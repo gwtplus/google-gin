@@ -1,0 +1,10 @@
+<module>
+
+  <inherits name='com.google.gwt.user.User'/>
+  <inherits name='com.google.inject.Inject'/>
+
+  <generate-with class="com.google.gwt.inject.rebind.InjectorGenerator">
+    <when-type-assignable class="com.google.gwt.inject.client.Injector" />
+  </generate-with>
+  
+</module>

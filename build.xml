@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <property file="build.properties"/>
+  
+  <!-- Compiler options -->
+  
+  <property name="compiler.debug" value="on"/>
+  <property name="compiler.generate.no.warnings" value="off"/>
+  <property name="compiler.args" value=""/>
+  <property name="compiler.max.memory" value="128m"/>
+
+  <property name="gwt.home" value="${env.GWT_HOME}"/>
+
+  <patternset id="ignored.files">
+    <exclude name="**/.svn/**"/>
+  </patternset>
+
+  <patternset id="compiler.resources">
+    <include name="**/?*.xml"/>
+  </patternset>
+  
+  
+  <!-- Project Libraries -->
+  
+  <path id="library.guice.classpath">
+    <pathelement location="${basedir}/lib/guice-snapshot.jar"/>
+    <pathelement location="${basedir}/lib/guice-src-for-gwt.jar"/>
+  </path>
+  
+  <path id="library.gwt-user.classpath">
+    <pathelement location="${gwt.home}/gwt-user.jar"/>
+  </path>
+  
+  <path id="library.gwt-dev.classpath">
+    <fileset dir="${gwt.home}" includes="gwt-dev-*.jar"/>
+  </path>
+  
+  <path id="library.junit.classpath">
+    <pathelement location="${basedir}/lib/test/junit.jar"/>
+  </path>
+  
+  <path id="library.aopalliance.classpath">
+    <pathelement location="${basedir}/lib/aopalliance.jar"/>
+  </path>
+  
+  <path id="library.easymock.classpath">
+    <pathelement location="${basedir}/lib/test/easymock.jar"/>
+    <pathelement location="${basedir}/lib/test/cglib-nodep-2.2.jar"/>
+    <pathelement location="${basedir}/lib/test/easymockclassextension.jar"/>
+  </path>
+  
+  <dirname property="gin.basedir" file="${ant.file}"/>
+  
+  <property name="gin.source.dir" value="${gin.basedir}/src"/>
+
+  <property name="gin.output.base" value="${gin.basedir}/out"/>
+  <property name="gin.output.dir" value="${gin.output.base}/production"/>
+  <property name="gin.dist.dir" value="${gin.output.base}/dist"/>
+  <property name="gin.testoutput.dir" value="${gin.output.base}/test"/>
+  <property name="gin.testrun.dir" value="${gin.output.base}/testrun"/>
+  
+  <path id="gin.classpath">
+    <path refid="library.guice.classpath"/>
+    <path refid="library.gwt-user.classpath"/>
+    <path refid="library.gwt-dev.classpath"/>
+    <path refid="library.junit.classpath"/>
+    <path refid="library.aopalliance.classpath"/>
+    <path refid="library.easymock.classpath"/>
+  </path>
+  
+  <path id="gin.test.classpath">
+    <pathelement location="${gin.output.dir}"/>
+    <pathelement location="${gin.testoutput.dir}"/>
+    <path refid="library.guice.classpath"/>
+    <path refid="library.gwt-user.classpath"/>
+    <path refid="library.gwt-dev.classpath"/>
+    <path refid="library.junit.classpath"/>
+    <path refid="library.aopalliance.classpath"/>
+    <path refid="library.easymock.classpath"/>
+
+    <!-- Put test sources on test classpath -->
+    <path refid="gin.test.sourcepath"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.compilation">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <path id="gin.sourcepath" path="${gin.basedir}/src"/>
+  <path id="gin.test.sourcepath" path="${gin.basedir}/test"/>
+  
+  <target name="compile" depends="compile.production,compile.tests"/>
+  
+  <target name="compile.production" description="Compile module gin; production classes">
+    <mkdir dir="${gin.output.dir}"/>
+    <javac destdir="${gin.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
+      <compilerarg line="${compiler.args}"/>
+      <classpath refid="gin.classpath"/>
+      <src refid="gin.sourcepath"/>
+      <patternset refid="excluded.from.compilation"/>
+    </javac>
+    
+    <copy todir="${gin.output.dir}">
+      <fileset dir="${gin.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+
+    <!-- Also include client .java files in the output, for GWT -->
+    <copy todir="${gin.output.dir}">
+      <fileset dir="${gin.basedir}/src" includes="com/google/gwt/inject/client/**/*.java" />
+    </copy>
+
+    <!-- And also include guice-src-for-gwt.jar -->
+  </target>
+  
+  <target name="compile.tests" depends="compile.production" description="compile module gin; test classes" unless="skip.tests">
+    <mkdir dir="${gin.testoutput.dir}"/>
+    <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
+      <compilerarg line="${compiler.args}"/>
+      <classpath refid="gin.classpath"/>
+      <classpath location="${gin.output.dir}"/>
+      <src refid="gin.test.sourcepath"/>
+      <patternset refid="excluded.from.compilation"/>
+    </javac>
+    
+    <copy todir="${gin.testoutput.dir}">
+      <fileset dir="${gin.basedir}/test">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="test" depends="compile">
+    <mkdir dir="${gin.testrun.dir}"/>
+
+    <junit printsummary="yes" fork="yes" showoutput="true">
+      <formatter type="brief" />
+
+      <!-- Switches from hosted to Web mode -->
+      <!-- <jvmarg value="-Dgwt.args=-web"/> -->
+
+      <classpath refid="gin.test.classpath"/>
+      <batchtest todir="${gin.testrun.dir}">
+        <fileset dir="${gin.testoutput.dir}" includes="**/*Test.class" />
+      </batchtest>
+    </junit>
+  </target>
+  
+  <target name="dist">
+    <mkdir dir="${gin.dist.dir}"/>
+    <jar destfile="${gin.dist.dir}/gin.jar">
+      <fileset dir="${gin.output.dir}" />
+    </jar>
+
+    <zip destfile="${gin.dist.dir}/gin-src.jar">
+      <fileset dir="${gin.source.dir}"/>
+      <fileset file="LICENSE"/>
+    </zip>
+  </target>
+
+  <target name="clean" description="cleanup module">
+    <delete dir="${gin.output.base}"/>
+  </target>
+  
+  <target name="init" description="Build initialization">
+    <!-- Perform any build initialization in this target -->
+  </target>
+  
+  <target name="all" depends="init, clean, compile" description="build all"/>
+</project>
