@@ -24,7 +24,7 @@ import com.google.inject.Provider;
  * @author bstoler@google.com (Brian Stoler)
 */
 @Modules("com.google.gwt.inject.rebind.MyAppModule")
-public interface MyAppInjector extends Injector {
+public interface MyAppGinjector extends Ginjector {
 
   String ANNOTATED_STRING_VALUE = "abc";
 

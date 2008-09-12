@@ -19,7 +19,7 @@ import com.google.inject.Inject;
 import com.google.gwt.core.client.GWT;
 
 /**
- * A more complex object that we create from {@link MyAppInjector}.
+ * A more complex object that we create from {@link MyAppGinjector}.
  * 
  * @author bstoler@google.com (Brian Stoler)
 */

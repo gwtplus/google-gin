@@ -24,7 +24,7 @@ import com.google.inject.Provider;
  */
 public class InjectTest extends GWTTestCase {
   public void testSimpleInjector() {
-    SimpleInjector injector = GWT.create(SimpleInjector.class);
+    SimpleGinjector injector = GWT.create(SimpleGinjector.class);
 
     SimpleObject simple = injector.getSimple();
     assertNotNull(simple);
@@ -34,7 +34,7 @@ public class InjectTest extends GWTTestCase {
   }
 
   public void testMyAppInjector() {
-    MyAppInjector injector = GWT.create(MyAppInjector.class);
+    MyAppGinjector injector = GWT.create(MyAppGinjector.class);
 
     SimpleObject simple = injector.getSimple();
     assertNotNull(simple);
@@ -60,7 +60,7 @@ public class InjectTest extends GWTTestCase {
   }
 
   public void testBindingAnnotations() {
-    MyAppInjector injector = GWT.create(MyAppInjector.class);
+    MyAppGinjector injector = GWT.create(MyAppGinjector.class);
 
     SimpleObject simple = injector.getSimple();
     assertNotNull(simple);
@@ -84,7 +84,7 @@ public class InjectTest extends GWTTestCase {
 
   public void testEagerSingleton() {
     EagerObject.constructorCalls = 0;
-    MyAppInjector injector = GWT.create(MyAppInjector.class);
+    MyAppGinjector injector = GWT.create(MyAppGinjector.class);
 
     // Constructor should have been called before we even ask for instance
     assertEquals(1, EagerObject.constructorCalls);
@@ -98,7 +98,7 @@ public class InjectTest extends GWTTestCase {
   }
 
   public void testHierarchicalInjector() {
-    HierarchicalMyAppInjector injector = GWT.create(HierarchicalMyAppInjector.class);
+    HierarchicalMyAppGinjector injector = GWT.create(HierarchicalMyAppGinjector.class);
 
     SimpleObject simple = injector.getSimple();
     assertNotNull(simple);
@@ -121,7 +121,7 @@ public class InjectTest extends GWTTestCase {
   }
 
   public void testSyntheticProvider() {
-    MyAppInjector injector = GWT.create(MyAppInjector.class);
+    MyAppGinjector injector = GWT.create(MyAppGinjector.class);
 
     // Provider with no binding annotation
     Provider<SimpleObject> simpleProvider = injector.getSimpleProvider();
@@ -144,8 +144,8 @@ public class InjectTest extends GWTTestCase {
   }
 
   public void testAnnotatedConstants() {
-    MyAppInjector injector = GWT.create(MyAppInjector.class);
-    assertEquals(MyAppInjector.ANNOTATED_STRING_VALUE, injector.getAnnotatedString());
+    MyAppGinjector injector = GWT.create(MyAppGinjector.class);
+    assertEquals(MyAppGinjector.ANNOTATED_STRING_VALUE, injector.getAnnotatedString());
   }
 
   public String getModuleName() {

@@ -16,10 +16,9 @@
 package com.google.gwt.inject.client;
 
 /**
- * A simple injector interface for test cases.
- * 
- * @author bstoler@google.com (Brian Stoler)
-*/
-public interface SimpleInjector extends Injector {
-  SimpleObject getSimple();
+ * Marker interface that injectors should extend.
+ *
+ * Note that this is not named "G-injector" -- its "GIN-jector."
+ */
+public interface Ginjector {
 }

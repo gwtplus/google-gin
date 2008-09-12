@@ -21,7 +21,7 @@ import com.google.gwt.inject.client.MySingletonProvider;
 import com.google.gwt.inject.client.MySingleton;
 import com.google.gwt.inject.client.SimpleObject;
 import com.google.gwt.inject.client.EagerObject;
-import com.google.gwt.inject.client.MyAppInjector;
+import com.google.gwt.inject.client.MyAppGinjector;
 import com.google.gwt.inject.client.MyBindingAnnotation;
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
@@ -47,6 +47,6 @@ public class MyAppModule extends AbstractModule {
     bind(EagerObject.class).asEagerSingleton();
 
     bindConstant().annotatedWith(MyBindingAnnotation.class)
-        .to(MyAppInjector.ANNOTATED_STRING_VALUE);
+        .to(MyAppGinjector.ANNOTATED_STRING_VALUE);
   }
 }
