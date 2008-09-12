@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<project name="google-gin" default="all" basedir=".">
   <property file="build.properties"/>
+    
+  <property environment="env"/>
   
+  <!-- Mac GWT requires -XstartOnFirstThread -->
+  <condition property="mac">
+    <os name="Mac OS X"/>
+  </condition>
+  <condition property="macJvmArgs" value="-XstartOnFirstThread" else="">
+    <isset property="mac"/>
+  </condition>
+
   <!-- Compiler options -->
   
   <property name="compiler.debug" value="on"/>
@@ -137,6 +148,7 @@
     <mkdir dir="${gin.testrun.dir}"/>
 
     <junit printsummary="yes" fork="yes" showoutput="true">
+      <jvmarg line="${macJvmArgs}"/>
       <formatter type="brief" />
 
       <!-- Switches from hosted to Web mode -->
@@ -169,5 +181,5 @@
     <!-- Perform any build initialization in this target -->
   </target>
   
-  <target name="all" depends="init, clean, compile" description="build all"/>
+  <target name="all" depends="init, clean, compile, test, dist" description="build all"/>
 </project>
