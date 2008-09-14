@@ -23,6 +23,7 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPackage;
+import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.client.Modules;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
@@ -31,6 +32,7 @@ import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
+import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -65,6 +67,12 @@ import java.util.Set;
  * @author bstoler@google.com (Brian Stoler)
  */
 class GinjectorGeneratorImpl {
+  /**
+   * Suffix that is appended to the name of a GWT-RPC service interface to build
+   * the name of the asynchronous proxy interface.
+   */
+  private static final String ASYNC_SERVICE_PROXY_SUFFIX = "Async";
+
   private final TreeLogger logger;
   private final GeneratorContext ctx;
   private final JClassType injectorInterface;
@@ -394,6 +402,20 @@ class GinjectorGeneratorImpl {
   }
 
   private Binding createImplicitBindingForClass(JClassType classType) {
+    // Special case: When injecting a remote service proxy call GWT.create on
+    // the synchronous service interface
+    String name = classType.getQualifiedSourceName();
+    if (classType.isInterface() != null && name.endsWith(ASYNC_SERVICE_PROXY_SUFFIX)) {
+      String serviceInterfaceName =
+          name.substring(0, name.length() - ASYNC_SERVICE_PROXY_SUFFIX.length());
+      TypeOracle typeOracle = ctx.getTypeOracle();
+      JClassType serviceInterface = typeOracle.findType(serviceInterfaceName);
+      JClassType marker = typeOracle.findType(RemoteService.class.getName());
+      if (serviceInterface != null && marker != null && serviceInterface.isAssignableTo(marker)) {
+        return new CallGwtDotCreateBinding(serviceInterface);
+      }
+    }
+
     // Either call the @Inject constructor or use GWT.create
     JConstructor[] constructors = classType.getConstructors();
     if (constructors.length == 0 ||

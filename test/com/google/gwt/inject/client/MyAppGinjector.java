@@ -49,4 +49,6 @@ public interface MyAppGinjector extends Ginjector {
   @Named("blue") Provider<SimpleObject> getSimpleBlueProvider();
 
   @MyBindingAnnotation String getAnnotatedString();
+
+  MyRemoteServiceAsync getMyRemoteServiceAsync();
 }
