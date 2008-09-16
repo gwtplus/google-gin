@@ -18,6 +18,7 @@ package com.google.gwt.inject.client;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
 
 /**
@@ -107,7 +108,7 @@ public class InjectTest extends GWTTestCase {
     SimpleObject unnamedSimple = injector.getUnnamedSimple();
     assertNotNull(unnamedSimple);
     assertSame(simple, unnamedSimple);
-    
+
     SimpleObject purple = injector.getSimplePurple();
     assertNotNull(purple);
     assertNotSame(simple, purple);
@@ -115,7 +116,7 @@ public class InjectTest extends GWTTestCase {
     SimpleObject red = injector.getSimpleRed();
     assertNotNull(red);
     assertNotSame(purple, red);
-    
+
     SimpleObject blue = injector.getSimpleBlue();
     assertNotNull(blue);
     assertSame(blue, red);
@@ -165,6 +166,52 @@ public class InjectTest extends GWTTestCase {
 
     // Make sure that the @Singleton annotation worked
     assertSame(service, injector.getMyRemoteServiceAsync());
+  }
+
+  public void testInnerClassInjection() {
+    InnerGinjector injector = GWT.create(InnerGinjector.class);
+    InnerType innerType = injector.getG();
+    assertTrue(innerType.injected);
+  }
+
+  public void testNestedProviderInjection() {
+    InnerGinjector injector = GWT.create(InnerGinjector.class);
+    MyType myType = injector.getMyType();
+    assertTrue(myType != null);
+  }
+
+  public static class InnerType {
+    boolean injected;
+
+    @Inject
+    InnerType(Dependency d) {
+      if (d != null) {
+        injected = true;
+      }
+    }
+  }
+
+  @Modules("com.google.gwt.inject.rebind.MyAppModule$MyModule")
+  public interface InnerGinjector extends Ginjector {
+    @MyBindingAnnotation
+    InnerType getG();
+
+    MyType getMyType();
+  }
+
+  public static class Dependency {
+  }
+
+  public interface MyType {
+  }
+
+  public static class MyTypeImpl implements MyType {
+  }
+
+  public static class MyProvider implements Provider<InjectTest.MyType> {
+    public InjectTest.MyType get() {
+      return new InjectTest.MyTypeImpl();
+    }
   }
 
   public String getModuleName() {

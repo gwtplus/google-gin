@@ -26,12 +26,12 @@ import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.client.Modules;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
+import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
-import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
@@ -50,8 +50,10 @@ import com.google.inject.spi.Message;
 
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,7 +65,7 @@ import java.util.Set;
  * Does the heavy lifting involved in generating implementations of
  * {@link com.google.gwt.inject.client.Ginjector}. This class is instantiated
  * once per class to generate, so it can keep useful state around in its fields.
- * 
+ *
  * @author bstoler@google.com (Brian Stoler)
  */
 class GinjectorGeneratorImpl {
@@ -98,12 +100,12 @@ class GinjectorGeneratorImpl {
   /**
    * A name to method map for the methods on the injector interface, and its
    * superinterfaces that we need to output a concrete method for. These also
-   * form the basis for the unresolved classes. Methods redefined (with 
+   * form the basis for the unresolved classes. Methods redefined (with
    * different annotations) in the base interface take precedence over the
    * superinterfaces.
    */
   private final Map<String, JMethod> injectorMethods = new HashMap<String, JMethod>();
-  
+
   /**
    * Keeps track of whether we've found an error so we can eventually throw
    * an {@link UnableToCompleteException}. We do this instead of throwing
@@ -127,7 +129,6 @@ class GinjectorGeneratorImpl {
     JPackage interfacePackage = injectorInterface.getPackage();
     String packageName = interfacePackage == null ? "" : interfacePackage.getName();
 
-    // TODO(bstoler) This may not work for inner interfaces
     String implClassName = injectorInterface.getSimpleSourceName() + "Impl";
 
     final PrintWriter printWriter = ctx.tryCreate(logger, packageName, implClassName);
@@ -187,12 +188,12 @@ class GinjectorGeneratorImpl {
               + method.getReadableDeclaration());
           injectorMethods.put(method.getName(), method);
         } else {
-          logger.log(TreeLogger.DEBUG, "Ignoring injector method: " + iface.getName() + "#" 
+          logger.log(TreeLogger.DEBUG, "Ignoring injector method: " + iface.getName() + "#"
               + method.getReadableDeclaration());
         }
       }
     }
-    
+
     for (JClassType superIface : iface.getImplementedInterfaces()) {
       determineInjectorMethods(superIface);
     }
@@ -251,7 +252,7 @@ class GinjectorGeneratorImpl {
         }
       }
     }
-    
+
     for (JClassType superIface : iface.getImplementedInterfaces()) {
       populateModulesFromInjectorInterface(superIface, modules);
     }
@@ -261,22 +262,29 @@ class GinjectorGeneratorImpl {
     try {
       Class<?> moduleClass = Class.forName(moduleClassName);
       if (Module.class.isAssignableFrom(moduleClass)) {
-        return  (Module) moduleClass.newInstance();
+        Constructor<?> constructor = moduleClass.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        try {
+          return (Module) constructor.newInstance();
+        } catch (InvocationTargetException e) {
+          logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
+        } finally {
+          // be a good citizen
+          constructor.setAccessible(false);
+        }
       }
-
       logger.log(TreeLogger.ERROR, "Module class not a subtype of Module: " + moduleClassName);
-      foundError = true;
     } catch (ClassNotFoundException e) {
       logger.log(TreeLogger.ERROR, "Module class not found: " + moduleClassName, e);
-      foundError = true;
     } catch (IllegalAccessException e) {
       logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
-      foundError = true;
     } catch (InstantiationException e) {
       logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
-      foundError = true;
+    } catch (NoSuchMethodException e) {
+      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
     }
-
+    
+    foundError = true;
     return null;
   }
 
@@ -284,7 +292,8 @@ class GinjectorGeneratorImpl {
     // Write out each binding
     for (Map.Entry<Key<?>, Binding> entry : bindings.entrySet()) {
       Key<?> key = entry.getKey();
-      String typeName = key.getTypeLiteral().toString();
+      // toString on TypeLiteral outputs the source name, not the binary name.
+      String typeName = nameGenerator.binaryNameToSourceName(key.getTypeLiteral().toString());
       Binding binding = entry.getValue();
 
       String getter = nameGenerator.getGetterMethodName(key);
@@ -339,7 +348,7 @@ class GinjectorGeneratorImpl {
     if (scope == null) {
       scope = GinScope.NONE;
     }
-    
+
     if (scope == GinScope.NONE) {
       // Look for scope annotation as a fallback
       Class<?> raw = Util.getRawType(key);
@@ -385,7 +394,7 @@ class GinjectorGeneratorImpl {
     }
 
     if (binding == null) {
-      JClassType classType = ctx.getTypeOracle().findType(Util.getRawType(key).getName());
+      JClassType classType = ctx.getTypeOracle().findType(nameGenerator.binaryNameToSourceName(Util.getRawType(key).getName()));
       if (classType != null) {
         binding = createImplicitBindingForClass(classType);
       } else {
@@ -535,7 +544,7 @@ class GinjectorGeneratorImpl {
             + targetKey + " inst=" + instance);
         foundError = true;
       }
-      
+
       return null;
     }
 

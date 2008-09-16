@@ -15,15 +15,18 @@
  */
 package com.google.gwt.inject.rebind;
 
-import com.google.gwt.inject.client.MyServiceImpl;
-import com.google.gwt.inject.client.MyService;
-import com.google.gwt.inject.client.MySingletonProvider;
-import com.google.gwt.inject.client.MySingleton;
-import com.google.gwt.inject.client.SimpleObject;
 import com.google.gwt.inject.client.EagerObject;
+import com.google.gwt.inject.client.InjectTest;
 import com.google.gwt.inject.client.MyAppGinjector;
 import com.google.gwt.inject.client.MyBindingAnnotation;
+import com.google.gwt.inject.client.MyService;
+import com.google.gwt.inject.client.MyServiceImpl;
+import com.google.gwt.inject.client.MySingleton;
+import com.google.gwt.inject.client.MySingletonProvider;
+import com.google.gwt.inject.client.SimpleObject;
 import com.google.inject.AbstractModule;
+import com.google.inject.Binder;
+import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 
@@ -31,7 +34,7 @@ import com.google.inject.name.Names;
  * GIN module for test cases.
  *
  * @author bstoler@google.com (Brian Stoler)
-*/
+ */
 public class MyAppModule extends AbstractModule {
   protected void configure() {
     // Note that MyServiceImpl has @Singleton on itself
@@ -48,5 +51,12 @@ public class MyAppModule extends AbstractModule {
 
     bindConstant().annotatedWith(MyBindingAnnotation.class)
         .to(MyAppGinjector.ANNOTATED_STRING_VALUE);
+  }
+
+  static class MyModule implements Module {
+    public void configure(Binder binder) {
+      binder.bind(InjectTest.InnerType.class).annotatedWith(MyBindingAnnotation.class).to(InjectTest.InnerType.class);
+      binder.bind(InjectTest.MyType.class).toProvider(InjectTest.MyProvider.class);
+    }
   }
 }

@@ -103,7 +103,7 @@ public class UtilTest extends TestCase {
     Annotation ann = getClass().getAnnotation(MyBindingAnnotation.class);
     assertNotNull(ann);
 
-    Key<?> key = Util.getKey(type, new Annotation[] { ann });
+    Key<?> key = Util.getKey(type, new Annotation[]{ann});
     assertEquals(key, Key.get(String.class, ann));
     assertEquals(key, Key.get(String.class, MyBindingAnnotation.class));
   }
@@ -115,7 +115,7 @@ public class UtilTest extends TestCase {
     Annotation ann = getClass().getAnnotation(MyOtherAnnotation.class);
     assertNotNull(ann);
 
-    Key<?> key = Util.getKey(type, new Annotation[] { ann });
+    Key<?> key = Util.getKey(type, new Annotation[]{ann});
     assertEquals(key, Key.get(String.class));
   }
 
@@ -128,12 +128,12 @@ public class UtilTest extends TestCase {
     assertNotNull(bindingAnn);
     assertNotNull(otherAnn);
 
-    Key<?> key = Util.getKey(type, new Annotation[] { bindingAnn, otherAnn });
+    Key<?> key = Util.getKey(type, new Annotation[]{bindingAnn, otherAnn});
     assertEquals(key, Key.get(String.class, bindingAnn));
     assertEquals(key, Key.get(String.class, MyBindingAnnotation.class));
 
     // Test annotations in the other order too
-    key = Util.getKey(type, new Annotation[] { otherAnn, bindingAnn });
+    key = Util.getKey(type, new Annotation[]{otherAnn, bindingAnn});
     assertEquals(key, Key.get(String.class, bindingAnn));
     assertEquals(key, Key.get(String.class, MyBindingAnnotation.class));
   }
@@ -158,6 +158,8 @@ public class UtilTest extends TestCase {
     expect(type.isPrimitive()).andReturn(null).anyTimes();
     expect(type.isArray()).andReturn(type).anyTimes();
     expect(type.isParameterized()).andReturn(null).anyTimes();
+    expect(type.isLocalType()).andReturn(null).anyTimes();
+    expect(type.isMemberType()).andReturn(null).anyTimes();
     expect(type.isClassOrInterface()).andReturn(type).anyTimes();
     expect(type.getComponentType()).andReturn(componentType).anyTimes();
     return type;
@@ -168,6 +170,8 @@ public class UtilTest extends TestCase {
     expect(type.isPrimitive()).andReturn(null).anyTimes();
     expect(type.isArray()).andReturn(null).anyTimes();
     expect(type.isParameterized()).andReturn(null).anyTimes();
+    expect(type.isLocalType()).andReturn(null).anyTimes();
+    expect(type.isMemberType()).andReturn(null).anyTimes();
     expect(type.isClassOrInterface()).andReturn(type).anyTimes();
     expect(type.getQualifiedSourceName()).andReturn(clazz.getName()).anyTimes();
     return type;
@@ -181,6 +185,8 @@ public class UtilTest extends TestCase {
     expect(type.isClassOrInterface()).andReturn(type).anyTimes();
     expect(type.getRawType()).andReturn(rawType).anyTimes();
     expect(type.getTypeArgs()).andReturn(typeArgs).anyTimes();
+    expect(type.isLocalType()).andReturn(null).anyTimes();
+    expect(type.isMemberType()).andReturn(null).anyTimes();
     return type;
   }
 

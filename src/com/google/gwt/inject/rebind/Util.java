@@ -15,24 +15,24 @@
  */
 package com.google.gwt.inject.rebind;
 
+import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
 import com.google.gwt.core.ext.typeinfo.JArrayType;
 import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JParameterizedType;
-import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
+import com.google.gwt.core.ext.typeinfo.JParameterizedType;
+import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
+import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.util.Types;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 /**
  * Simple static utilities for injector generator.
@@ -44,14 +44,14 @@ public class Util {
 
   /**
    * Gets the Guice binding key for a given GWT type with optional annotations.
-   * 
+   *
    * @param gwtType GWT type to convert in to a key
    * @param annotations Optional array of {@code Annotation}s. If this contains
    *     one and only one {@link BindingAnnotation}, it will be included in the
    *     key. If it includes more than one, an exception will be thrown.
    * @return Guice Key instance for this type/annotations
    * @throws ProvisionException in case of any failure
-   */ 
+   */
   public static Key<?> getKey(JType gwtType, Annotation[] annotations)
       throws ProvisionException {
     try {
@@ -76,7 +76,7 @@ public class Util {
     if (annotations == null || annotations.length == 0) {
       return null;
     }
-    
+
     Annotation bindingAnnotation = null;
     for (Annotation annotation : annotations) {
       if (annotation.annotationType().getAnnotation(BindingAnnotation.class) != null) {
@@ -99,7 +99,7 @@ public class Util {
     JPrimitiveType primitiveType = gwtType.isPrimitive();
     if (primitiveType != null) {
       String boxClassName = primitiveType.getQualifiedBoxedSourceName();
-      Class<?> boxClass = loadClass(boxClassName);
+      Class<?> boxClass = loadClass(boxClassName, NameGenerator.ClassType.REGULAR);
       return (Class) boxClass.getField("TYPE").get(null);
     }
 
@@ -124,9 +124,7 @@ public class Util {
 
     JClassType jClassType = gwtType.isClassOrInterface();
     if (gwtType.isClassOrInterface() != null) {
-
-      // TODO(bstoler): This may not be quite right for nested types
-      return loadClass(jClassType.getQualifiedSourceName());
+      return loadClass(jClassType.getQualifiedSourceName(), NameGenerator.ClassType.getType(jClassType));
     }
 
     throw new ProvisionException("Unknown GWT type: " + gwtType);
@@ -135,8 +133,9 @@ public class Util {
   // Wrapper around Class.forName that passes initialize=false. This is critical
   // because GWT client code (whose class names we may be referencing here)
   // can not necessarily have its static initializers run at rebind time.
-  private static Class<?> loadClass(String className) throws ClassNotFoundException {
-    return Class.forName(className, false, Thread.currentThread().getContextClassLoader());
+  private static Class<?> loadClass(String className, NameGenerator.ClassType classType) throws ClassNotFoundException {
+    String resultingClassName = classType.getBinaryClassName(className);
+    return Class.forName(resultingClassName, false, Thread.currentThread().getContextClassLoader());
   }
 
   public static Key<?> getKey(JMethod method) {

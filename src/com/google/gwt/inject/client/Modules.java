@@ -25,6 +25,9 @@ import java.lang.annotation.Target;
  *
  * <p>The values are fully-qualified class names. (We can't use Class objects
  * because this is a reference from {@code .client} to {@code .rebind}.
+ *
+ * <p>To specify static nested classes, use the class' binary name, as specified
+ * by {@link Class#forName(String)} (example: {@code com.company.Type$StaticNestedType}.
  */
 @Documented
 @Target({ElementType.TYPE})

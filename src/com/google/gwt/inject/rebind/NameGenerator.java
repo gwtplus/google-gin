@@ -2,10 +2,11 @@
 
 package com.google.gwt.inject.rebind;
 
+import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.inject.Key;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Helper to generate various names for a binding that are needed when
@@ -15,6 +16,14 @@ import java.util.HashMap;
  */
 public class NameGenerator {
   private final Map<Key<?>, String> cache = new HashMap<Key<?>, String>();
+
+  public String sourceNameToBinaryName(ClassType type, String fullyQualifiedClassName) {
+    return type.getBinaryClassName(fullyQualifiedClassName);
+  }
+
+  public String binaryNameToSourceName(String fullyQualifiedClassName) {
+    return replaceLast(fullyQualifiedClassName, '$', '.');
+  }
 
   public String getGetterMethodName(Key<?> key) {
     return "get_" + mangle(key);
@@ -43,5 +52,43 @@ public class NameGenerator {
     name = name.replaceAll("[^\\p{Alnum}_]", "\\$");
     cache.put(key, name);
     return name;
+  }
+
+  public enum ClassType {
+    REGULAR {
+      public String getBinaryClassName(String binaryClassName) {
+        return binaryClassName;
+      }
+    },
+    STATIC_NESTED,
+    INNER,
+    ANONYMOUS_INNER;
+
+    public static ClassType getType(JClassType type) {
+      if (type.isLocalType())
+        return ANONYMOUS_INNER;
+      if (type.isMemberType()) {
+        if (type.isStatic()) {
+          return STATIC_NESTED;
+        } else {
+          return INNER;
+        }
+      } else {
+        return REGULAR;
+      }
+    }
+
+    public String getBinaryClassName(String binaryClassName) {
+      return replaceLast(binaryClassName, '.', '$');
+    }
+  }
+
+  private static String replaceLast(String source, char toReplace, char with) {
+    StringBuilder sb = new StringBuilder(source);
+    int index = sb.lastIndexOf(String.valueOf(toReplace));
+    if (index != -1) {
+      sb.setCharAt(index, with);
+    }
+    return sb.toString(); 
   }
 }
