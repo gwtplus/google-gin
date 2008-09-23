@@ -20,8 +20,6 @@ import com.google.gwt.i18n.client.Messages;
 /**
  * A {@code Messages} interface to test that such objects can be created
  * by injectors with no special bindings.
- * 
- * @author bstoler@google.com (Brian Stoler)
  */
 public interface MyMessages extends Messages {
   String FUN_MSG = "fun!";

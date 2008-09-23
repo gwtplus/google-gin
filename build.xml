@@ -17,13 +17,13 @@
   <property name="compiler.debug" value="on"/>
   <property name="compiler.generate.no.warnings" value="off"/>
   <property name="compiler.args" value=""/>
+
   <property name="compiler.max.memory" value="128m"/>
+  <property name="test.max.memory" value="256m"/>
 
+  <!-- GWT installation directory; can be passed as Ant property gwt.home,
+       or can be provided by system property GWT_HOME. -->
   <property name="gwt.home" value="${env.GWT_HOME}"/>
-
-  <patternset id="ignored.files">
-    <exclude name="**/.svn/**"/>
-  </patternset>
 
   <patternset id="compiler.resources">
     <include name="**/?*.xml"/>
@@ -34,7 +34,6 @@
   
   <path id="library.guice.classpath">
     <pathelement location="${basedir}/lib/guice-snapshot.jar"/>
-    <pathelement location="${basedir}/lib/guice-src-for-gwt.jar"/>
   </path>
   
   <path id="library.gwt-user.classpath">
@@ -88,14 +87,9 @@
     <path refid="library.aopalliance.classpath"/>
     <path refid="library.easymock.classpath"/>
 
-    <!-- Put test sources on test classpath -->
+    <!-- Put test sources on test classpath so GWT compiler can see them -->
     <path refid="gin.test.sourcepath"/>
   </path>
-  
-  
-  <patternset id="excluded.from.compilation">
-    <patternset refid="ignored.files"/>
-  </patternset>
   
   <path id="gin.sourcepath" path="${gin.basedir}/src"/>
   <path id="gin.test.sourcepath" path="${gin.basedir}/test"/>
@@ -108,7 +102,12 @@
       <compilerarg line="${compiler.args}"/>
       <classpath refid="gin.classpath"/>
       <src refid="gin.sourcepath"/>
-      <patternset refid="excluded.from.compilation"/>
+
+      <!-- Don't compile the fake Guice API classes; they are just for
+           the GWT compiler to see. Compiling them with javac breaks the
+           generator because it then sees the wrong versions of the Guice
+           classes (it needs the real ones). -->
+      <exclude name="com/google/gwt/inject/guiceapi/**" />
     </javac>
     
     <copy todir="${gin.output.dir}">
@@ -118,12 +117,13 @@
       </fileset>
     </copy>
 
-    <!-- Also include client .java files in the output, for GWT -->
+    <!-- Also include client and guiceapi .java files in the output, for GWT -->
     <copy todir="${gin.output.dir}">
-      <fileset dir="${gin.basedir}/src" includes="com/google/gwt/inject/client/**/*.java" />
+      <fileset dir="${gin.basedir}/src">
+        <include name="com/google/gwt/inject/client/**/*.java" />
+        <include name="com/google/gwt/inject/guiceapi/**/*.java" />
+      </fileset>
     </copy>
-
-    <!-- And also include guice-src-for-gwt.jar -->
   </target>
   
   <target name="compile.tests" depends="compile.production" description="compile module gin; test classes" unless="skip.tests">
@@ -133,7 +133,6 @@
       <classpath refid="gin.classpath"/>
       <classpath location="${gin.output.dir}"/>
       <src refid="gin.test.sourcepath"/>
-      <patternset refid="excluded.from.compilation"/>
     </javac>
     
     <copy todir="${gin.testoutput.dir}">
@@ -144,15 +143,19 @@
     </copy>
   </target>
 
-  <target name="test" depends="compile">
+  <target name="test" depends="test.web, test.hosted" />
+
+  <!-- TODO: Some way to avoid this copy/paste -->
+  <target name="test.web" depends="compile">
     <mkdir dir="${gin.testrun.dir}"/>
 
-    <junit printsummary="yes" fork="yes" showoutput="true">
+    <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
+           haltonerror="true" >
       <jvmarg line="${macJvmArgs}"/>
       <formatter type="brief" />
 
       <!-- Switches from hosted to Web mode -->
-      <!-- <jvmarg value="-Dgwt.args=-web"/> -->
+      <jvmarg value="-Dgwt.args=-web"/>
 
       <classpath refid="gin.test.classpath"/>
       <batchtest todir="${gin.testrun.dir}">
@@ -161,6 +164,21 @@
     </junit>
   </target>
   
+  <target name="test.hosted" depends="compile">
+    <mkdir dir="${gin.testrun.dir}"/>
+
+    <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
+           haltonerror="true" >
+      <jvmarg line="${macJvmArgs}"/>
+      <formatter type="brief" />
+
+      <classpath refid="gin.test.classpath"/>
+      <batchtest todir="${gin.testrun.dir}">
+        <fileset dir="${gin.testoutput.dir}" includes="**/*Test.class" />
+      </batchtest>
+    </junit>
+  </target>
+
   <target name="dist">
     <mkdir dir="${gin.dist.dir}"/>
     <jar destfile="${gin.dist.dir}/gin.jar">

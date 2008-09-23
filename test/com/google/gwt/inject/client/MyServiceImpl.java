@@ -18,7 +18,7 @@ package com.google.gwt.inject.client;
 import com.google.inject.Singleton;
 
 /**
- * @author bstoler@google.com (Brian Stoler)
+ * Trivial class for use in tests.
  */
 @Singleton
 public class MyServiceImpl implements MyService {

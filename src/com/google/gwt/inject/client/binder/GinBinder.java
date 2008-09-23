@@ -13,11 +13,18 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.binder;
 
-/**
- * A simple injector interface for test cases.
- */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+import com.google.gwt.inject.client.GinModule;
+import com.google.inject.TypeLiteral;
+
+public interface GinBinder {
+
+  <T> GinAnnotatedBindingBuilder<T> bind(Class<T> clazz);
+
+  <T> GinAnnotatedBindingBuilder<T> bind(TypeLiteral<T> type);
+
+  GinAnnotatedConstantBindingBuilder bindConstant();
+
+  void install(GinModule install); // not using proper generics for compat with Guice 1.0
 }

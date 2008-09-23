@@ -1,10 +1,14 @@
 <module>
 
   <inherits name='com.google.gwt.user.User'/>
-  <inherits name='com.google.inject.Inject'/>
 
   <generate-with class="com.google.gwt.inject.rebind.GinjectorGenerator">
     <when-type-assignable class="com.google.gwt.inject.client.Ginjector" />
   </generate-with>
-  
+
+  <!-- Provide needed Guice API definitions for GWT compiler -->
+  <super-source path="guiceapi" />
+
+  <!-- Though the default, without this seems not to work. Perhaps due to super-src? -->
+  <source path="client"/>
 </module>

@@ -18,9 +18,7 @@ package com.google.gwt.inject.rebind;
 
 /**
  * Enum for scopes that GIN supports.
- *
- * @author bstoler@google.com (Brian Stoler)
  */
 enum GinScope {
-  NONE, SINGLETON, EAGER_SINGLETON
+  NO_SCOPE, SINGLETON, EAGER_SINGLETON
 }

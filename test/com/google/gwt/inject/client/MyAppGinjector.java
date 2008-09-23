@@ -20,10 +20,8 @@ import com.google.inject.Provider;
 
 /**
  * A more complex injector for test case.
- *
- * @author bstoler@google.com (Brian Stoler)
 */
-@Modules("com.google.gwt.inject.rebind.MyAppModule")
+@GinModules(MyAppGinModule.class)
 public interface MyAppGinjector extends Ginjector {
 
   String ANNOTATED_STRING_VALUE = "abc";
@@ -36,7 +34,7 @@ public interface MyAppGinjector extends Ginjector {
 
   MyServiceImpl getMyServiceImpl();
 
-  MySingleton getSingleton();
+  MyProvidedObject getSingleton();
 
   @Named("blue") SimpleObject getSimpleBlue();
   @Named("red") SimpleObject getSimpleRed();

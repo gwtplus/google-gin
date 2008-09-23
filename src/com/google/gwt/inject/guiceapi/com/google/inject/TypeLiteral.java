@@ -13,11 +13,11 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.inject;
 
 /**
- * A simple injector interface for test cases.
+ * Fake equivalent to Guice's TypeLiteral.
+ * Only used to keep the GWT compiler happy.
  */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+public class TypeLiteral<T> {
 }

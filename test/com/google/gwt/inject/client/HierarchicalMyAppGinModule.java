@@ -15,9 +15,15 @@
  */
 package com.google.gwt.inject.client;
 
+import com.google.inject.Singleton;
+import com.google.inject.name.Names;
+
 /**
- * A simple injector interface for test cases.
- */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+ * Module to test that GIN works for hierarchical modules.
+*/
+public class HierarchicalMyAppGinModule extends AbstractGinModule {
+
+  protected void configure() {
+    bind(SimpleObject.class).annotatedWith(Names.named("purple")).in(Singleton.class);
+  }
 }

@@ -19,10 +19,8 @@ import com.google.inject.name.Named;
 
 /**
  * An injector interface that is part of an injector heirarchy.
- * 
- * @author marcwilson@google.com (Marc Wilson)
 */
-@Modules("com.google.gwt.inject.rebind.HierarchicalMyAppModule")
+@GinModules(HierarchicalMyAppGinModule.class)
 public interface HierarchicalMyAppGinjector extends MyAppGinjector {
   
   // Adds an additional method.

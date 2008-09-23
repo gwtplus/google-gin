@@ -15,9 +15,13 @@
  */
 package com.google.gwt.inject.client;
 
+import com.google.inject.Provider;
+
 /**
- * A simple injector interface for test cases.
+ * Provider to call static getter on {@link MyProvidedObject}.
  */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+public class MyProvidedProvider implements Provider<MyProvidedObject> {
+  public MyProvidedObject get() {
+    return MyProvidedObject.getInstance();
+  }
 }

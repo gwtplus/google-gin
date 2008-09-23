@@ -24,6 +24,8 @@ import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.inject.client.GinModule;
+import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Modules;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
@@ -32,6 +34,7 @@ import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
+import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
@@ -65,8 +68,6 @@ import java.util.Set;
  * Does the heavy lifting involved in generating implementations of
  * {@link com.google.gwt.inject.client.Ginjector}. This class is instantiated
  * once per class to generate, so it can keep useful state around in its fields.
- *
- * @author bstoler@google.com (Brian Stoler)
  */
 class GinjectorGeneratorImpl {
   /**
@@ -243,10 +244,21 @@ class GinjectorGeneratorImpl {
   }
 
   private void populateModulesFromInjectorInterface(JClassType iface, List<Module> modules) {
+    @SuppressWarnings("deprecation")
     Modules modulesAnn = iface.getAnnotation(Modules.class);
     if (modulesAnn != null) {
       for (String moduleClassName : modulesAnn.value()) {
         Module module = instantiateModuleClass(moduleClassName);
+        if (module != null) {
+          modules.add(module);
+        }
+      }
+    }
+
+    GinModules gmodules = iface.getAnnotation(GinModules.class);
+    if (gmodules != null) {
+      for (Class<? extends GinModule> moduleClass : gmodules.value()) {
+        Module module = instantiateGModuleClass(moduleClass);
         if (module != null) {
           modules.add(module);
         }
@@ -283,7 +295,30 @@ class GinjectorGeneratorImpl {
     } catch (NoSuchMethodException e) {
       logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
     }
-    
+
+    foundError = true;
+    return null;
+  }
+
+  private Module instantiateGModuleClass(Class<? extends GinModule> moduleClassName) {
+    try {
+      Constructor<? extends GinModule> constructor = moduleClassName.getDeclaredConstructor();
+      try {
+        constructor.setAccessible(true);
+        return new GinModuleAdapter(constructor.newInstance());
+      } finally {
+        constructor.setAccessible(false);
+      }
+    } catch (IllegalAccessException e) {
+      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
+    } catch (InstantiationException e) {
+      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
+    } catch (NoSuchMethodException e) {
+      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
+    } catch (InvocationTargetException e) {
+      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
+    }
+
     foundError = true;
     return null;
   }
@@ -292,7 +327,8 @@ class GinjectorGeneratorImpl {
     // Write out each binding
     for (Map.Entry<Key<?>, Binding> entry : bindings.entrySet()) {
       Key<?> key = entry.getKey();
-      // toString on TypeLiteral outputs the source name, not the binary name.
+      
+      // toString on TypeLiteral outputs the binary name, not the source name
       String typeName = nameGenerator.binaryNameToSourceName(key.getTypeLiteral().toString());
       Binding binding = entry.getValue();
 
@@ -330,7 +366,7 @@ class GinjectorGeneratorImpl {
           writeMethod("private " + typeName + " " + getter + "()", "return " + field + ";");
           break;
 
-        case NONE:
+        case NO_SCOPE:
           // For none, getter just returns creator
           writeMethod("private " + typeName + " " + getter + "()", "return " + creator + "();");
           break;
@@ -346,10 +382,10 @@ class GinjectorGeneratorImpl {
   private GinScope determineScope(Key<?> key) {
     GinScope scope = scopes.get(key);
     if (scope == null) {
-      scope = GinScope.NONE;
+      scope = GinScope.NO_SCOPE;
     }
 
-    if (scope == GinScope.NONE) {
+    if (scope == GinScope.NO_SCOPE) {
       // Look for scope annotation as a fallback
       Class<?> raw = Util.getRawType(key);
       if (raw.getAnnotation(Singleton.class) != null) {
@@ -586,7 +622,7 @@ class GinjectorGeneratorImpl {
     }
 
     public Void visitNoScoping() {
-      scopes.put(targetKey, GinScope.NONE);
+      scopes.put(targetKey, GinScope.NO_SCOPE);
       return null;
     }
   }

@@ -13,11 +13,15 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.inject.name;
 
 /**
- * A simple injector interface for test cases.
+ * Equivalent of Guice's Names type.
+ * Used to keep the GWT compiler happy.
  */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+public class Names {
+  public static Named named(String name) { 
+    throw new UnsupportedOperationException("You are executing Names.named() in GWT code. " +
+        "GWT does not emulate enough of Java to make that work."); 
+  }
 }

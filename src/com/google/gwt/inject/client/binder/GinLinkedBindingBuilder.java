@@ -13,11 +13,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.binder;
 
-/**
- * A simple injector interface for test cases.
- */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+import com.google.inject.Provider;
+
+public interface GinLinkedBindingBuilder<T> extends GinScopedBindingBuilder {
+
+  <I extends T> GinScopedBindingBuilder to(Class<I> implementation);
+
+  <I extends Provider<? extends T>> GinScopedBindingBuilder toProvider(Class<I> provider);
 }

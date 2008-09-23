@@ -1,8 +1,5 @@
 <module>
-
   <inherits name='com.google.gwt.user.User'/>
-  <inherits name='com.google.inject.Inject'/>
   <inherits name='com.google.gwt.inject.Inject'/>
   <inherits name="com.google.gwt.junit.JUnit"/>
-  
 </module>

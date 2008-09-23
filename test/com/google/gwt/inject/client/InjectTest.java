@@ -21,8 +21,10 @@ import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
+import java.util.List;
+
 /**
- * @author bstoler@google.com (Brian Stoler)
+ * Integrated tests for GIN.
  */
 public class InjectTest extends GWTTestCase {
   public void testSimpleInjector() {
@@ -58,7 +60,7 @@ public class InjectTest extends GWTTestCase {
     // Even the separately bound MyServiceImpl is the same instance
     assertSame(service, injector.getMyServiceImpl());
 
-    assertSame(MySingleton.getInstance(), injector.getSingleton());
+    assertSame(MyProvidedObject.getInstance(), injector.getSingleton());
   }
 
   public void testBindingAnnotations() {
@@ -180,6 +182,12 @@ public class InjectTest extends GWTTestCase {
     assertTrue(myType != null);
   }
 
+  public void testTypeLiteral() {
+    InnerGinjector injector = GWT.create(InnerGinjector.class);
+    List<String> list = injector.getList();
+    assertTrue(list != null);
+  }
+  
   public static class InnerType {
     boolean injected;
 
@@ -191,12 +199,14 @@ public class InjectTest extends GWTTestCase {
     }
   }
 
-  @Modules("com.google.gwt.inject.rebind.MyAppModule$MyModule")
+  @GinModules(MyAppGinModule.MyModule.class)
   public interface InnerGinjector extends Ginjector {
     @MyBindingAnnotation
     InnerType getG();
 
     MyType getMyType();
+
+    List<String> getList();
   }
 
   public static class Dependency {

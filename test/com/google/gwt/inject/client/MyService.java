@@ -16,7 +16,7 @@
 package com.google.gwt.inject.client;
 
 /**
- * @author bstoler@google.com (Brian Stoler)
+ * Interface to use in tests.
  */
 public interface MyService {
 

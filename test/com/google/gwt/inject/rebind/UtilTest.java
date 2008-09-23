@@ -26,8 +26,6 @@ import java.util.List;
  * Unit tests for {@link JType} to {@link Key} translation. Since it is not easy
  * to create {@link JType} instances, we use EasyMock (classextension) to mock
  * them out.
- *
- * @author bstoler@google.com (Brian Stoler)
  */
 // Annotate our class just to make it easy to get annotation instances :)
 @MyBindingAnnotation

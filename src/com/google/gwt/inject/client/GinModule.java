@@ -13,21 +13,10 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.rebind;
+package com.google.gwt.inject.client;
 
-import com.google.gwt.inject.client.SimpleObject;
-import com.google.inject.AbstractModule;
-import com.google.inject.Singleton;
-import com.google.inject.name.Names;
+import com.google.gwt.inject.client.binder.GinBinder;
 
-/**
- * Module to test that GIN works for hierarchical modules.
- *
- * @author marcwilson@google.com (Marc Wilson)
-*/
-public class HierarchicalMyAppModule extends AbstractModule {
-
-  protected void configure() {
-    bind(SimpleObject.class).annotatedWith(Names.named("purple")).in(Singleton.class);
-  }
+public interface GinModule {
+  void configure(GinBinder binder);
 }

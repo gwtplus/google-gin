@@ -15,9 +15,17 @@
  */
 package com.google.gwt.inject.client;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
- * A simple injector interface for test cases.
+ * An annotation to put on {@code @Ginjector} subtypes to indicate which
+ * {@code GinModule} types to use to provide explicit bindings.
  */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+public @interface GinModules {
+  Class<? extends GinModule>[] value();
 }

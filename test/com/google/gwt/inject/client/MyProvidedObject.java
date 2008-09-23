@@ -16,8 +16,17 @@
 package com.google.gwt.inject.client;
 
 /**
- * A simple injector interface for test cases.
+ * This is a simple test object to prove that you can write a provider
+ * that calls an existing static method. Note that there is no reason to write
+ * new code with manual singletons like this.
  */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+public class MyProvidedObject {
+  private static final MyProvidedObject INSTANCE = new MyProvidedObject();
+
+  public static MyProvidedObject getInstance() {
+    return INSTANCE;
+  }
+
+  private MyProvidedObject() {
+  }
 }

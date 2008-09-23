@@ -13,34 +13,27 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.rebind;
+package com.google.gwt.inject.client;
 
-import com.google.gwt.inject.client.EagerObject;
-import com.google.gwt.inject.client.InjectTest;
-import com.google.gwt.inject.client.MyAppGinjector;
-import com.google.gwt.inject.client.MyBindingAnnotation;
-import com.google.gwt.inject.client.MyService;
-import com.google.gwt.inject.client.MyServiceImpl;
-import com.google.gwt.inject.client.MySingleton;
-import com.google.gwt.inject.client.MySingletonProvider;
-import com.google.gwt.inject.client.SimpleObject;
-import com.google.inject.AbstractModule;
-import com.google.inject.Binder;
-import com.google.inject.Module;
+import com.google.gwt.inject.client.binder.GinBinder;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import com.google.inject.Provider;
 import com.google.inject.name.Names;
+
+import java.util.List;
+import java.util.Arrays;
 
 /**
  * GIN module for test cases.
- *
- * @author bstoler@google.com (Brian Stoler)
  */
-public class MyAppModule extends AbstractModule {
+public class MyAppGinModule extends AbstractGinModule {
+
   protected void configure() {
     // Note that MyServiceImpl has @Singleton on itself
     bind(MyService.class).to(MyServiceImpl.class);
 
-    bind(MySingleton.class).toProvider(MySingletonProvider.class).in(Singleton.class);
+    bind(MyProvidedObject.class).toProvider(MyProvidedProvider.class).in(Singleton.class);
 
     // SimpleObject (all three flavors) are singletons
     bind(SimpleObject.class).in(Singleton.class);
@@ -53,10 +46,17 @@ public class MyAppModule extends AbstractModule {
         .to(MyAppGinjector.ANNOTATED_STRING_VALUE);
   }
 
-  static class MyModule implements Module {
-    public void configure(Binder binder) {
+  static class MyModule implements GinModule {
+    public void configure(GinBinder binder) {
+      binder.bind(new TypeLiteral<List<String>>() { }).toProvider(ListOfStringProvider.class);
       binder.bind(InjectTest.InnerType.class).annotatedWith(MyBindingAnnotation.class).to(InjectTest.InnerType.class);
       binder.bind(InjectTest.MyType.class).toProvider(InjectTest.MyProvider.class);
+    }
+  }
+
+  static class ListOfStringProvider implements Provider<List<String>> {
+    public List<String> get() {
+      return Arrays.asList("blah");
     }
   }
 }

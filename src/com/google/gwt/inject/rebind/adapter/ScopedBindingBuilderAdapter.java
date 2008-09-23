@@ -13,17 +13,21 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.rebind.adapter;
 
-/**
- * A trivial object to create from the injector that is bound as eager
- * singleton.
-*/
-public class EagerObject {
-  // Count constructor calls so we can ensure eagerness
-  static int constructorCalls = 0;
+import com.google.gwt.inject.client.binder.GinScopedBindingBuilder;
+import com.google.inject.binder.ScopedBindingBuilder;
 
-  public EagerObject() {
-    constructorCalls++;
+import java.lang.annotation.Annotation;
+
+class ScopedBindingBuilderAdapter implements GinScopedBindingBuilder {
+  private final ScopedBindingBuilder scopedBindingBuilder;
+
+  public ScopedBindingBuilderAdapter(ScopedBindingBuilder scopedBindingBuilder) {
+    this.scopedBindingBuilder = scopedBindingBuilder;
+  }
+
+  public void in(Class<? extends Annotation> scopeAnnotation) {
+    scopedBindingBuilder.in(scopeAnnotation);
   }
 }

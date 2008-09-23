@@ -28,7 +28,11 @@ import java.lang.annotation.Target;
  *
  * <p>To specify static nested classes, use the class' binary name, as specified
  * by {@link Class#forName(String)} (example: {@code com.company.Type$StaticNestedType}.
+ *
+ * @deprecated Use {@link GinModules} instead. The old module mechanism will be
+ *     removed soon.
  */
+@Deprecated
 @Documented
 @Target({ElementType.TYPE})
 public @interface Modules {

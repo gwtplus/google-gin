@@ -13,11 +13,24 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.rebind.adapter;
+
+import com.google.gwt.inject.client.GinModule;
+import com.google.inject.Binder;
+import com.google.inject.Module;
 
 /**
- * A simple injector interface for test cases.
+ * Makes a {@link com.google.gwt.inject.client.GinModule}
+ * available as a {@link com.google.inject.Module}.
  */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+public final class GinModuleAdapter implements Module {
+  private final GinModule gmodule;
+
+  public GinModuleAdapter(GinModule ginModule) {
+    this.gmodule = ginModule;
+  }
+
+  public void configure(Binder binder) {
+    gmodule.configure(new BinderAdapter(binder));
+  }
 }

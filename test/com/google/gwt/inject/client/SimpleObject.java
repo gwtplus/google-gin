@@ -17,8 +17,6 @@ package com.google.gwt.inject.client;
 
 /**
  * A trivial object to create from the injector.
- * 
- * @author bstoler@google.com (Brian Stoler)
-*/
+ */
 public class SimpleObject {
 }
