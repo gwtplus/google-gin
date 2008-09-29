@@ -1,0 +1,13 @@
+<module>
+  <!-- Inherit the core Web Toolkit stuff.                        -->
+  <inherits name='com.google.gwt.user.User'/>
+
+  <!-- Inherit the default GWT style sheet.                       -->
+  <inherits name='com.google.gwt.user.theme.standard.Standard'/>
+
+  <!-- Inherit GIN.                                               -->
+  <inherits name='com.google.gwt.inject.Inject'/>
+
+  <entry-point class='com.google.gwt.gin.higherlower.client.HigherLower'/>
+  <stylesheet src='HigherLower.css'/>
+</module>

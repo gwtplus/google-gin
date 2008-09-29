@@ -1,0 +1,63 @@
+body {
+  font-family: arial, sans-serif;
+  margin-left: 20px;
+  margin-right: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.card {
+  margin-right: 20px;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.centered {
+  margin-left: auto;
+  margin-right: auto;
+  width: 180px;
+}
+
+.scoreBoard {
+  font-size: 18px;
+  font-weight: bold;
+  color: blue;
+}
+
+.cardGrid .td {
+  border: 5px;
+}
+
+div, td {
+  color: #000000
+}
+
+a:link {
+  color: #0000cc
+}
+
+a:visited {
+  color: #551a8b
+}
+
+a:active {
+  color: #ff0000
+}
+
+button {
+  display: block;
+  font-size: 16pt
+}
+
+.widePanel {
+  width: 100%
+}
+
+img {
+  margin-top: 20px;
+}
