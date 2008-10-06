@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 
 /**
  * An annotation to put on {@code @Ginjector} subtypes to indicate which
- * {@code GinModule} types to use to provide explicit bindings.
+ * {@code GinModule} implementations to use.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

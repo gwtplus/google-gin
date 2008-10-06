@@ -20,6 +20,9 @@ import com.google.gwt.inject.client.binder.GinAnnotatedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinAnnotatedConstantBindingBuilder;
 import com.google.inject.TypeLiteral;
 
+/**
+ * GIN counterpart of Guice's {@code AbstractModule}.
+ */
 public abstract class AbstractGinModule implements GinModule {
   private GinBinder binder;
 
@@ -40,5 +43,9 @@ public abstract class AbstractGinModule implements GinModule {
 
   protected final GinAnnotatedConstantBindingBuilder bindConstant() {
     return binder.bindConstant();
+  }
+
+  protected final void install(GinModule install) {
+    binder.install(install);
   }
 }

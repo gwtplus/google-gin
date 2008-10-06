@@ -17,6 +17,9 @@ package com.google.gwt.inject.client;
 
 import com.google.gwt.inject.client.binder.GinBinder;
 
+/**
+ * GIN counterpart of Guice's {@code Module}.
+ */
 public interface GinModule {
   void configure(GinBinder binder);
 }

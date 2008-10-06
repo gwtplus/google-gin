@@ -26,7 +26,6 @@ import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
-import com.google.gwt.inject.client.Modules;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
@@ -244,17 +243,6 @@ class GinjectorGeneratorImpl {
   }
 
   private void populateModulesFromInjectorInterface(JClassType iface, List<Module> modules) {
-    @SuppressWarnings("deprecation")
-    Modules modulesAnn = iface.getAnnotation(Modules.class);
-    if (modulesAnn != null) {
-      for (String moduleClassName : modulesAnn.value()) {
-        Module module = instantiateModuleClass(moduleClassName);
-        if (module != null) {
-          modules.add(module);
-        }
-      }
-    }
-
     GinModules gmodules = iface.getAnnotation(GinModules.class);
     if (gmodules != null) {
       for (Class<? extends GinModule> moduleClass : gmodules.value()) {
@@ -268,36 +256,6 @@ class GinjectorGeneratorImpl {
     for (JClassType superIface : iface.getImplementedInterfaces()) {
       populateModulesFromInjectorInterface(superIface, modules);
     }
-  }
-
-  private Module instantiateModuleClass(String moduleClassName) {
-    try {
-      Class<?> moduleClass = Class.forName(moduleClassName);
-      if (Module.class.isAssignableFrom(moduleClass)) {
-        Constructor<?> constructor = moduleClass.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        try {
-          return (Module) constructor.newInstance();
-        } catch (InvocationTargetException e) {
-          logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
-        } finally {
-          // be a good citizen
-          constructor.setAccessible(false);
-        }
-      }
-      logger.log(TreeLogger.ERROR, "Module class not a subtype of Module: " + moduleClassName);
-    } catch (ClassNotFoundException e) {
-      logger.log(TreeLogger.ERROR, "Module class not found: " + moduleClassName, e);
-    } catch (IllegalAccessException e) {
-      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
-    } catch (InstantiationException e) {
-      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
-    } catch (NoSuchMethodException e) {
-      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
-    }
-
-    foundError = true;
-    return null;
   }
 
   private Module instantiateGModuleClass(Class<? extends GinModule> moduleClassName) {
