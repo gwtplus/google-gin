@@ -22,11 +22,14 @@ import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.inject.Guice;
+import com.google.inject.Stage;
 
 /**
  * Generator for implementations of {@link com.google.gwt.inject.client.Ginjector}.
  */
 public class GinjectorGenerator extends Generator {
+  
   public String generate(TreeLogger logger, GeneratorContext ctx, String requestedClass)
       throws UnableToCompleteException {
     TypeOracle oracle = ctx.getTypeOracle();
@@ -34,7 +37,10 @@ public class GinjectorGenerator extends Generator {
     JClassType injector = oracle.findType(requestedClass);
     checkInjectorClass(logger, requestedClass, oracle, injector);
 
-    return new GinjectorGeneratorImpl(logger, ctx, injector).generate();
+    // This is the Injector we use for the Generator internally,
+    // it has nothing to do with user code.
+    return Guice.createInjector(Stage.PRODUCTION, new GinjectorGeneratorModule())
+        .getInstance(GinjectorGeneratorImpl.class).generate(logger, ctx, injector);
   }
 
   private void checkInjectorClass(TreeLogger logger, String requestedClass,

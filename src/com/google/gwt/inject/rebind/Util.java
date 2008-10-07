@@ -99,7 +99,7 @@ public class Util {
     JPrimitiveType primitiveType = gwtType.isPrimitive();
     if (primitiveType != null) {
       String boxClassName = primitiveType.getQualifiedBoxedSourceName();
-      Class<?> boxClass = loadClass(boxClassName, NameGenerator.ClassType.REGULAR);
+      Class<?> boxClass = loadClass(boxClassName, ClassType.REGULAR);
       return (Class) boxClass.getField("TYPE").get(null);
     }
 
@@ -124,7 +124,7 @@ public class Util {
 
     JClassType jClassType = gwtType.isClassOrInterface();
     if (gwtType.isClassOrInterface() != null) {
-      return loadClass(jClassType.getQualifiedSourceName(), NameGenerator.ClassType.getType(jClassType));
+      return loadClass(jClassType.getQualifiedSourceName(), ClassType.getType(jClassType));
     }
 
     throw new ProvisionException("Unknown GWT type: " + gwtType);
@@ -133,7 +133,7 @@ public class Util {
   // Wrapper around Class.forName that passes initialize=false. This is critical
   // because GWT client code (whose class names we may be referencing here)
   // can not necessarily have its static initializers run at rebind time.
-  private static Class<?> loadClass(String className, NameGenerator.ClassType classType) throws ClassNotFoundException {
+  private static Class<?> loadClass(String className, ClassType classType) throws ClassNotFoundException {
     String resultingClassName = classType.getBinaryClassName(className);
     return Class.forName(resultingClassName, false, Thread.currentThread().getContextClassLoader());
   }

@@ -75,10 +75,12 @@ class GinjectorGeneratorImpl {
    */
   private static final String ASYNC_SERVICE_PROXY_SUFFIX = "Async";
 
-  private final TreeLogger logger;
-  private final GeneratorContext ctx;
-  private final JClassType injectorInterface;
-  private final NameGenerator nameGenerator = new NameGenerator();
+  private TreeLogger logger;
+
+  /**
+   * Generates names for code we produce to resolve injection requests.
+   */
+  private final NameGenerator nameGenerator;
 
   /**
    * Map from key to binding for all types we already have a binding for.
@@ -118,14 +120,16 @@ class GinjectorGeneratorImpl {
    */
   private SourceWriter writer;
 
-  public GinjectorGeneratorImpl(TreeLogger logger, GeneratorContext ctx,
-      JClassType injectorInterface) {
-    this.logger = logger;
-    this.ctx = ctx;
-    this.injectorInterface = injectorInterface;
+  @Inject
+  public GinjectorGeneratorImpl(NameGenerator nameGenerator) {
+    this.nameGenerator = nameGenerator;
   }
 
-  public String generate() throws UnableToCompleteException {
+  public String generate(TreeLogger logger, GeneratorContext ctx,
+      JClassType injectorInterface) throws UnableToCompleteException {
+    // TODO (RobbieV) it would be nice if the logger could be final.
+    this.logger = logger;
+
     JPackage interfacePackage = injectorInterface.getPackage();
     String packageName = interfacePackage == null ? "" : interfacePackage.getName();
 
@@ -147,12 +151,12 @@ class GinjectorGeneratorImpl {
     determineInjectorMethods(injectorInterface);
     addUnresolvedEntriesForInjectorInterface();
 
-    createBindingsForModules();
+    createBindingsForModules(injectorInterface);
 
     while (!unresolved.isEmpty()) {
       // Iterate through a copy because we will modify it during iteration
       for (Key<?> key : new ArrayList<Key<?>>(unresolved)) {
-        createImplicitBinding(key);
+        createImplicitBinding(ctx, key);
       }
 
       if (foundError) {
@@ -218,7 +222,7 @@ class GinjectorGeneratorImpl {
     return true;
   }
 
-  private void createBindingsForModules() {
+  private void createBindingsForModules(JClassType injectorInterface) {
     List<Module> modules = new ArrayList<Module>();
     populateModulesFromInjectorInterface(injectorInterface, modules);
 
@@ -372,7 +376,7 @@ class GinjectorGeneratorImpl {
     writer.println();
   }
 
-  private void createImplicitBinding(Key<?> key) {
+  private void createImplicitBinding(GeneratorContext ctx, Key<?> key) {
     Binding binding = null;
     Type keyType = key.getTypeLiteral().getType();
 
@@ -388,9 +392,10 @@ class GinjectorGeneratorImpl {
     }
 
     if (binding == null) {
-      JClassType classType = ctx.getTypeOracle().findType(nameGenerator.binaryNameToSourceName(Util.getRawType(key).getName()));
+      JClassType classType = ctx.getTypeOracle().findType(
+          nameGenerator.binaryNameToSourceName(Util.getRawType(key).getName()));
       if (classType != null) {
-        binding = createImplicitBindingForClass(classType);
+        binding = createImplicitBindingForClass(ctx, classType);
       } else {
         logger.log(TreeLogger.ERROR, "Class not found: " + key);
         foundError = true;
@@ -404,7 +409,7 @@ class GinjectorGeneratorImpl {
     }
   }
 
-  private Binding createImplicitBindingForClass(JClassType classType) {
+  private Binding createImplicitBindingForClass(GeneratorContext ctx, JClassType classType) {
     // Special case: When injecting a remote service proxy call GWT.create on
     // the synchronous service interface
     String name = classType.getQualifiedSourceName();
