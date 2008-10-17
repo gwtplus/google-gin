@@ -52,7 +52,7 @@ public class Util {
    * @return Guice Key instance for this type/annotations
    * @throws ProvisionException in case of any failure
    */
-  public static Key<?> getKey(JType gwtType, Annotation[] annotations)
+  static Key<?> getKey(JType gwtType, Annotation[] annotations)
       throws ProvisionException {
     try {
       Type type = gwtTypeToJavaType(gwtType);
@@ -138,10 +138,11 @@ public class Util {
     return Class.forName(resultingClassName, false, Thread.currentThread().getContextClassLoader());
   }
 
-  public static Key<?> getKey(JMethod method) {
+  static Key<?> getKey(JMethod method) {
     return getKey(method.getReturnType(), getAnnotations(JAbstractMethod.class, method));
   }
 
+  // used in rebind.adapter, so public
   public static Key<?> getKey(JParameter param) {
     return getKey(param.getType(), getAnnotations(JParameter.class, param));
   }

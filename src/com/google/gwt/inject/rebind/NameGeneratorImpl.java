@@ -24,7 +24,7 @@ import java.util.Map;
  * Helper to generate various names for a binding that are needed when
  * outputting the Java code for that binding.
  */
-public class NameGeneratorImpl implements NameGenerator {
+class NameGeneratorImpl implements NameGenerator {
   private final Map<Key<?>, String> cache = new HashMap<Key<?>, String>();
 
   public String sourceNameToBinaryName(ClassType type, String fullyQualifiedClassName) {

@@ -16,8 +16,40 @@
 package com.google.gwt.inject.client;
 
 /**
- * Marker interface that injectors should extend.
+ * Where the GWT world stops and the GIN/Guice world begins.
+ * Analogous to Guice's {@code Injector}, this type can be used to bootstrap injection. Unlike
+ * Guice, however, this is not a type that you create, but rather a type that you extend. It's
+ * best explained with an example. Consider this Guice code:
+ * <pre>
+ * // Define and create a Module
+ * Module applicationModule = ...;
+ * 
+ * // create an Injector
+ * Injector injector = Guice.createInjector(applicationModule);
  *
+ * // bootstrap the injection
+ * injector.getInstance(Application.class);
+ * </pre>
+ *
+ * Here's the equivalent GIN code:
+ * <pre>
+ * // Define a GinModule (e.g. ApplicationModule) but don't create it.
+ *
+ * // create a Ginjector
+ * ApplicationGinjector ginjector = GWT.create(ApplicationGinjector.class);
+ * 
+ * // bootstrap the injection
+ * RootPanel.get().add(ginjector.getApplication());
+ *
+ * (somewhere else...)
+ *
+ * // define a Ginjector subtype
+ * {@code @}GinModules(ApplicationModule.class)
+ * public interface ApplicationGinjector extends Ginjector {
+ *   Application getApplication();
+ * }
+ * </pre>
+ * 
  * Note that this is not named "G-injector" -- its "GIN-jector."
  */
 public interface Ginjector {

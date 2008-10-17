@@ -17,10 +17,10 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.typeinfo.JClassType;
 
-public enum ClassType {
+enum ClassType {
   REGULAR {
     @Override
-    public String getBinaryClassName(String binaryClassName) {
+    String getBinaryClassName(String binaryClassName) {
       return binaryClassName;
     }
   },
@@ -28,7 +28,7 @@ public enum ClassType {
   INNER,
   ANONYMOUS_INNER;
 
-  public static ClassType getType(JClassType type) {
+  static ClassType getType(JClassType type) {
     if (type.isLocalType()) {
       return ANONYMOUS_INNER;
     }
@@ -44,7 +44,7 @@ public enum ClassType {
     }
   }
 
-  public String getBinaryClassName(String binaryClassName) {
+  String getBinaryClassName(String binaryClassName) {
     return NameGeneratorImpl.replaceLast(binaryClassName, '.', '$');
   }
 }
