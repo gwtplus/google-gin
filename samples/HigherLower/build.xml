@@ -43,6 +43,7 @@
 
   <path id="javac.compile.class.path">
     <pathelement path="${java.class.path}/"/>
+    <pathelement path="${libLocation}/aopalliance.jar"/>
     <pathelement path="${libLocation}/gin.jar"/>
     <pathelement path="${libLocation}/guice-snapshot.jar"/>
     <pathelement path="${env.GWT_HOME}/gwt-user.jar"/>
