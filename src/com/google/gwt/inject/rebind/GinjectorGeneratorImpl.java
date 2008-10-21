@@ -48,6 +48,7 @@ import com.google.inject.spi.DefaultBindingTargetVisitor;
 import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
+import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.Message;
 
 import java.io.PrintWriter;
@@ -534,6 +535,10 @@ class GinjectorGeneratorImpl {
     }
 
     @Override
+    public Void visitInstance(T instance, Set<InjectionPoint> injectionPoints) {
+      return visitInstance(instance);
+    }
+
     public Void visitInstance(T instance) {
       Binding binding = BindConstantBinding.create(targetKey, instance);
       if (binding != null) {
