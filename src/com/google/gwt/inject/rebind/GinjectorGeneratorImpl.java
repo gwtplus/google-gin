@@ -23,9 +23,13 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPackage;
+import com.google.gwt.core.ext.typeinfo.JParameter;
+import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
@@ -33,8 +37,7 @@ import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
-import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
-import com.google.gwt.user.client.rpc.RemoteService;
+import com.google.gwt.inject.rebind.binding.Injectables;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -66,17 +69,12 @@ import java.util.Set;
 
 /**
  * Does the heavy lifting involved in generating implementations of
- * {@link com.google.gwt.inject.client.Ginjector}. This class is instantiated
+ * {@link Ginjector}. This class is instantiated
  * once per class to generate, so it can keep useful state around in its fields.
  */
 class GinjectorGeneratorImpl {
-  /**
-   * Suffix that is appended to the name of a GWT-RPC service interface to build
-   * the name of the asynchronous proxy interface.
-   */
-  private static final String ASYNC_SERVICE_PROXY_SUFFIX = "Async";
-
-  private TreeLogger logger;
+  private final TreeLogger logger;
+  private final GeneratorContext ctx;
 
   /**
    * Generates names for code we produce to resolve injection requests.
@@ -94,20 +92,71 @@ class GinjectorGeneratorImpl {
   private final Map<Key<?>, GinScope> scopes = new HashMap<Key<?>, GinScope>();
 
   /**
-   * Set of keys for classes that we still need to resolve. Every time a binding
-   * is added to {@code bindings}, the key is removed from this set. When this
-   * set becomes empty, we know we've satisfied all dependencies.
+   * Set of keys for classes that we still need to resolve. Every time a
+   * binding is added to {@code bindings}, the key is removed from this set.
+   * When this set becomes empty, we know we've satisfied all dependencies.
    */
   private final Set<Key<?>> unresolved = new HashSet<Key<?>>();
 
   /**
-   * A name to method map for the methods on the injector interface, and its
-   * superinterfaces that we need to output a concrete method for. These also
-   * form the basis for the unresolved classes. Methods redefined (with
-   * different annotations) in the base interface take precedence over the
-   * superinterfaces.
+   * Collector that gathers methods from an injector interface and its
+   * ancestors, recording only those methods that use constructor injection
+   * (i.e. that return an object and take no parameters).  Used to determine
+   * injection root types and to write the implementation for the collected
+   * methods.
    */
-  private final Map<String, JMethod> injectorMethods = new HashMap<String, JMethod>();
+  private final MethodCollector constructorInjectCollector;
+
+  /**
+   * Collector that gathers methods from an injector interface and its
+   * ancestors, recording only those methods that use member injection (i.e.
+   * that return void and take one object as parameter).  Used to determine
+   * injection root types and to write the implementation for the collected
+   * methods.
+   */
+  private final MethodCollector memberInjectCollector;
+
+  /**
+   * Collector that gathers methods from a type and its ancestors, recording
+   * only those methods that have an {@code @Inject} annotation.  Used to
+   * determine which methods need to be called during the initialization of an
+   * object.
+   */
+  private final MethodCollector injectableCollector;
+
+  /**
+   * Collector that gathers all methods from an injector.
+   */
+  private final MethodCollector completeCollector;
+
+  /**
+   * Provider for {@link CallGwtDotCreateBinding}s.
+   */
+  private final Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider;
+
+  /**
+   * Provider for {@link CallConstructorBinding}s.
+   */
+  private final Provider<CallConstructorBinding> callConstructorBinding;
+
+  /**
+   * Provider for {@link BindClassBinding}s.
+   */
+  private final Provider<BindClassBinding> bindClassBindingProvider;
+
+  /**
+   * Provider for {@link BindProviderBinding}s.
+   */
+  private final Provider<BindProviderBinding> bindProviderBindingProvider;
+
+  /**
+   * Provider for {@link ImplicitProviderBinding}s.
+   */
+  private final Provider<ImplicitProviderBinding> implicitProviderBindingProvider;
+
+  private final SourceWriteUtil sourceWriteUtil;
+
+  private final KeyUtil keyUtil;
 
   /**
    * Keeps track of whether we've found an error so we can eventually throw
@@ -117,19 +166,60 @@ class GinjectorGeneratorImpl {
   private boolean foundError = false;
 
   /**
+   * Interface of the injector that this class is implementing.
+   */
+  private JClassType injectorInterface;
+
+  /**
    * Writer to append Java code for our implementation class.
    */
   private SourceWriter writer;
 
   @Inject
-  public GinjectorGeneratorImpl(NameGenerator nameGenerator) {
+  public GinjectorGeneratorImpl(NameGenerator nameGenerator, final TreeLogger logger,
+      Provider<MethodCollector> collectorProvider,
+      Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider,
+      Provider<CallConstructorBinding> callConstructorBinding,
+      @Injectables MethodCollector injectableCollector, SourceWriteUtil sourceWriteUtil,
+      final KeyUtil keyUtil, GeneratorContext ctx,
+      Provider<BindClassBinding> bindClassBindingProvider,
+      Provider<BindProviderBinding> bindProviderBindingProvider,
+      Provider<ImplicitProviderBinding> implicitProviderBindingProvider) {
     this.nameGenerator = nameGenerator;
+    this.logger = logger;
+    this.callGwtDotCreateBindingProvider = callGwtDotCreateBindingProvider;
+    this.callConstructorBinding = callConstructorBinding;
+    this.bindClassBindingProvider = bindClassBindingProvider;
+    this.implicitProviderBindingProvider = implicitProviderBindingProvider;
+    this.bindProviderBindingProvider = bindProviderBindingProvider;
+    this.injectableCollector = injectableCollector;
+    this.sourceWriteUtil = sourceWriteUtil;
+    this.keyUtil = keyUtil;
+    this.ctx = ctx;
+
+    completeCollector = collectorProvider.get();
+
+    constructorInjectCollector = collectorProvider.get();
+    constructorInjectCollector.setFilter(new MethodCollector.Filter() {
+        public boolean accept(JMethod method) {
+          return method.getParameters().length == 0;
+        }
+      });
+
+    memberInjectCollector = collectorProvider.get();
+    memberInjectCollector.setFilter(new MethodCollector.Filter() {
+        public boolean accept(JMethod method) {
+          return keyUtil.isMemberInject(method);
+        }
+      });
   }
 
-  public String generate(TreeLogger logger, GeneratorContext ctx,
-      JClassType injectorInterface) throws UnableToCompleteException {
-    // TODO (RobbieV) it would be nice if the logger could be final.
-    this.logger = logger;
+  public String generate(String injectorClassName) throws UnableToCompleteException {
+
+    TypeOracle oracle = ctx.getTypeOracle();
+    injectorInterface = oracle.findType(injectorClassName);
+
+    validateInjectorClass(logger, injectorClassName, oracle, injectorInterface);
 
     JPackage interfacePackage = injectorInterface.getPackage();
     String packageName = interfacePackage == null ? "" : interfacePackage.getName();
@@ -149,7 +239,8 @@ class GinjectorGeneratorImpl {
         injectorInterface.getParameterizedQualifiedSourceName());
     composerFactory.addImport(GWT.class.getCanonicalName());
 
-    determineInjectorMethods(injectorInterface);
+    validateMethods();
+
     addUnresolvedEntriesForInjectorInterface();
 
     createBindingsForModules(injectorInterface);
@@ -157,7 +248,7 @@ class GinjectorGeneratorImpl {
     while (!unresolved.isEmpty()) {
       // Iterate through a copy because we will modify it during iteration
       for (Key<?> key : new ArrayList<Key<?>>(unresolved)) {
-        createImplicitBinding(ctx, key);
+        createImplicitBinding(key);
       }
 
       if (foundError) {
@@ -185,42 +276,73 @@ class GinjectorGeneratorImpl {
     return composerFactory.getCreatedClassName();
   }
 
-  private void determineInjectorMethods(JClassType iface) {
-    for (JMethod method : iface.getMethods()) {
-      if (validateMethod(method)) {
-        if (!injectorMethods.containsKey(method.getName())) {
-          logger.log(TreeLogger.TRACE, "Found injector method: " + iface.getName() + "#"
-              + method.getReadableDeclaration());
-          injectorMethods.put(method.getName(), method);
-        } else {
-          logger.log(TreeLogger.DEBUG, "Ignoring injector method: " + iface.getName() + "#"
-              + method.getReadableDeclaration());
+  private void validateInjectorClass(TreeLogger logger, String requestedClass,
+      TypeOracle oracle, JClassType injector) throws UnableToCompleteException {
+    if (injector == null) {
+      logger.log(TreeLogger.ERROR, "Unable to find metadata for type '"
+          + requestedClass + "'", null);
+      throw new UnableToCompleteException();
+    }
+
+    if (injector.isInterface() == null) {
+      logger.log(TreeLogger.ERROR, injector.getQualifiedSourceName()
+          + " is not an interface", null);
+      throw new UnableToCompleteException();
+    }
+
+    if (!injector.isAssignableTo(oracle.findType(Ginjector.class.getName()))) {
+      logger.log(TreeLogger.ERROR, injector.getQualifiedSourceName()
+          + " is not a subtype of " + Ginjector.class.getName());
+    }
+  }
+
+  private void validateMethods() throws UnableToCompleteException {
+    for (JMethod method : completeCollector.getMethods(injectorInterface)) {
+      if (method.getParameters().length > 1) {
+        logger.log(TreeLogger.Type.ERROR, "Injector methods cannot have more than one parameter, "
+            + " found: " + method.getReadableDeclaration());
+        foundError = true;
+      }
+
+      // Member inject method.
+      if (method.getParameters().length == 1) {
+        if (method.getParameters()[0].getType().isClassOrInterface() == null) {
+          logger.log(TreeLogger.Type.ERROR, "Injector method parameter types must be a class or "
+              + "interface, found: " + method.getReadableDeclaration());
+          foundError = true;
         }
+
+        if (method.getReturnType() != JPrimitiveType.VOID) {
+          logger.log(TreeLogger.Type.ERROR, "Injector methods with a parameter must have a void "
+              + "return type, found: " + method.getReadableDeclaration());
+          foundError = true;
+        }
+
+      // Constructor injection.
+      } else if (method.getReturnType().isClassOrInterface() == null) {
+        logger.log(TreeLogger.Type.ERROR, "Injector methods with no parameters must return a class "
+            + "or interface, found: " + method.getReadableDeclaration());
+        foundError = true;
       }
     }
 
-    for (JClassType superIface : iface.getImplementedInterfaces()) {
-      determineInjectorMethods(superIface);
+    if (foundError) {
+      throw new UnableToCompleteException();
     }
   }
 
   private void addUnresolvedEntriesForInjectorInterface() {
-    for (JMethod method : injectorMethods.values()) {
-      Key<?> key = Util.getKey(method);
+    for (JMethod method : constructorInjectCollector.getMethods(injectorInterface)) {
+      Key<?> key = keyUtil.getKey(method);
       logger.log(TreeLogger.TRACE, "Add unresolved key from injector interface: " + key);
       unresolved.add(key);
     }
-  }
 
-  private boolean validateMethod(JMethod method) {
-    if (method.getParameters().length > 0) {
-      logger.log(TreeLogger.ERROR, String.format(
-          "Invalid injector method %s; it has parameters", method));
-      foundError = true;
-      return false;
+    for (JMethod method : memberInjectCollector.getMethods(injectorInterface)) {
+      Key<?> key = keyUtil.getKey(method);
+      logger.log(TreeLogger.TRACE, "Add unresolved key from injector interface: " + key);
+      unresolved.add(key);
     }
-
-    return true;
   }
 
   private void createBindingsForModules(JClassType injectorInterface) {
@@ -290,7 +412,7 @@ class GinjectorGeneratorImpl {
     // Write out each binding
     for (Map.Entry<Key<?>, Binding> entry : bindings.entrySet()) {
       Key<?> key = entry.getKey();
-      
+
       // toString on TypeLiteral outputs the binary name, not the source name
       String typeName = nameGenerator.binaryNameToSourceName(key.getTypeLiteral().toString());
       Binding binding = entry.getValue();
@@ -299,8 +421,7 @@ class GinjectorGeneratorImpl {
       String creator = nameGenerator.getCreatorMethodName(key);
 
       // Regardless of the scope, we have a creator method
-      writeMethod("private " + typeName + " " + creator + "()",
-          binding.getCreatorMethodBody(nameGenerator));
+      writeMethod("private " + typeName + " " + creator + "()", binding.getCreatorMethodBody());
 
       // Name of the field that we might need
       String field = nameGenerator.getSingletonFieldName(key);
@@ -350,7 +471,7 @@ class GinjectorGeneratorImpl {
 
     if (scope == GinScope.NO_SCOPE) {
       // Look for scope annotation as a fallback
-      Class<?> raw = Util.getRawType(key);
+      Class<?> raw = keyUtil.getRawType(key);
       if (raw.getAnnotation(Singleton.class) != null) {
         scope = GinScope.SINGLETON;
       }
@@ -361,10 +482,28 @@ class GinjectorGeneratorImpl {
   }
 
   private void outputInterfaceMethods() {
+
     // Add a forwarding method for each method in our injector interface
-    for (JMethod method : injectorMethods.values()) {
-      writeMethod(method.getReadableDeclaration(false, false, false, false, true),
-          "return " + nameGenerator.getGetterMethodName(Util.getKey(method)) + "();");
+    for (JMethod injectorMethod : constructorInjectCollector.getMethods(injectorInterface)) {
+      StringBuilder body = new StringBuilder();
+      body.append("return ")
+          .append(nameGenerator.getGetterMethodName(keyUtil.getKey(injectorMethod)))
+          .append("();");
+
+      writeMethod(injectorMethod.getReadableDeclaration(false, false, false, false, true),
+          body.toString());
+    }
+
+    for (JMethod injectorMethod : memberInjectCollector.getMethods(injectorInterface)) {
+      StringBuilder body = new StringBuilder();
+      JParameter injectee = injectorMethod.getParameters()[0];
+      for (JMethod method :
+          injectableCollector.getMethods(injectee.getType().isClassOrInterface())) {
+        body.append(injectee.getName()).append(".").append(method.getName());
+        sourceWriteUtil.appendInvoke(body, method);
+      }
+      writeMethod(injectorMethod.getReadableDeclaration(false, false, false, false, true),
+          body.toString());
     }
   }
 
@@ -377,7 +516,7 @@ class GinjectorGeneratorImpl {
     writer.println();
   }
 
-  private void createImplicitBinding(GeneratorContext ctx, Key<?> key) {
+  private void createImplicitBinding(Key<?> key) {
     Binding binding = null;
     Type keyType = key.getTypeLiteral().getType();
 
@@ -386,7 +525,8 @@ class GinjectorGeneratorImpl {
 
       // Create implicit Provider<T> binding
       if (keyParamType.getRawType() == Provider.class) {
-        binding = new ImplicitProviderBinding(key);
+        binding = implicitProviderBindingProvider.get();
+        ((ImplicitProviderBinding) binding).setProviderKey(key);
 
         // TODO(bstoler): Scope the provider binding like the thing being provided?
       }
@@ -394,9 +534,9 @@ class GinjectorGeneratorImpl {
 
     if (binding == null) {
       JClassType classType = ctx.getTypeOracle().findType(
-          nameGenerator.binaryNameToSourceName(Util.getRawType(key).getName()));
+          nameGenerator.binaryNameToSourceName(keyUtil.getRawType(key).getName()));
       if (classType != null) {
-        binding = createImplicitBindingForClass(ctx, classType);
+        binding = createImplicitBindingForClass(classType);
       } else {
         logger.log(TreeLogger.ERROR, "Class not found: " + key);
         foundError = true;
@@ -410,30 +550,20 @@ class GinjectorGeneratorImpl {
     }
   }
 
-  private Binding createImplicitBindingForClass(GeneratorContext ctx, JClassType classType) {
-    // Special case: When injecting a remote service proxy call GWT.create on
-    // the synchronous service interface
-    String name = classType.getQualifiedSourceName();
-    if (classType.isInterface() != null && name.endsWith(ASYNC_SERVICE_PROXY_SUFFIX)) {
-      String serviceInterfaceName =
-          name.substring(0, name.length() - ASYNC_SERVICE_PROXY_SUFFIX.length());
-      TypeOracle typeOracle = ctx.getTypeOracle();
-      JClassType serviceInterface = typeOracle.findType(serviceInterfaceName);
-      JClassType marker = typeOracle.findType(RemoteService.class.getName());
-      if (serviceInterface != null && marker != null && serviceInterface.isAssignableTo(marker)) {
-        return new CallGwtDotCreateBinding(serviceInterface);
-      }
-    }
-
+  private Binding createImplicitBindingForClass(JClassType classType) {
     // Either call the @Inject constructor or use GWT.create
     JConstructor[] constructors = classType.getConstructors();
     if (constructors.length == 0 ||
         (constructors.length == 1 && constructors[0].getParameters().length == 0)) {
-      return new CallGwtDotCreateBinding(classType);
+      CallGwtDotCreateBinding binding = callGwtDotCreateBindingProvider.get();
+      binding.setClassType(classType);
+      return binding;
     } else {
       JConstructor constructor = getInjectConstructor(classType);
       if (constructor != null) {
-        return new CallConstructorBinding(constructor);
+        CallConstructorBinding binding = callConstructorBinding.get();
+        binding.setConstructor(constructor);
+        return binding;
       }
     }
 
@@ -524,13 +654,17 @@ class GinjectorGeneratorImpl {
 
     @Override
     public Void visitProviderKey(Key<? extends Provider<? extends T>> providerKey) {
-      addBinding(targetKey, new BindProviderBinding(providerKey));
+      BindProviderBinding binding = bindProviderBindingProvider.get();
+      binding.setProviderKey(providerKey);
+      addBinding(targetKey, binding);
       return null;
     }
 
     @Override
     public Void visitKey(Key<? extends T> key) {
-      addBinding(targetKey, new BindClassBinding(key));
+      BindClassBinding binding = bindClassBindingProvider.get();
+      binding.setBoundClassKey(key);
+      addBinding(targetKey, binding);
       return null;
     }
 

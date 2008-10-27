@@ -13,26 +13,21 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.inject.Key;
+import com.google.inject.BindingAnnotation;
 
-import java.util.Set;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Interface used by {@code InjectorGeneratorImpl} to represent different kinds
- * of bindings.
+ * Binding for {@link com.google.gwt.inject.rebind.MethodCollector}s
+ * that collect injectable methods (i.e. methods with @Inject on them).
  */
-public interface Binding {
-
-  /**
-   * @return body of the method to create for this binding
-   */
-  String getCreatorMethodBody();
-
-  /**
-   * @return The set of keys that this binding requires. This set is used to
-   *     find more classes that need to be bound.
-   */
-  Set<Key<?>> getRequiredKeys();
-}
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.PARAMETER, ElementType.FIELD, ElementType.METHOD})
+@BindingAnnotation
+public @interface Injectables {}

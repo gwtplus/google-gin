@@ -170,6 +170,36 @@ public class InjectTest extends GWTTestCase {
     assertSame(service, injector.getMyRemoteServiceAsync());
   }
 
+  public void testMethodInjection() {
+    MyAppGinjector injector = GWT.create(MyAppGinjector.class);
+
+    MyMethodApp myApp = new MyMethodApp();
+
+    injector.injectMembers(myApp);
+
+    SimpleObject simple = injector.getSimple();
+    assertNotNull(simple);
+
+    // Ensure we get the same instance each time
+    assertSame(simple, injector.getSimple());
+
+    MyApp app = injector.getMyApp();
+    assertNotNull(app);
+    assertSame(simple, app.getSimple());
+
+    assertNotNull(app.getMsgs());
+    assertEquals(MyMessages.FUN_MSG, app.getMsgs().getFunMessage());
+
+    MyService service = injector.getMyService();
+    assertTrue(service instanceof MyServiceImpl);
+    assertSame(service, app.getService());
+
+    // Even the separately bound MyServiceImpl is the same instance
+    assertSame(service, injector.getMyServiceImpl());
+
+    assertSame(MyProvidedObject.getInstance(), injector.getSingleton());
+  }
+
   public void testInnerClassInjection() {
     InnerGinjector injector = GWT.create(InnerGinjector.class);
     InnerType innerType = injector.getG();
@@ -187,7 +217,7 @@ public class InjectTest extends GWTTestCase {
     List<String> list = injector.getList();
     assertTrue(list != null);
   }
-  
+
   public static class InnerType {
     boolean injected;
 

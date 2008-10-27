@@ -16,23 +16,32 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.inject.rebind.NameGenerator;
+import com.google.inject.Inject;
 import com.google.inject.Key;
 
-import java.util.Collections;
-import java.util.Set;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * Binding implementation for {@code Provider<T>} that just uses the binding
  * to {@code T}.
  */
 public class ImplicitProviderBinding implements Binding {
-  private final ParameterizedType providerType;
-  private final Key<?> targetKey;
 
-  public ImplicitProviderBinding(Key<?> providerKey) {
+  private final NameGenerator nameGenerator;
+
+  private ParameterizedType providerType;
+  private Key<?> targetKey;
+
+  @Inject
+  public ImplicitProviderBinding(NameGenerator nameGenerator) {
+    this.nameGenerator = nameGenerator;
+  }
+
+  public void setProviderKey(Key<?> providerKey) {
     providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
 
     // Pass any binding annotation on the Provider to the thing we create
@@ -40,7 +49,8 @@ public class ImplicitProviderBinding implements Binding {
     targetKey = getKeyWithSameAnnotation(targetType, providerKey);
   }
 
-  public String getCreatorMethodBody(NameGenerator nameGenerator) {
+  public String getCreatorMethodBody() {
+    assert (providerType != null);
     return "return new " + providerType + "() { \n"
         + "  public " + targetKey.getTypeLiteral() + " get() { \n"
         + "    return " + nameGenerator.getGetterMethodName(targetKey) + "();\n"
@@ -49,6 +59,7 @@ public class ImplicitProviderBinding implements Binding {
   }
 
   public Set<Key<?>> getRequiredKeys() {
+    assert (targetKey != null);
     return Collections.<Key<?>>singleton(targetKey);
   }
 

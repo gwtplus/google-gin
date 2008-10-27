@@ -15,31 +15,54 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.inject.rebind.NameGenerator;
-import com.google.inject.Key;
-
-import java.util.Collections;
-import java.util.Set;
+import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.inject.rebind.KeyUtil;
+import com.google.gwt.inject.rebind.MethodCollector;
+import com.google.gwt.inject.rebind.SourceWriteUtil;
+import com.google.gwt.user.client.rpc.RemoteService;
+import com.google.inject.Inject;
 
 /**
  * A binding that just calls {@code GWT.create()} for the requested type.
  * This is the default binding for interfaces or classes that don't have
  * a non-default constructor annotated with {@code @Inject}.
  */
-public class CallGwtDotCreateBinding implements Binding {
-  private final JClassType classType;
+public class CallGwtDotCreateBinding extends CreatorBinding {
 
-  public CallGwtDotCreateBinding(JClassType classType) {
-    this.classType = classType;
+  /**
+   * Suffix that is appended to the name of a GWT-RPC service interface to build
+   * the name of the asynchronous proxy interface.
+   */
+  private static final String ASYNC_SERVICE_PROXY_SUFFIX = "Async";
+
+  private final GeneratorContext ctx;
+
+  @Inject
+  public CallGwtDotCreateBinding(@Injectables MethodCollector methodCollector,
+      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, GeneratorContext ctx) {
+    super(methodCollector, sourceWriteUtil, keyUtil);
+    this.ctx = ctx;
   }
 
-  public String getCreatorMethodBody(NameGenerator nameGenerator) {
-    return "return " + "GWT.create(" +
-        classType.getParameterizedQualifiedSourceName() + ".class);";
-  }
+  @Override protected void appendCreationStatement(StringBuilder sb) {
+    // Special case: When injecting a remote service proxy call GWT.create on
+    // the synchronous service interface
+    String name = getClassType().getQualifiedSourceName();
+    if (getClassType().isInterface() != null && name.endsWith(ASYNC_SERVICE_PROXY_SUFFIX)) {
+      String serviceInterfaceName =
+          name.substring(0, name.length() - ASYNC_SERVICE_PROXY_SUFFIX.length());
+      TypeOracle typeOracle = ctx.getTypeOracle();
+      JClassType serviceInterface = typeOracle.findType(serviceInterfaceName);
+      JClassType marker = typeOracle.findType(RemoteService.class.getName());
+      if (serviceInterface != null && marker != null && serviceInterface.isAssignableTo(marker)) {
+        name = serviceInterface.getQualifiedSourceName();
+      }
+    }
 
-  public Set<Key<?>> getRequiredKeys() {
-    return Collections.emptySet();
+    sb.append("GWT.create(")
+        .append(name)
+        .append(".class);");
   }
 }

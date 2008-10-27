@@ -16,6 +16,7 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.inject.rebind.NameGenerator;
+import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 
@@ -26,17 +27,27 @@ import java.util.Set;
  * A binding to call the requested {@link com.google.inject.Provider}.
  */
 public class BindProviderBinding implements Binding {
-  private final Key<?> providerKey;
 
-  public BindProviderBinding(Key<? extends Provider<?>> providerKey) {
+  private final NameGenerator nameGenerator;
+
+  private Key<? extends Provider<?>> providerKey;
+
+  @Inject
+  public BindProviderBinding(NameGenerator nameGenerator) {
+    this.nameGenerator = nameGenerator;
+  }
+
+  public void setProviderKey(Key<? extends Provider<?>> providerKey) {
     this.providerKey = providerKey;
   }
 
-  public String getCreatorMethodBody(NameGenerator nameGenerator) {
+  public String getCreatorMethodBody() {
+    assert (providerKey != null);
     return "return " + nameGenerator.getGetterMethodName(providerKey) + "().get();";
   }
 
   public Set<Key<?>> getRequiredKeys() {
+    assert (providerKey != null);
     return Collections.<Key<?>>singleton(providerKey);
   }
 }

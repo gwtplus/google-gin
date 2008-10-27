@@ -15,7 +15,13 @@
  */
 package com.google.gwt.inject.rebind;
 
+import com.google.gwt.core.ext.GeneratorContext;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.inject.rebind.binding.Injectables;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Provides;
 import com.google.inject.Singleton;
 
 /**
@@ -26,8 +32,35 @@ import com.google.inject.Singleton;
  * adding bindings.
  */
 class GinjectorGeneratorModule extends AbstractModule {
+
+  private final TreeLogger logger;
+  private final GeneratorContext ctx;
+
+  public GinjectorGeneratorModule(TreeLogger logger, GeneratorContext ctx) {
+    this.logger = logger;
+    this.ctx = ctx;
+  }
+
   @Override
   protected void configure() {
+    bind(TreeLogger.class).toInstance(logger);
+    bind(GeneratorContext.class).toInstance(ctx);
     bind(NameGenerator.class).to(NameGeneratorImpl.class).in(Singleton.class);
+  }
+
+  @Provides @Injectables @Singleton
+  MethodCollector provideInjectablesMethodCollector(@Injectables MethodCollector.Filter filter,
+      MethodCollector collector) {
+    collector.setFilter(filter);
+    return collector;
+  }
+
+  @Provides @Injectables @Singleton
+  MethodCollector.Filter provideInjectablesMethodFilter() {
+    return new MethodCollector.Filter() {
+       public boolean accept(JMethod method) {
+         return method.isAnnotationPresent(Inject.class);
+       }
+     };
   }
 }

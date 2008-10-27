@@ -15,8 +15,8 @@
  */
 package com.google.gwt.inject.client;
 
-import com.google.inject.name.Named;
 import com.google.inject.Provider;
+import com.google.inject.name.Named;
 
 /**
  * A more complex injector for test case.
@@ -49,4 +49,6 @@ public interface MyAppGinjector extends Ginjector {
   @MyBindingAnnotation String getAnnotatedString();
 
   MyRemoteServiceAsync getMyRemoteServiceAsync();
+
+  void injectMembers(MyMethodApp methodApp);
 }

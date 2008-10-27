@@ -31,13 +31,29 @@ import java.util.List;
 @MyBindingAnnotation
 @MyOtherAnnotation
 public class UtilTest extends TestCase {
+
   private IMocksControl control;
+  private KeyUtil keyUtil;
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+
+    keyUtil = new KeyUtil();
+    control = createControl();
+  }
+
+  @Override
+  protected void runTest() throws Throwable {
+    super.runTest();
+    control.verify();
+  }
 
   public void testString() throws Exception {
     JClassType type = createClassType(String.class);
     control.replay();
 
-    Key<?> key = Util.getKey(type, null);
+    Key<?> key = keyUtil.getKey(type, null);
     assertEquals(key, Key.get(String.class));
   }
 
@@ -45,7 +61,7 @@ public class UtilTest extends TestCase {
     JClassType type = createClassType(Integer.class);
     control.replay();
 
-    Key<?> key = Util.getKey(type, null);
+    Key<?> key = keyUtil.getKey(type, null);
     assertEquals(key, Key.get(Integer.class));
   }
 
@@ -53,7 +69,7 @@ public class UtilTest extends TestCase {
     JPrimitiveType type = createPrimitiveType(Integer.class);
     control.replay();
 
-    Key<?> key = Util.getKey(type, null);
+    Key<?> key = keyUtil.getKey(type, null);
     assertEquals(key, Key.get(int.class));
   }
 
@@ -63,7 +79,7 @@ public class UtilTest extends TestCase {
     JParameterizedType paramType = createParameterizedType(listType, integerType);
     control.replay();
 
-    Key<?> key = Util.getKey(paramType, null);
+    Key<?> key = keyUtil.getKey(paramType, null);
     assertEquals(key, Key.get(new TypeLiteral<List<Integer>>() {}));
   }
 
@@ -72,7 +88,7 @@ public class UtilTest extends TestCase {
     JArrayType arrayType = createArrayType(intType);
     control.replay();
 
-    Key<?> key = Util.getKey(arrayType, null);
+    Key<?> key = keyUtil.getKey(arrayType, null);
     assertEquals(key, Key.get(int[].class));
   }
 
@@ -81,7 +97,7 @@ public class UtilTest extends TestCase {
     JArrayType arrayType = createArrayType(integerType);
     control.replay();
 
-    Key<?> key = Util.getKey(arrayType, null);
+    Key<?> key = keyUtil.getKey(arrayType, null);
     assertEquals(key, Key.get(Integer[].class));
   }
 
@@ -90,7 +106,7 @@ public class UtilTest extends TestCase {
     control.replay();
 
     Annotation ann = Names.named("brian");
-    Key<?> key = Util.getKey(type, new Annotation[] { ann });
+    Key<?> key = keyUtil.getKey(type, new Annotation[] { ann });
     assertEquals(key, Key.get(String.class, ann));
   }
 
@@ -101,7 +117,7 @@ public class UtilTest extends TestCase {
     Annotation ann = getClass().getAnnotation(MyBindingAnnotation.class);
     assertNotNull(ann);
 
-    Key<?> key = Util.getKey(type, new Annotation[]{ann});
+    Key<?> key = keyUtil.getKey(type, new Annotation[]{ann});
     assertEquals(key, Key.get(String.class, ann));
     assertEquals(key, Key.get(String.class, MyBindingAnnotation.class));
   }
@@ -113,7 +129,7 @@ public class UtilTest extends TestCase {
     Annotation ann = getClass().getAnnotation(MyOtherAnnotation.class);
     assertNotNull(ann);
 
-    Key<?> key = Util.getKey(type, new Annotation[]{ann});
+    Key<?> key = keyUtil.getKey(type, new Annotation[]{ann});
     assertEquals(key, Key.get(String.class));
   }
 
@@ -126,12 +142,12 @@ public class UtilTest extends TestCase {
     assertNotNull(bindingAnn);
     assertNotNull(otherAnn);
 
-    Key<?> key = Util.getKey(type, new Annotation[]{bindingAnn, otherAnn});
+    Key<?> key = keyUtil.getKey(type, new Annotation[]{bindingAnn, otherAnn});
     assertEquals(key, Key.get(String.class, bindingAnn));
     assertEquals(key, Key.get(String.class, MyBindingAnnotation.class));
 
     // Test annotations in the other order too
-    key = Util.getKey(type, new Annotation[]{otherAnn, bindingAnn});
+    key = keyUtil.getKey(type, new Annotation[]{otherAnn, bindingAnn});
     assertEquals(key, Key.get(String.class, bindingAnn));
     assertEquals(key, Key.get(String.class, MyBindingAnnotation.class));
   }
@@ -144,12 +160,14 @@ public class UtilTest extends TestCase {
     Annotation namedAnn = Names.named("brian");
 
     try {
-      Key<?> key = Util.getKey(type, new Annotation[]{bindingAnn, namedAnn});
+      Key<?> key = keyUtil.getKey(type, new Annotation[]{bindingAnn, namedAnn});
       fail("Expected exception, but got: " + key);
     } catch (ProvisionException e) {
       // good, expected
     }
   }
+
+  // TODO(schmitt):  Add tests for method collector.
 
   private JArrayType createArrayType(JType componentType) {
     JArrayType type = control.createMock(JArrayType.class);
@@ -196,18 +214,5 @@ public class UtilTest extends TestCase {
     expect(type.isClassOrInterface()).andReturn(null).anyTimes();
     expect(type.getQualifiedBoxedSourceName()).andReturn(boxClass.getName()).anyTimes();
     return type;
-  }
-
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-
-    control = createControl();
-  }
-
-  @Override
-  protected void runTest() throws Throwable {
-    super.runTest();
-    control.verify();
   }
 }

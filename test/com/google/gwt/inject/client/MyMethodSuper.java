@@ -13,26 +13,28 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.rebind.binding;
+package com.google.gwt.inject.client;
 
-import com.google.inject.Key;
-
-import java.util.Set;
+import com.google.inject.Inject;
 
 /**
- * Interface used by {@code InjectorGeneratorImpl} to represent different kinds
- * of bindings.
+ * Variant of {@link MyApp} that uses method injection.  This class serves as
+ * test for the inclusion of superclasses in method injection.
  */
-public interface Binding {
+public abstract class MyMethodSuper {
 
-  /**
-   * @return body of the method to create for this binding
-   */
-  String getCreatorMethodBody();
+  private SimpleObject simple;
 
-  /**
-   * @return The set of keys that this binding requires. This set is used to
-   *     find more classes that need to be bound.
-   */
-  Set<Key<?>> getRequiredKeys();
+  public SimpleObject getSimple() {
+    return simple;
+  }
+
+  @Inject
+  public void setSimple(SimpleObject simple) {
+    this.simple = simple;
+  }
+
+  public abstract MyMessages getMsgs();
+
+  public abstract MyService getService();
 }

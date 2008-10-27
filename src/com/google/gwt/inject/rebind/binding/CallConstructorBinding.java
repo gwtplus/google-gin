@@ -16,52 +16,37 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.core.ext.typeinfo.JConstructor;
-import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.inject.rebind.Util;
-import com.google.gwt.inject.rebind.NameGenerator;
-import com.google.inject.Key;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.google.gwt.inject.rebind.KeyUtil;
+import com.google.gwt.inject.rebind.MethodCollector;
+import com.google.gwt.inject.rebind.SourceWriteUtil;
+import com.google.inject.Inject;
 
 /**
  * A binding that calls a single constructor directly. Values for constructor
  * parameters are retrieved by going back through the injector.
  */
-public class CallConstructorBinding implements Binding {
-  private final List<Key<?>> paramKeys;
-  private final String typeName;
+public class CallConstructorBinding extends CreatorBinding {
 
-  public CallConstructorBinding(JConstructor constructor) {
-    JParameter[] params = constructor.getParameters();
-    paramKeys = new ArrayList<Key<?>>(params.length);
+  private final SourceWriteUtil sourceWriteUtil;
 
-    for (JParameter param : params) {
-      paramKeys.add(Util.getKey(param));
-    }
+  private JConstructor constructor;
 
-    typeName = constructor.getEnclosingType().getParameterizedQualifiedSourceName();
+  @Inject
+  public CallConstructorBinding(@Injectables MethodCollector methodCollector,
+      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
+    super(methodCollector, sourceWriteUtil, keyUtil);
+    this.sourceWriteUtil = sourceWriteUtil;
   }
 
-  public String getCreatorMethodBody(NameGenerator nameGenerator) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("return new ").append(typeName).append("(");
-
-    for (int i = 0; i < paramKeys.size(); i++) {
-      if (i != 0) {
-        sb.append(", ");
-      }
-
-      sb.append(nameGenerator.getGetterMethodName(paramKeys.get(i))).append("()");
-    }
-
-    sb.append(");");
-    return sb.toString();
+  public void setConstructor(JConstructor constructor) {
+    this.constructor = constructor;
+    setClassType(constructor.getEnclosingType());
+    addParamTypes(constructor);
   }
 
-  public Set<Key<?>> getRequiredKeys() {
-    return new HashSet<Key<?>>(paramKeys);
+  @Override protected void appendCreationStatement(StringBuilder sb) {
+    assert (constructor != null);
+    sb.append("new ").append(getTypeName());
+    sourceWriteUtil.appendInvoke(sb, constructor);
   }
 }

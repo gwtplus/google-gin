@@ -15,12 +15,11 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.inject.rebind.NameGenerator;
 import com.google.inject.Key;
 
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Set;
-import java.lang.reflect.Type;
 
 /**
  * Binding implementation that replaces one type with another.
@@ -31,7 +30,7 @@ public class BindConstantBinding implements Binding {
   /**
    * Creates a constant binding if {@code key} is of a supported type, or
    * returns {@code null} otherwise.
-   * 
+   *
    * @param key Key to bind to
    * @param value value to bind to
    * @return binding, if {@code key} is a constant type, or {@code null} if not
@@ -61,7 +60,7 @@ public class BindConstantBinding implements Binding {
     this.valueToOutput = valueToOutput;
   }
 
-  public String getCreatorMethodBody(NameGenerator nameGenerator) {
+  public String getCreatorMethodBody() {
     return "return " + valueToOutput + ";";
   }
 

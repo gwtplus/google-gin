@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
@@ -26,6 +27,7 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
+import com.google.inject.Singleton;
 import com.google.inject.util.Types;
 
 import java.lang.annotation.Annotation;
@@ -35,11 +37,36 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
- * Simple static utilities for injector generator.
+ * Util object that offers {@link Key} retrieval and manipulation methods.
  */
-public class Util {
-  private Util() {
-    // Private constructor to prevent instantiation
+@Singleton
+public class KeyUtil {
+
+  public Key<?> getKey(JMethod method) {
+    if (isMemberInject(method)) {
+      return getKey(method.getParameters()[0]);
+    }
+
+    return getKey(method.getReturnType(), getAnnotations(JAbstractMethod.class, method));
+  }
+
+  public Key<?> getKey(JParameter param) {
+    return getKey(param.getType(), getAnnotations(JParameter.class, param));
+  }
+
+  public boolean isMemberInject(JMethod method) {
+    return method.getReturnType() == JPrimitiveType.VOID;
+  }
+
+  public Class<?> getRawType(Key<?> key) {
+    Type type = key.getTypeLiteral().getType();
+    if (type instanceof Class) {
+      return (Class) type;
+    } else if (type instanceof ParameterizedType) {
+      return (Class) ((ParameterizedType) type).getRawType();
+    }
+
+    throw new ProvisionException("Can't get raw type for " + key);
   }
 
   /**
@@ -50,9 +77,9 @@ public class Util {
    *     one and only one {@link BindingAnnotation}, it will be included in the
    *     key. If it includes more than one, an exception will be thrown.
    * @return Guice Key instance for this type/annotations
-   * @throws ProvisionException in case of any failure
+   * @throws com.google.inject.ProvisionException in case of any failure
    */
-  static Key<?> getKey(JType gwtType, Annotation[] annotations)
+  public Key<?> getKey(JType gwtType, Annotation[] annotations)
       throws ProvisionException {
     try {
       Type type = gwtTypeToJavaType(gwtType);
@@ -72,7 +99,7 @@ public class Util {
     }
   }
 
-  private static Annotation getBindingAnnotation(Annotation[] annotations) {
+  private Annotation getBindingAnnotation(Annotation[] annotations) {
     if (annotations == null || annotations.length == 0) {
       return null;
     }
@@ -87,14 +114,14 @@ public class Util {
 
         bindingAnnotation = annotation;
 
-        // Keep going so we can find any rogue additional binding annotations 
+        // Keep going so we can find any rogue additional binding annotations
       }
     }
 
     return bindingAnnotation;
   }
 
-  private static Type gwtTypeToJavaType(JType gwtType)
+  private Type gwtTypeToJavaType(JType gwtType)
       throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
     JPrimitiveType primitiveType = gwtType.isPrimitive();
     if (primitiveType != null) {
@@ -133,18 +160,10 @@ public class Util {
   // Wrapper around Class.forName that passes initialize=false. This is critical
   // because GWT client code (whose class names we may be referencing here)
   // can not necessarily have its static initializers run at rebind time.
-  private static Class<?> loadClass(String className, ClassType classType) throws ClassNotFoundException {
+  private static Class<?> loadClass(String className, ClassType classType)
+      throws ClassNotFoundException {
     String resultingClassName = classType.getBinaryClassName(className);
     return Class.forName(resultingClassName, false, Thread.currentThread().getContextClassLoader());
-  }
-
-  static Key<?> getKey(JMethod method) {
-    return getKey(method.getReturnType(), getAnnotations(JAbstractMethod.class, method));
-  }
-
-  // used in rebind.adapter, so public
-  public static Key<?> getKey(JParameter param) {
-    return getKey(param.getType(), getAnnotations(JParameter.class, param));
   }
 
   // Reflective hack until getAnnotations is exposed from GWT
@@ -160,16 +179,5 @@ public class Util {
     } catch (InvocationTargetException e) {
       throw new ProvisionException("Failed to get annotations from " + instance, e);
     }
-  }
-
-  static Class<?> getRawType(Key<?> key) {
-    Type type = key.getTypeLiteral().getType();
-    if (type instanceof Class) {
-      return (Class) type;
-    } else if (type instanceof ParameterizedType) {
-      return (Class) ((ParameterizedType) type).getRawType();
-    }
-
-    throw new ProvisionException("Can't get raw type for " + key);
   }
 }

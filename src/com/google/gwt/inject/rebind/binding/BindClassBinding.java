@@ -16,6 +16,7 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.inject.rebind.NameGenerator;
+import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.util.Collections;
@@ -25,17 +26,27 @@ import java.util.Set;
  * Binding implementation that replaces one type with another.
  */
 public class BindClassBinding implements Binding {
-  private final Key<?> boundClassKey;
 
-  public BindClassBinding(Key<?> boundClassKey) {
+  private final NameGenerator nameGenerator;
+
+  private Key<?> boundClassKey;
+
+  @Inject
+  public BindClassBinding(NameGenerator nameGenerator) {
+    this.nameGenerator = nameGenerator;
+  }
+
+  public void setBoundClassKey(Key<?> boundClassKey) {
     this.boundClassKey = boundClassKey;
   }
 
-  public String getCreatorMethodBody(NameGenerator nameGenerator) {
+  public String getCreatorMethodBody() {
+    assert (boundClassKey != null);
     return "return " + nameGenerator.getGetterMethodName(boundClassKey) + "();";
   }
 
   public Set<Key<?>> getRequiredKeys() {
+    assert (boundClassKey != null);
     return Collections.<Key<?>>singleton(boundClassKey);
   }
 }
