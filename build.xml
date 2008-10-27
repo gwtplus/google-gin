@@ -65,6 +65,7 @@
   <property name="gin.output.base" value="${gin.basedir}/out"/>
   <property name="gin.output.dir" value="${gin.output.base}/production"/>
   <property name="gin.dist.dir" value="${gin.output.base}/dist"/>
+  <property name="gin.javadoc.dir" value="${gin.output.base}/javadoc"/>
   <property name="gin.testoutput.dir" value="${gin.output.base}/test"/>
   <property name="gin.testrun.dir" value="${gin.output.base}/testrun"/>
   
@@ -197,6 +198,12 @@
   
   <target name="init" description="Build initialization">
     <!-- Perform any build initialization in this target -->
+  </target>
+
+  <target name="javadoc" description="Creates javadoc">
+    <javadoc sourcepath="${gin.source.dir}" destdir="${gin.javadoc.dir}" classpathref="gin.classpath">
+      <link href="http://google-guice.googlecode.com/svn/trunk/javadoc" />
+    </javadoc>
   </target>
   
   <target name="all" depends="init, clean, compile, test, dist" description="build all"/>
