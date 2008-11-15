@@ -37,8 +37,8 @@ public class MyAppGinModule extends AbstractGinModule {
 
     // SimpleObject (all three flavors) are singletons
     bind(SimpleObject.class).in(Singleton.class);
-    bind(SimpleObject.class).annotatedWith(Names.named("red")).in(Singleton.class);
-    bind(SimpleObject.class).annotatedWith(Names.named("blue")).in(Singleton.class);
+    bind(SimpleObject.class).annotatedWith(Names.named("red")).to(SimpleObject.class);
+    bind(SimpleObject.class).annotatedWith(Names.named("blue")).to(SimpleObject.class);
 
     bind(EagerObject.class).asEagerSingleton();
 

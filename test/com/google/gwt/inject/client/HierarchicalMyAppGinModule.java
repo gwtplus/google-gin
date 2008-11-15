@@ -24,6 +24,7 @@ import com.google.inject.name.Names;
 public class HierarchicalMyAppGinModule extends AbstractGinModule {
 
   protected void configure() {
-    bind(SimpleObject.class).annotatedWith(Names.named("purple")).in(Singleton.class);
+    bind(SimpleObject.class).annotatedWith(Names.named("purple"))
+        .to(SimpleObject.class).in(Singleton.class);
   }
 }

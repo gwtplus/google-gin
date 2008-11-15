@@ -46,6 +46,8 @@ import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.Singleton;
+import com.google.inject.Guice;
+import com.google.inject.Stage;
 import com.google.inject.spi.BindingScopingVisitor;
 import com.google.inject.spi.DefaultBindingTargetVisitor;
 import com.google.inject.spi.DefaultElementVisitor;
@@ -345,11 +347,20 @@ class GinjectorGeneratorImpl {
     }
   }
 
-  private void createBindingsForModules(JClassType injectorInterface) {
+  private void createBindingsForModules(JClassType injectorInterface)
+      throws UnableToCompleteException {
     List<Module> modules = new ArrayList<Module>();
     populateModulesFromInjectorInterface(injectorInterface, modules);
 
     if (!modules.isEmpty()) {
+      // Validate module consistency using Guice.
+      try {
+        Guice.createInjector(Stage.TOOL, modules);
+      } catch (Exception e) {
+        logger.log(TreeLogger.ERROR, e.getMessage());
+        throw new UnableToCompleteException();
+      }
+
       List<Element> elements = Elements.getElements(modules);
       for (Element element : elements) {
         GuiceElementVisitor visitor = new GuiceElementVisitor();

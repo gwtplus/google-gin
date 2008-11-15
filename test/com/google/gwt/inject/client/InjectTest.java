@@ -72,17 +72,17 @@ public class InjectTest extends GWTTestCase {
     // Ensure we get the same instance each time
     assertSame(simple, injector.getSimple());
 
-    // Ensure simple is not the same as blue
+    // Ensure simple is the same as blue
     SimpleObject blue = injector.getSimpleBlue();
     assertNotNull(blue);
-    assertNotSame(simple, blue);
+    assertSame(simple, blue);
     assertSame(blue, injector.getSimpleBlue());
 
-    // Ensure simple, red and blue are all different
+    // Ensure simple, red and blue are all the same
     SimpleObject red = injector.getSimpleRed();
     assertNotNull(red);
-    assertNotSame(simple, red);
-    assertNotSame(red, blue);
+    assertSame(simple, red);
+    assertSame(red, blue);
     assertSame(red, injector.getSimpleRed());
   }
 
@@ -113,11 +113,11 @@ public class InjectTest extends GWTTestCase {
 
     SimpleObject purple = injector.getSimplePurple();
     assertNotNull(purple);
-    assertNotSame(simple, purple);
+    assertSame(simple, purple);
 
     SimpleObject red = injector.getSimpleRed();
     assertNotNull(red);
-    assertNotSame(purple, red);
+    assertSame(purple, red);
 
     SimpleObject blue = injector.getSimpleBlue();
     assertNotNull(blue);
@@ -143,7 +143,7 @@ public class InjectTest extends GWTTestCase {
     // Make sure provider works and gives us the same instance as direct request
     SimpleObject blue = blueProvider.get();
     assertNotNull(blue);
-    assertNotSame(simple, injector.getSimpleBlue());
+    assertSame(simple, injector.getSimpleBlue());
     assertSame(blue, injector.getSimpleBlue());
   }
 
