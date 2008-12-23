@@ -26,6 +26,7 @@ import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
@@ -37,7 +38,11 @@ import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
-import com.google.gwt.inject.rebind.binding.Injectables;
+import com.google.gwt.inject.rebind.binding.InjectionPoint;
+import com.google.gwt.inject.rebind.util.KeyUtil;
+import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -53,7 +58,6 @@ import com.google.inject.spi.DefaultBindingTargetVisitor;
 import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
-import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.Message;
 
 import java.io.PrintWriter;
@@ -68,6 +72,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collection;
 
 /**
  * Does the heavy lifting involved in generating implementations of
@@ -107,7 +112,7 @@ class GinjectorGeneratorImpl {
    * injection root types and to write the implementation for the collected
    * methods.
    */
-  private final MethodCollector constructorInjectCollector;
+  private final MemberCollector constructorInjectCollector;
 
   /**
    * Collector that gathers methods from an injector interface and its
@@ -116,7 +121,7 @@ class GinjectorGeneratorImpl {
    * injection root types and to write the implementation for the collected
    * methods.
    */
-  private final MethodCollector memberInjectCollector;
+  private final MemberCollector memberInjectCollector;
 
   /**
    * Collector that gathers methods from a type and its ancestors, recording
@@ -124,12 +129,12 @@ class GinjectorGeneratorImpl {
    * determine which methods need to be called during the initialization of an
    * object.
    */
-  private final MethodCollector injectableCollector;
+  private final MemberCollector injectableCollector;
 
   /**
    * Collector that gathers all methods from an injector.
    */
-  private final MethodCollector completeCollector;
+  private final MemberCollector completeCollector;
 
   /**
    * Provider for {@link CallGwtDotCreateBinding}s.
@@ -178,11 +183,11 @@ class GinjectorGeneratorImpl {
   private SourceWriter writer;
 
   @Inject
-  public GinjectorGeneratorImpl(NameGenerator nameGenerator, final TreeLogger logger,
-      Provider<MethodCollector> collectorProvider,
+  public GinjectorGeneratorImpl(NameGenerator nameGenerator, TreeLogger logger,
+      Provider<MemberCollector> collectorProvider,
       Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider,
       Provider<CallConstructorBinding> callConstructorBinding,
-      @Injectables MethodCollector injectableCollector, SourceWriteUtil sourceWriteUtil,
+      @InjectionPoint MemberCollector injectableCollector, SourceWriteUtil sourceWriteUtil,
       final KeyUtil keyUtil, GeneratorContext ctx,
       Provider<BindClassBinding> bindClassBindingProvider,
       Provider<BindProviderBinding> bindProviderBindingProvider,
@@ -200,16 +205,17 @@ class GinjectorGeneratorImpl {
     this.ctx = ctx;
 
     completeCollector = collectorProvider.get();
+    completeCollector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
 
     constructorInjectCollector = collectorProvider.get();
-    constructorInjectCollector.setFilter(new MethodCollector.Filter() {
+    constructorInjectCollector.setMethodFilter(new MemberCollector.MethodFilter() {
         public boolean accept(JMethod method) {
           return method.getParameters().length == 0;
         }
       });
 
     memberInjectCollector = collectorProvider.get();
-    memberInjectCollector.setFilter(new MethodCollector.Filter() {
+    memberInjectCollector.setMethodFilter(new MemberCollector.MethodFilter() {
         public boolean accept(JMethod method) {
           return keyUtil.isMemberInject(method);
         }
@@ -334,15 +340,12 @@ class GinjectorGeneratorImpl {
   }
 
   private void addUnresolvedEntriesForInjectorInterface() {
-    for (JMethod method : constructorInjectCollector.getMethods(injectorInterface)) {
+    for (JMethod method : completeCollector.getMethods(injectorInterface)) {
       Key<?> key = keyUtil.getKey(method);
       logger.log(TreeLogger.TRACE, "Add unresolved key from injector interface: " + key);
-      unresolved.add(key);
-    }
 
-    for (JMethod method : memberInjectCollector.getMethods(injectorInterface)) {
-      Key<?> key = keyUtil.getKey(method);
-      logger.log(TreeLogger.TRACE, "Add unresolved key from injector interface: " + key);
+      nameGenerator.markAsUsed(method.getName());
+
       unresolved.add(key);
     }
   }
@@ -432,7 +435,7 @@ class GinjectorGeneratorImpl {
       String creator = nameGenerator.getCreatorMethodName(key);
 
       // Regardless of the scope, we have a creator method
-      writeMethod("private " + typeName + " " + creator + "()", binding.getCreatorMethodBody());
+      binding.writeCreatorMethods(writer, "private " + typeName + " " + creator + "()");
 
       // Name of the field that we might need
       String field = nameGenerator.getSingletonFieldName(key);
@@ -458,12 +461,14 @@ class GinjectorGeneratorImpl {
           // Just call the creator on field init
           writer.println("private final " + typeName + " " + field + " = " + creator + "();");
 
-          writeMethod("private " + typeName + " " + getter + "()", "return " + field + ";");
+          sourceWriteUtil.writeMethod(writer, "private " + typeName + " " + getter + "()",
+              "return " + field + ";");
           break;
 
         case NO_SCOPE:
           // For none, getter just returns creator
-          writeMethod("private " + typeName + " " + getter + "()", "return " + creator + "();");
+          sourceWriteUtil.writeMethod(writer, "private " + typeName + " " + getter + "()",
+              "return " + creator + "();");
           break;
 
         default:
@@ -501,30 +506,28 @@ class GinjectorGeneratorImpl {
           .append(nameGenerator.getGetterMethodName(keyUtil.getKey(injectorMethod)))
           .append("();");
 
-      writeMethod(injectorMethod.getReadableDeclaration(false, false, false, false, true),
-          body.toString());
+      sourceWriteUtil.writeMethod(writer,
+          injectorMethod.getReadableDeclaration(false, false, false, false, true), body.toString());
     }
 
     for (JMethod injectorMethod : memberInjectCollector.getMethods(injectorInterface)) {
       StringBuilder body = new StringBuilder();
       JParameter injectee = injectorMethod.getParameters()[0];
-      for (JMethod method :
-          injectableCollector.getMethods(injectee.getType().isClassOrInterface())) {
-        body.append(injectee.getName()).append(".").append(method.getName());
+      JClassType targetType = injectee.getType().isClassOrInterface();
+      for (JMethod method : injectableCollector.getMethods(targetType)) {
+        body.append(injectee.getName()).append(".");
         sourceWriteUtil.appendInvoke(body, method);
       }
-      writeMethod(injectorMethod.getReadableDeclaration(false, false, false, false, true),
-          body.toString());
-    }
-  }
 
-  private void writeMethod(String methodDecl, String body) {
-    writer.println(methodDecl + " {");
-    writer.indent();
-    writer.println(body);
-    writer.outdent();
-    writer.println("}");
-    writer.println();
+      Collection<JField> fields = injectableCollector.getFields(targetType);
+      if (!fields.isEmpty()) {
+        body.append(
+            sourceWriteUtil.appendFieldInjection(writer, targetType, fields, injectee.getName()));
+      }
+
+      sourceWriteUtil.writeMethod(writer,
+          injectorMethod.getReadableDeclaration(false, false, false, false, true), body.toString());
+    }
   }
 
   private void createImplicitBinding(Key<?> key) {
@@ -680,7 +683,7 @@ class GinjectorGeneratorImpl {
     }
 
     @Override
-    public Void visitInstance(T instance, Set<InjectionPoint> injectionPoints) {
+    public Void visitInstance(T instance, Set<com.google.inject.spi.InjectionPoint> injectionPoints) {
       return visitInstance(instance);
     }
 

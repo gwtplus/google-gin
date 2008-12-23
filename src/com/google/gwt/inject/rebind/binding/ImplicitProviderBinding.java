@@ -15,7 +15,9 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.inject.rebind.NameGenerator;
+import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceWriteUtil;
+import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 
@@ -33,12 +35,15 @@ public class ImplicitProviderBinding implements Binding {
 
   private final NameGenerator nameGenerator;
 
+  private final SourceWriteUtil sourceWriteUtil;
+
   private ParameterizedType providerType;
   private Key<?> targetKey;
 
   @Inject
-  public ImplicitProviderBinding(NameGenerator nameGenerator) {
+  public ImplicitProviderBinding(NameGenerator nameGenerator, SourceWriteUtil sourceWriteUtil) {
     this.nameGenerator = nameGenerator;
+    this.sourceWriteUtil = sourceWriteUtil;
   }
 
   public void setProviderKey(Key<?> providerKey) {
@@ -49,13 +54,14 @@ public class ImplicitProviderBinding implements Binding {
     targetKey = getKeyWithSameAnnotation(targetType, providerKey);
   }
 
-  public String getCreatorMethodBody() {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
     assert (providerType != null);
-    return "return new " + providerType + "() { \n"
+    sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
+        "return new " + providerType + "() { \n"
         + "  public " + targetKey.getTypeLiteral() + " get() { \n"
         + "    return " + nameGenerator.getGetterMethodName(targetKey) + "();\n"
         + "  }\n"
-        + "};";
+        + "};");
   }
 
   public Set<Key<?>> getRequiredKeys() {

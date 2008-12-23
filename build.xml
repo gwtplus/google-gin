@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="google-gin" default="all" basedir=".">
   <property file="build.properties"/>
-    
+
   <property environment="env"/>
-  
+
   <!-- Mac GWT requires -XstartOnFirstThread -->
   <condition property="mac">
     <os name="Mac OS X"/>
@@ -13,7 +13,7 @@
   </condition>
 
   <!-- Compiler options -->
-  
+
   <property name="compiler.debug" value="on"/>
   <property name="compiler.generate.no.warnings" value="off"/>
   <property name="compiler.args" value=""/>
@@ -28,38 +28,32 @@
   <patternset id="compiler.resources">
     <include name="**/?*.xml"/>
   </patternset>
-  
-  
+
+
   <!-- Project Libraries -->
-  
+
   <path id="library.guice.classpath">
     <pathelement location="${basedir}/lib/guice-snapshot.jar"/>
   </path>
-  
+
   <path id="library.gwt-user.classpath">
     <pathelement location="${gwt.home}/gwt-user.jar"/>
   </path>
-  
+
   <path id="library.gwt-dev.classpath">
     <fileset dir="${gwt.home}" includes="gwt-dev-*.jar"/>
   </path>
-  
+
   <path id="library.junit.classpath">
     <pathelement location="${basedir}/lib/test/junit.jar"/>
   </path>
-  
+
   <path id="library.aopalliance.classpath">
     <pathelement location="${basedir}/lib/aopalliance.jar"/>
   </path>
-  
-  <path id="library.easymock.classpath">
-    <pathelement location="${basedir}/lib/test/easymock.jar"/>
-    <pathelement location="${basedir}/lib/test/cglib-nodep-2.2.jar"/>
-    <pathelement location="${basedir}/lib/test/easymockclassextension.jar"/>
-  </path>
-  
+
   <dirname property="gin.basedir" file="${ant.file}"/>
-  
+
   <property name="gin.source.dir" value="${gin.basedir}/src"/>
 
   <property name="gin.output.base" value="${gin.basedir}/out"/>
@@ -68,16 +62,15 @@
   <property name="gin.javadoc.dir" value="${gin.output.base}/javadoc"/>
   <property name="gin.testoutput.dir" value="${gin.output.base}/test"/>
   <property name="gin.testrun.dir" value="${gin.output.base}/testrun"/>
-  
+
   <path id="gin.classpath">
     <path refid="library.guice.classpath"/>
     <path refid="library.gwt-user.classpath"/>
     <path refid="library.gwt-dev.classpath"/>
     <path refid="library.junit.classpath"/>
     <path refid="library.aopalliance.classpath"/>
-    <path refid="library.easymock.classpath"/>
   </path>
-  
+
   <path id="gin.test.classpath">
     <pathelement location="${gin.output.dir}"/>
     <pathelement location="${gin.testoutput.dir}"/>
@@ -86,17 +79,16 @@
     <path refid="library.gwt-dev.classpath"/>
     <path refid="library.junit.classpath"/>
     <path refid="library.aopalliance.classpath"/>
-    <path refid="library.easymock.classpath"/>
 
     <!-- Put test sources on test classpath so GWT compiler can see them -->
     <path refid="gin.test.sourcepath"/>
   </path>
-  
+
   <path id="gin.sourcepath" path="${gin.basedir}/src"/>
   <path id="gin.test.sourcepath" path="${gin.basedir}/test"/>
-  
+
   <target name="compile" depends="compile.production,compile.tests"/>
-  
+
   <target name="compile.production" description="Compile module gin; production classes">
     <mkdir dir="${gin.output.dir}"/>
     <javac destdir="${gin.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
@@ -110,7 +102,7 @@
            classes (it needs the real ones). -->
       <exclude name="com/google/gwt/inject/guiceapi/**" />
     </javac>
-    
+
     <copy todir="${gin.output.dir}">
       <fileset dir="${gin.basedir}/src">
         <patternset refid="compiler.resources"/>
@@ -126,7 +118,7 @@
       </fileset>
     </copy>
   </target>
-  
+
   <target name="compile.tests" depends="compile.production" description="compile module gin; test classes" unless="skip.tests">
     <mkdir dir="${gin.testoutput.dir}"/>
     <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
@@ -135,7 +127,7 @@
       <classpath location="${gin.output.dir}"/>
       <src refid="gin.test.sourcepath"/>
     </javac>
-    
+
     <copy todir="${gin.testoutput.dir}">
       <fileset dir="${gin.basedir}/test">
         <patternset refid="compiler.resources"/>
@@ -156,7 +148,7 @@
       <formatter type="brief" />
 
       <!-- Switches from hosted to Web mode -->
-      <jvmarg value="-Dgwt.args=-web"/>
+      <jvmarg value="-Dgwt.args=-web -gen out"/>
 
       <classpath refid="gin.test.classpath"/>
       <batchtest todir="${gin.testrun.dir}">
@@ -164,7 +156,7 @@
       </batchtest>
     </junit>
   </target>
-  
+
   <target name="test.hosted" depends="compile">
     <mkdir dir="${gin.testrun.dir}"/>
 
@@ -195,7 +187,7 @@
   <target name="clean" description="cleanup module">
     <delete dir="${gin.output.base}"/>
   </target>
-  
+
   <target name="init" description="Build initialization">
     <!-- Perform any build initialization in this target -->
   </target>
@@ -205,6 +197,6 @@
       <link href="http://google-guice.googlecode.com/svn/trunk/javadoc" />
     </javadoc>
   </target>
-  
+
   <target name="all" depends="init, clean, compile, test, dist" description="build all"/>
 </project>

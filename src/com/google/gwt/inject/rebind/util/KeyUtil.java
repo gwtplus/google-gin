@@ -14,16 +14,18 @@
  * the License.
  */
 
-package com.google.gwt.inject.rebind;
+package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
 import com.google.gwt.core.ext.typeinfo.JArrayType;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.core.ext.typeinfo.JWildcardType;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
@@ -35,6 +37,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Util object that offers {@link Key} retrieval and manipulation methods.
@@ -52,6 +56,10 @@ public class KeyUtil {
 
   public Key<?> getKey(JParameter param) {
     return getKey(param.getType(), getAnnotations(JParameter.class, param));
+  }
+
+  public Key<?> getKey(JField field) {
+    return getKey(field.getType(), getAnnotations(JField.class, field));
   }
 
   public boolean isMemberInject(JMethod method) {
@@ -136,17 +144,39 @@ public class KeyUtil {
       return Types.arrayOf(componentType);
     }
 
+    JWildcardType wildcardType = gwtType.isWildcard();
+    if (wildcardType != null) {
+      Type baseType = gwtTypeToJavaType(wildcardType.getBaseType());
+
+      switch (wildcardType.getBoundType()) {
+        case EXTENDS:
+          return Types.subtypeOf(baseType);
+        case SUPER:
+          return Types.subtypeOf(baseType);
+        case UNBOUND:
+
+      }
+    }
+
     JParameterizedType parameterizedType = gwtType.isParameterized();
     if (gwtType.isParameterized() != null) {
       JClassType[] typeArgs = parameterizedType.getTypeArgs();
-      Type[] javaTypeArgs = new Type[typeArgs.length];
+      List<Type> javaTypeArgs = new ArrayList<Type>();
 
-      for (int i = 0; i < typeArgs.length; i++) {
-        javaTypeArgs[i] = gwtTypeToJavaType(typeArgs[i]);
+      for (JClassType typeArg : typeArgs) {
+        JWildcardType wildcard = typeArg.isWildcard();
+
+        // TODO(schmitt):  This might not work, but I have no better idea.
+        if (wildcard == null || wildcard.getBoundType() != JWildcardType.BoundType.UNBOUND) {
+          javaTypeArgs.add(gwtTypeToJavaType(typeArg));
+        }
       }
 
+      javaTypeArgs.toArray(new Type[javaTypeArgs.size()]);
+
       Type rawType = gwtTypeToJavaType(parameterizedType.getRawType());
-      return Types.newParameterizedType(rawType, javaTypeArgs);
+      return
+          Types.newParameterizedType(rawType, javaTypeArgs.toArray(new Type[javaTypeArgs.size()]));
     }
 
     JClassType jClassType = gwtType.isClassOrInterface();

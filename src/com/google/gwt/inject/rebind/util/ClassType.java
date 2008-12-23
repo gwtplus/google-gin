@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.rebind;
+package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.core.ext.typeinfo.JClassType;
 
@@ -45,6 +45,6 @@ enum ClassType {
   }
 
   String getBinaryClassName(String binaryClassName) {
-    return NameGeneratorImpl.replaceLast(binaryClassName, '.', '$');
+    return NameGenerator.replaceLast(binaryClassName, '.', '$');
   }
 }

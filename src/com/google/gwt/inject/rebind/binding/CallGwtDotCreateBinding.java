@@ -18,9 +18,9 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.inject.rebind.KeyUtil;
-import com.google.gwt.inject.rebind.MethodCollector;
-import com.google.gwt.inject.rebind.SourceWriteUtil;
+import com.google.gwt.inject.rebind.util.KeyUtil;
+import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.inject.Inject;
 
@@ -40,9 +40,9 @@ public class CallGwtDotCreateBinding extends CreatorBinding {
   private final GeneratorContext ctx;
 
   @Inject
-  public CallGwtDotCreateBinding(@Injectables MethodCollector methodCollector,
+  public CallGwtDotCreateBinding(@InjectionPoint MemberCollector memberCollector,
       SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, GeneratorContext ctx) {
-    super(methodCollector, sourceWriteUtil, keyUtil);
+    super(memberCollector, sourceWriteUtil, keyUtil);
     this.ctx = ctx;
   }
 

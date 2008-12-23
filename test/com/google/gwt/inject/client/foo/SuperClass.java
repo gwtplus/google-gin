@@ -13,17 +13,25 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+package com.google.gwt.inject.client.foo;
 
-package com.google.gwt.inject.rebind;
+public abstract class SuperClass implements SimpleInterface {
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
+  private int a;
+  protected String b;
+  public SubClass c;
 
-/**
- * Simple custom non-binding annotation for tests.
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE })
-@interface MyOtherAnnotation {}
+  private void barA() {
+
+  }
+
+  protected abstract void bazA();
+
+  public void fooA() {
+
+  }
+
+  private void fooIC() {
+
+  }
+}

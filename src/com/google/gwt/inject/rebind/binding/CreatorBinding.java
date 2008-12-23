@@ -18,34 +18,37 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.inject.rebind.KeyUtil;
-import com.google.gwt.inject.rebind.MethodCollector;
-import com.google.gwt.inject.rebind.SourceWriteUtil;
+import com.google.gwt.inject.rebind.util.KeyUtil;
+import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.SourceWriteUtil;
+import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Abstract binder that takes a type and performs the required key analysis and
  * method injection.  Calls
- * {@link #appendCreationStatement(StringBuilder, com.google.gwt.inject.rebind.NameGenerator)}
+ * {@link #appendCreationStatement(StringBuilder, com.google.gwt.inject.rebind.util.NameGenerator)}
  * on subclass to retrieve the actual object creation statement (e.g.
  * {@code new MyObject();}).
  */
 abstract class CreatorBinding implements Binding {
 
-  private final MethodCollector methodCollector;
+  private final MemberCollector memberCollector;
   private final SourceWriteUtil sourceWriteUtil;
   private final KeyUtil keyUtil;
   private Set<Key<?>> requiredKeys;
   private JClassType classType;
 
-  protected CreatorBinding(MethodCollector methodCollector, SourceWriteUtil sourceWriteUtil,
+  protected CreatorBinding(MemberCollector memberCollector, SourceWriteUtil sourceWriteUtil,
       KeyUtil keyUtil) {
-    this.methodCollector = methodCollector;
+    this.memberCollector = memberCollector;
     this.sourceWriteUtil = sourceWriteUtil;
     this.keyUtil = keyUtil;
     this.requiredKeys = new HashSet<Key<?>>();
@@ -53,26 +56,35 @@ abstract class CreatorBinding implements Binding {
 
   public void setClassType(JClassType classType) {
     this.classType = classType;
-    for (JMethod method : methodCollector.getMethods(classType)) {
+    for (JMethod method : memberCollector.getMethods(classType)) {
       addParamTypes(method);
+    }
+
+    for (JField field : memberCollector.getFields(classType)) {
+      requiredKeys.add(keyUtil.getKey(field));
     }
   }
 
-  public String getCreatorMethodBody() {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
     assert (classType != null);
 
     StringBuilder sb = new StringBuilder();
     sb.append(getTypeName()).append(" result = ");
     appendCreationStatement(sb);
 
-    for (JMethod method : methodCollector.getMethods(classType)) {
-      sb.append("result.").append(method.getName());
+    for (JMethod method : memberCollector.getMethods(classType)) {
+      sb.append("result.");
       sourceWriteUtil.appendInvoke(sb, method);
+    }
+
+    Collection<JField> fields = memberCollector.getFields(classType);
+    if (!fields.isEmpty()) {
+      sb.append(sourceWriteUtil.appendFieldInjection(writer, classType, fields, "result"));
     }
 
     sb.append("return result;");
 
-    return sb.toString();
+    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, sb.toString());
   }
 
   public Set<Key<?>> getRequiredKeys() {

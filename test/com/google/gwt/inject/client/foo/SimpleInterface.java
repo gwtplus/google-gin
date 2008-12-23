@@ -13,21 +13,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+package com.google.gwt.inject.client.foo;
 
-package com.google.gwt.inject.rebind.binding;
+public interface SimpleInterface {
 
-import com.google.inject.BindingAnnotation;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * Binding for {@link com.google.gwt.inject.rebind.MethodCollector}s
- * that collect injectable methods (i.e. methods with @Inject on them).
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER, ElementType.FIELD, ElementType.METHOD})
-@BindingAnnotation
-public @interface Injectables {}
+  void fooIB();
+}

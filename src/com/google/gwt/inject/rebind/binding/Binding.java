@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
 
 import java.util.Set;
@@ -26,9 +27,14 @@ import java.util.Set;
 public interface Binding {
 
   /**
-   * @return body of the method to create for this binding
+   * Writes the method necessary to create the binding's type to the writer.
+   * A method with the {@code creatorMethodSignature} <b>must</b> be written,
+   * other methods are optional.
+   *
+   * @param writer writer that methods are written to
+   * @param creatorMethodSignature signature of method that needs to be created
    */
-  String getCreatorMethodBody();
+  void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature);
 
   /**
    * @return The set of keys that this binding requires. This set is used to

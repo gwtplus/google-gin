@@ -51,4 +51,6 @@ public interface MyAppGinjector extends Ginjector {
   MyRemoteServiceAsync getMyRemoteServiceAsync();
 
   void injectMembers(MyMethodApp methodApp);
+
+  void injectMembers(MyFieldApp fielApp);
 }

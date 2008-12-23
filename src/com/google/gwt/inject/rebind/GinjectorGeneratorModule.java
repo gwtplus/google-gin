@@ -17,8 +17,10 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.inject.rebind.binding.Injectables;
+import com.google.gwt.inject.rebind.binding.InjectionPoint;
+import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
@@ -45,22 +47,38 @@ class GinjectorGeneratorModule extends AbstractModule {
   protected void configure() {
     bind(TreeLogger.class).toInstance(logger);
     bind(GeneratorContext.class).toInstance(ctx);
-    bind(NameGenerator.class).to(NameGeneratorImpl.class).in(Singleton.class);
   }
 
-  @Provides @Injectables @Singleton
-  MethodCollector provideInjectablesMethodCollector(@Injectables MethodCollector.Filter filter,
-      MethodCollector collector) {
-    collector.setFilter(filter);
+  @Provides
+  @InjectionPoint
+  @Singleton
+  private MemberCollector provideInjectablesCollector(
+      @InjectionPoint MemberCollector.MethodFilter methodFilter,
+      @InjectionPoint MemberCollector.FieldFilter fieldFilter, MemberCollector collector) {
+    collector.setMethodFilter(methodFilter);
+    collector.setFieldFilter(fieldFilter);
     return collector;
   }
 
-  @Provides @Injectables @Singleton
-  MethodCollector.Filter provideInjectablesMethodFilter() {
-    return new MethodCollector.Filter() {
+  @Provides
+  @InjectionPoint
+  @Singleton
+  private MemberCollector.MethodFilter provideInjectablesMethodFilter() {
+    return new MemberCollector.MethodFilter() {
        public boolean accept(JMethod method) {
          return method.isAnnotationPresent(Inject.class);
        }
      };
+  }
+
+  @Provides
+  @InjectionPoint
+  @Singleton
+  private MemberCollector.FieldFilter provideInjectablesFieldFilter() {
+    return new MemberCollector.FieldFilter() {
+      public boolean accept(JField field) {
+        return field.isAnnotationPresent(Inject.class);
+      }
+    };
   }
 }

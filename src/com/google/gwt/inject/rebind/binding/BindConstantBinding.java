@@ -16,6 +16,8 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.inject.Key;
+import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -60,8 +62,8 @@ public class BindConstantBinding implements Binding {
     this.valueToOutput = valueToOutput;
   }
 
-  public String getCreatorMethodBody() {
-    return "return " + valueToOutput + ";";
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
+    SourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return " + valueToOutput + ";");
   }
 
   public Set<Key<?>> getRequiredKeys() {
