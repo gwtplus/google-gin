@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Binding implementation that replaces one type with another.
+ * Binding for a constant value.
  */
 public class BindConstantBinding implements Binding {
   private final String valueToOutput;
