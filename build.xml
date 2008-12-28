@@ -62,6 +62,7 @@
   <property name="gin.javadoc.dir" value="${gin.output.base}/javadoc"/>
   <property name="gin.testoutput.dir" value="${gin.output.base}/test"/>
   <property name="gin.testrun.dir" value="${gin.output.base}/testrun"/>
+  <property name="gin.testrungen.dir" value="${gin.output.base}/testrun/gen"/>
 
   <path id="gin.classpath">
     <path refid="library.guice.classpath"/>
@@ -141,14 +142,16 @@
   <!-- TODO: Some way to avoid this copy/paste -->
   <target name="test.web" depends="compile">
     <mkdir dir="${gin.testrun.dir}"/>
+    <mkdir dir="${gin.testrungen.dir}"/>
 
     <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
            haltonerror="true" >
       <jvmarg line="${macJvmArgs}"/>
       <formatter type="brief" />
 
-      <!-- Switches from hosted to Web mode -->
-      <jvmarg value="-Dgwt.args=-web -gen out"/>
+      <!-- Switches from hosted to Web mode and saves intermediate output -->
+      <!-- Add -logLevel TRACE to get more debug output -->
+      <jvmarg value="-Dgwt.args=-web -gen ${gin.testrungen.dir} "/>
 
       <classpath refid="gin.test.classpath"/>
       <batchtest todir="${gin.testrun.dir}">
