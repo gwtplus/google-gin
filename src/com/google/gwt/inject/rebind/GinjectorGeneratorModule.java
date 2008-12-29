@@ -17,8 +17,10 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.rebind.binding.InjectionPoint;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.inject.AbstractModule;
@@ -34,25 +36,30 @@ import com.google.inject.Singleton;
  * adding bindings.
  */
 class GinjectorGeneratorModule extends AbstractModule {
-
   private final TreeLogger logger;
   private final GeneratorContext ctx;
+  private final JClassType ginjectorInterface;
 
-  public GinjectorGeneratorModule(TreeLogger logger, GeneratorContext ctx) {
+  public GinjectorGeneratorModule(TreeLogger logger, GeneratorContext ctx,
+      JClassType ginjectorInterface) {
     this.logger = logger;
     this.ctx = ctx;
+    this.ginjectorInterface = ginjectorInterface;
   }
 
   @Override
   protected void configure() {
     bind(TreeLogger.class).toInstance(logger);
     bind(GeneratorContext.class).toInstance(ctx);
+    bind(TypeOracle.class).toInstance(ctx.getTypeOracle());
+    bind(JClassType.class).annotatedWith(GinjectorInterfaceType.class)
+        .toInstance(ginjectorInterface);
   }
 
   @Provides
   @InjectionPoint
   @Singleton
-  private MemberCollector provideInjectablesCollector(
+  MemberCollector provideInjectablesCollector(
       @InjectionPoint MemberCollector.MethodFilter methodFilter,
       @InjectionPoint MemberCollector.FieldFilter fieldFilter, MemberCollector collector) {
     collector.setMethodFilter(methodFilter);
@@ -63,7 +70,7 @@ class GinjectorGeneratorModule extends AbstractModule {
   @Provides
   @InjectionPoint
   @Singleton
-  private MemberCollector.MethodFilter provideInjectablesMethodFilter() {
+  MemberCollector.MethodFilter provideInjectablesMethodFilter() {
     return new MemberCollector.MethodFilter() {
        public boolean accept(JMethod method) {
          return method.isAnnotationPresent(Inject.class);
@@ -74,7 +81,7 @@ class GinjectorGeneratorModule extends AbstractModule {
   @Provides
   @InjectionPoint
   @Singleton
-  private MemberCollector.FieldFilter provideInjectablesFieldFilter() {
+  MemberCollector.FieldFilter provideInjectablesFieldFilter() {
     return new MemberCollector.FieldFilter() {
       public boolean accept(JField field) {
         return field.isAnnotationPresent(Inject.class);

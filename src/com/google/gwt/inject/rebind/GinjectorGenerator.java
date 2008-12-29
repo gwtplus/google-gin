@@ -19,7 +19,9 @@ import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.inject.Guice;
+import com.google.inject.Module;
 import com.google.inject.Stage;
 
 /**
@@ -30,9 +32,19 @@ public class GinjectorGenerator extends Generator {
   public String generate(TreeLogger logger, GeneratorContext ctx, String requestedClass)
       throws UnableToCompleteException {
 
+    JClassType ginjectorInterface = ctx.getTypeOracle().findType(requestedClass);
+
+    if (ginjectorInterface == null) {
+      logger.log(TreeLogger.ERROR, "Unable to find metadata for type '"
+          + requestedClass + "'", null);
+
+      throw new UnableToCompleteException();
+    }
+
     // This is the Injector we use for the Generator internally,
     // it has nothing to do with user code.
-    return Guice.createInjector(Stage.PRODUCTION, new GinjectorGeneratorModule(logger, ctx))
-        .getInstance(GinjectorGeneratorImpl.class).generate(requestedClass);
+    Module module = new GinjectorGeneratorModule(logger, ctx, ginjectorInterface);
+    return Guice.createInjector(Stage.PRODUCTION, module).getInstance(GinjectorGeneratorImpl.class)
+        .generate();
   }
 }
