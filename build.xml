@@ -68,7 +68,6 @@
     <path refid="library.guice.classpath"/>
     <path refid="library.gwt-user.classpath"/>
     <path refid="library.gwt-dev.classpath"/>
-    <path refid="library.junit.classpath"/>
     <path refid="library.aopalliance.classpath"/>
   </path>
 

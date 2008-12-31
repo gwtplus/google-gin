@@ -199,35 +199,6 @@ public class InjectTest extends GWTTestCase {
     assertSame(MyProvidedObject.getInstance(), injector.getSingleton());
   }
 
-  public void testFieldInjection() {
-    MyAppGinjector injector = GWT.create(MyAppGinjector.class);
-
-    MyFieldApp myApp = new MyFieldApp();
-
-    injector.injectMembers(myApp);
-
-    SimpleObject simple = injector.getSimple();
-    assertNotNull(simple);
-
-    // Ensure we get the same instance each time
-    assertSame(simple, injector.getSimple());
-
-    assertNotNull(myApp);
-    assertSame(simple, myApp.getSimple());
-
-    assertNotNull(myApp.getMsgs());
-    assertEquals(MyMessages.FUN_MSG, myApp.getMsgs().getFunMessage());
-
-    MyService service = injector.getMyService();
-    assertTrue(service instanceof MyServiceImpl);
-    assertSame(service, myApp.getService());
-
-    // Even the separately bound MyServiceImpl is the same instance
-    assertSame(service, injector.getMyServiceImpl());
-
-    assertSame(MyProvidedObject.getInstance(), injector.getSingleton());
-  }
-
   public void testInnerClassInjection() {
     InnerGinjector injector = GWT.create(InnerGinjector.class);
     InnerType innerType = injector.getG();

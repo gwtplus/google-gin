@@ -13,24 +13,38 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.field;
 
 import com.google.inject.Inject;
 
-/**
- * Variant of {@link com.google.gwt.inject.client.MyApp} that uses field
- * injection.  This class serves as test for the inclusion of superclasses in
- * field injection.
- */
-public abstract class MyFieldSuper {
+public class Basket {
 
-  @Inject private SimpleObject simple;
+  private final Fruit fruit;
+  private final Pear pear;
+  private final Tree tree;
+  private final Fruit.Worm worm;
 
-  public SimpleObject getSimple() {
-    return simple;
+  @Inject
+  public Basket(Fruit fruit, Pear pear, Tree tree, Fruit.Worm worm) {
+    this.fruit = fruit;
+    this.pear = pear;
+    this.tree = tree;
+    this.worm = worm;
   }
 
-  public abstract MyMessages getMsgs();
+  public Fruit getFruit() {
+    return fruit;
+  }
 
-  public abstract MyService getService();
+  public Pear getPear() {
+    return pear;
+  }
+
+  public Tree getTree() {
+    return tree;
+  }
+
+  public Fruit.Worm getWorm() {
+    return worm;
+  }
 }
