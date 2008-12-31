@@ -283,6 +283,6 @@ public class InjectTest extends GWTTestCase {
   }
 
   public String getModuleName() {
-    return "com.google.gwt.inject.InjectTestModule";
+    return "com.google.gwt.inject.InjectTest";
   }
 }
