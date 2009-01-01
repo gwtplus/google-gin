@@ -15,9 +15,9 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.inject.Key;
-import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
+import com.google.gwt.user.rebind.SourceWriter;
+import com.google.inject.Key;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -50,6 +50,8 @@ public class BindConstantBinding implements Binding {
     } else if (value instanceof Number || value instanceof Boolean) {
       // TODO(bstoler): May need type qualifier on numbers
       valueToOutput = value.toString();
+    } else if (value instanceof Enum) {
+      valueToOutput = value.getClass().getName() + "." + ((Enum) value).name();
     } else {
       // Unsupported type
       return null;
