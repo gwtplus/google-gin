@@ -24,9 +24,11 @@ import com.google.inject.Key;
 
 public class SourceWriteUtilTest extends AbstractUtilTester {
 
+  private NameGenerator nameGenerator;
+  private SourceWriteUtil sourceWriteUtil;
+
   public void testAppendInvokeZeroParam() throws NotFoundException {
     JMethod method = getClassType(String.class).getMethod("toString", new JType[0]);
-    SourceWriteUtil sourceWriteUtil = new SourceWriteUtil(new KeyUtil(), new NameGenerator());
 
     StringBuilder sb = new StringBuilder();
     sourceWriteUtil.appendInvoke(sb, method);
@@ -36,9 +38,6 @@ public class SourceWriteUtilTest extends AbstractUtilTester {
   public void testAppendInvokeOneParam() throws NotFoundException {
     JMethod concatMethod =
         getClassType(String.class).getMethod("concat", new JType[] {getClassType(String.class)});
-
-    NameGenerator nameGenerator = new NameGenerator();
-    SourceWriteUtil sourceWriteUtil = new SourceWriteUtil(new KeyUtil(), nameGenerator);
 
     String methodInvocation =
         "concat(" + nameGenerator.getGetterMethodName(Key.get(String.class)) + "());";
@@ -53,9 +52,6 @@ public class SourceWriteUtilTest extends AbstractUtilTester {
         getClassType(String.class).getMethod("substring",
             new JType[] {getPrimitiveType(int.class), getPrimitiveType(int.class)});
 
-    NameGenerator nameGenerator = new NameGenerator();
-    SourceWriteUtil sourceWriteUtil = new SourceWriteUtil(new KeyUtil(), nameGenerator);
-
     String methodInvocation =
         "substring(" + nameGenerator.getGetterMethodName(Key.get(int.class)) + "(), "
             + nameGenerator.getGetterMethodName(Key.get(int.class)) + "());";
@@ -66,7 +62,6 @@ public class SourceWriteUtilTest extends AbstractUtilTester {
   }
 
   public void testWriteMethod() {
-    SourceWriteUtil sourceWriteUtil = new SourceWriteUtil(new KeyUtil(), new NameGenerator());
     SourceWriter writer = new UnitTestSourceWriter();
 
     String signature = "public void foo()";
@@ -78,7 +73,6 @@ public class SourceWriteUtilTest extends AbstractUtilTester {
   }
 
   public void testWriteNativeMethod() {
-    SourceWriteUtil sourceWriteUtil = new SourceWriteUtil(new KeyUtil(), new NameGenerator());
     SourceWriter writer = new UnitTestSourceWriter();
 
     String signature = "public native void foo()";
@@ -87,6 +81,13 @@ public class SourceWriteUtilTest extends AbstractUtilTester {
     sourceWriteUtil.writeNativeMethod(writer, signature, body);
 
     assertEquals(signature + " /*-{\\n" + body + "\\n}-*/;\\n\\n", writer.toString());
+  }
+
+  protected void setUp() throws Exception {
+    super.setUp();
+    nameGenerator = new NameGenerator();
+    KeyUtil keyUtil = new KeyUtil(getTypeOracle(), nameGenerator);
+    sourceWriteUtil = new SourceWriteUtil(keyUtil, nameGenerator);
   }
 
   private static class UnitTestSourceWriter implements SourceWriter {

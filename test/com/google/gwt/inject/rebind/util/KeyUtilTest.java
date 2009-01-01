@@ -18,9 +18,10 @@ package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
+import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.inject.client.MyBindingAnnotation;
-import com.google.gwt.inject.client.foo.WildcardFieldClass;
 import com.google.gwt.inject.client.foo.SuperInterface;
+import com.google.gwt.inject.client.foo.WildcardFieldClass;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.TypeLiteral;
@@ -37,96 +38,67 @@ import java.util.Map;
 @MyBindingAnnotation
 @MyOtherAnnotation
 public class KeyUtilTest extends AbstractUtilTester {
+  private KeyUtil keyUtil;
+  private Annotation myBindingAnnotation;
+  private Annotation myOtherAnnotation;
+  private Annotation namedAnn;
 
   public void testString() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Key<?> key = keyUtil.getKey(getClassType(String.class), null);
-    assertEquals(key, Key.get(String.class));
+    checkClass(getClassType(String.class), Key.get(String.class));
   }
 
   public void testInteger() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Key<?> key = keyUtil.getKey(getClassType(Integer.class), null);
-    assertEquals(key, Key.get(Integer.class));
+    checkClass(getClassType(Integer.class), Key.get(Integer.class));
   }
 
   public void testInt() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Key<?> key = keyUtil.getKey(getPrimitiveType(int.class), null);
-    assertEquals(key, Key.get(int.class));
+    checkType(getPrimitiveType(int.class), Key.get(int.class));
   }
 
   public void testListOfInteger() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Key<?> key = keyUtil.getKey(getParameterizedType(List.class, Integer.class), null);
-    assertEquals(key, Key.get(new TypeLiteral<List<Integer>>() {}));
+    checkType(getParameterizedType(List.class, Integer.class),
+        Key.get(new TypeLiteral<List<Integer>>() {}));
   }
 
   public void testArrayOfInteger() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Key<?> key = keyUtil.getKey(getArrayType(Integer.class), null);
-    assertEquals(key, Key.get(Integer[].class));
+    checkType(getArrayType(Integer.class), Key.get(Integer[].class));
   }
 
   public void testArrayOfInt() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Key<?> key = keyUtil.getKey(getArrayType(int.class), null);
-    assertEquals(key, Key.get(int[].class));
+    checkType(getArrayType(int.class), Key.get(int[].class));
   }
 
   public void testStringNamed() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Annotation ann = Names.named("brian");
-    Key<?> key = keyUtil.getKey(getClassType(String.class), new Annotation[] {ann});
-    assertEquals(key, Key.get(String.class, ann));
+    Key<?> key = keyUtil.getKey(getClassType(String.class), namedAnn);
+    assertEquals(key, Key.get(String.class, namedAnn));
   }
 
   public void testStringMyBindingAnnotation() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Annotation ann = getClass().getAnnotation(MyBindingAnnotation.class);
-    assertNotNull(ann);
-
-    Key<?> key = keyUtil.getKey(getClassType(String.class), new Annotation[] {ann});
-    assertEquals(key, Key.get(String.class, ann));
+    Key<?> key = keyUtil.getKey(getClassType(String.class), myBindingAnnotation);
+    assertEquals(key, Key.get(String.class, myBindingAnnotation));
     assertEquals(key, Key.get(String.class, MyBindingAnnotation.class));
   }
 
   public void testStringNonBindingAnnotation() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Annotation ann = getClass().getAnnotation(MyOtherAnnotation.class);
-    assertNotNull(ann);
-
-    Key<?> key = keyUtil.getKey(getClassType(String.class), new Annotation[] {ann});
+    Key<?> key = keyUtil.getKey(getClassType(String.class), myOtherAnnotation);
     assertEquals(key, Key.get(String.class));
   }
 
   public void testStringTwoAnnotations() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-
-    Annotation bindingAnn = getClass().getAnnotation(MyBindingAnnotation.class);
-    Annotation otherAnn = getClass().getAnnotation(MyOtherAnnotation.class);
-    assertNotNull(bindingAnn);
-    assertNotNull(otherAnn);
-
-    Key<?> key =
-        keyUtil.getKey(getClassType(String.class), new Annotation[] {bindingAnn, otherAnn});
-    assertEquals(key, Key.get(String.class, bindingAnn));
+    Key<?> key = keyUtil.getKey(getClassType(String.class), myBindingAnnotation, myOtherAnnotation);
+    assertEquals(key, Key.get(String.class, myBindingAnnotation));
     assertEquals(key, Key.get(String.class, MyBindingAnnotation.class));
 
     // Test annotations in the other order too
-    key = keyUtil.getKey(getClassType(String.class), new Annotation[] {otherAnn, bindingAnn});
-    assertEquals(key, Key.get(String.class, bindingAnn));
+    key = keyUtil.getKey(getClassType(String.class), myOtherAnnotation, myBindingAnnotation);
+    assertEquals(key, Key.get(String.class, myBindingAnnotation));
     assertEquals(key, Key.get(String.class, MyBindingAnnotation.class));
   }
 
   public void testTooManyBindingAnnotations() throws Exception {
-    KeyUtil keyUtil = new KeyUtil();
-    Annotation bindingAnn = getClass().getAnnotation(MyBindingAnnotation.class);
-    Annotation namedAnn = Names.named("brian");
-
     try {
       Key<?> key =
-          keyUtil.getKey(getClassType(String.class), new Annotation[] {bindingAnn, namedAnn});
+          keyUtil.getKey(getClassType(String.class), myBindingAnnotation, namedAnn);
       fail("Expected exception, but got: " + key);
     } catch (ProvisionException e) {
       // good, expected
@@ -134,8 +106,6 @@ public class KeyUtilTest extends AbstractUtilTester {
   }
 
   public void testWildcardParameterizedType() {
-    KeyUtil keyUtil = new KeyUtil();
-
     // TODO(schmitt):  Check correctness of lower bound and unbound wildcard?
 
     // Loading actual example instead of creating a wildcard type by hand.
@@ -143,5 +113,26 @@ public class KeyUtilTest extends AbstractUtilTester {
     JField field = classType.getField("map");
     Key<?> key = keyUtil.getKey(field);
     assertEquals(key, Key.get(new TypeLiteral<Map<String, ? extends SuperInterface>>() {}));
+  }
+
+  private void checkClass(JClassType type, Key<?> key) {
+    checkType(type, key);
+    assertEquals(type, keyUtil.getRawClassType(key));
+  }
+
+  private void checkType(JType type, Key<?> key) {
+    Key<?> keyForType = keyUtil.getKey(type);
+    assertEquals(key, keyForType);
+  }
+
+  protected void setUp() throws Exception {
+    super.setUp();
+    keyUtil = new KeyUtil(getTypeOracle(), new NameGenerator());
+
+    namedAnn = Names.named("brian");
+    myBindingAnnotation = getClass().getAnnotation(MyBindingAnnotation.class);
+    myOtherAnnotation = getClass().getAnnotation(MyOtherAnnotation.class);
+    assertNotNull(myBindingAnnotation);
+    assertNotNull(myOtherAnnotation);
   }
 }

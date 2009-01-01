@@ -41,9 +41,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class AbstractUtilTester extends TestCase {
-
-  protected static final String FOO_PACKAGE = "com.google.gwt.inject.client.foo";
+  private static final String PACKAGE = "com.google.gwt.inject.client.foo";
+  
   private TypeOracle typeOracle;
+
+  protected TypeOracle getTypeOracle() {
+    checkTypeOracle();
+    return typeOracle;
+  }
 
   protected JParameterizedType getParameterizedType(Class base, Class... parameters) {
     checkTypeOracle();
@@ -117,13 +122,12 @@ public abstract class AbstractUtilTester extends TestCase {
 
   private Set<CompilationUnit> getTestUnits() {
     Set<CompilationUnit> units = new HashSet<CompilationUnit>();
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(FOO_PACKAGE, "SuperInterface")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(FOO_PACKAGE, "SimpleInterface")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(FOO_PACKAGE, "SubInterface")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(FOO_PACKAGE, "SuperClass")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(FOO_PACKAGE, "SubClass")));
-    units.add(
-        new SourceFileCompilationUnit(new MyJavaSourceFile(FOO_PACKAGE, "WildcardFieldClass")));
+    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SuperInterface")));
+    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SimpleInterface")));
+    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SubInterface")));
+    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SuperClass")));
+    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SubClass")));
+    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "WildcardFieldClass")));
     return units;
   }
 

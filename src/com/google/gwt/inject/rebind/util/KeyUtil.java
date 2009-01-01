@@ -26,10 +26,12 @@ import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.JWildcardType;
+import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
+import com.google.inject.Inject;
 import com.google.inject.util.Types;
 
 import java.lang.annotation.Annotation;
@@ -45,6 +47,14 @@ import java.util.List;
  */
 @Singleton
 public class KeyUtil {
+  private final TypeOracle typeOracle;
+  private final NameGenerator nameGenerator;
+
+  @Inject
+  public KeyUtil(TypeOracle typeOracle, NameGenerator nameGenerator) {
+    this.typeOracle = typeOracle;
+    this.nameGenerator = nameGenerator;
+  }
 
   public Key<?> getKey(JMethod method) {
     if (isMemberInject(method)) {
@@ -77,6 +87,10 @@ public class KeyUtil {
     throw new ProvisionException("Can't get raw type for " + key);
   }
 
+  public JClassType getRawClassType(Key<?> key) {
+    return typeOracle.findType(nameGenerator.binaryNameToSourceName(getRawType(key).getName()));
+  }
+  
   /**
    * Gets the Guice binding key for a given GWT type with optional annotations.
    *
@@ -87,7 +101,7 @@ public class KeyUtil {
    * @return Guice Key instance for this type/annotations
    * @throws com.google.inject.ProvisionException in case of any failure
    */
-  public Key<?> getKey(JType gwtType, Annotation[] annotations)
+  public Key<?> getKey(JType gwtType, Annotation... annotations)
       throws ProvisionException {
     try {
       Type type = gwtTypeToJavaType(gwtType);
