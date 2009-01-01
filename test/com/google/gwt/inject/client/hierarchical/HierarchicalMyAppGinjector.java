@@ -13,8 +13,11 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.hierarchical;
 
+import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.MyAppGinjector;
+import com.google.gwt.inject.client.SimpleObject;
 import com.google.inject.name.Named;
 
 /**
@@ -24,7 +27,8 @@ import com.google.inject.name.Named;
 public interface HierarchicalMyAppGinjector extends MyAppGinjector {
   
   // Adds an additional method.
-  @Named("purple") SimpleObject getSimplePurple();
+  @Named("purple")
+  SimpleObject getSimplePurple();
   
   // Redefine a method of the super-interface. Unneccessary but legal and the 
   // generator needs to handle this, and not output 2 implementations.

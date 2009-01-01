@@ -18,25 +18,12 @@ package com.google.gwt.inject.client;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
-import com.google.inject.Inject;
 import com.google.inject.Provider;
-
-import java.util.List;
 
 /**
  * Integrated tests for GIN.
  */
 public class InjectTest extends GWTTestCase {
-  public void testSimpleInjector() {
-    SimpleGinjector injector = GWT.create(SimpleGinjector.class);
-
-    SimpleObject simple = injector.getSimple();
-    assertNotNull(simple);
-
-    // Since we have not set scope, we should get a new instance each time
-    assertNotSame(simple, injector.getSimple());
-  }
-
   public void testMyAppInjector() {
     MyAppGinjector injector = GWT.create(MyAppGinjector.class);
 
@@ -60,7 +47,7 @@ public class InjectTest extends GWTTestCase {
     // Even the separately bound MyServiceImpl is the same instance
     assertSame(service, injector.getMyServiceImpl());
 
-    assertSame(MyProvidedObject.getInstance(), injector.getSingleton());
+    assertSame(MyProvided.getInstance(), injector.getMyProvided());
   }
 
   public void testBindingAnnotations() {
@@ -99,29 +86,6 @@ public class InjectTest extends GWTTestCase {
 
     // Still no more constructor calls
     assertEquals(1, EagerObject.constructorCalls);
-  }
-
-  public void testHierarchicalInjector() {
-    HierarchicalMyAppGinjector injector = GWT.create(HierarchicalMyAppGinjector.class);
-
-    SimpleObject simple = injector.getSimple();
-    assertNotNull(simple);
-
-    SimpleObject unnamedSimple = injector.getUnnamedSimple();
-    assertNotNull(unnamedSimple);
-    assertSame(simple, unnamedSimple);
-
-    SimpleObject purple = injector.getSimplePurple();
-    assertNotNull(purple);
-    assertSame(simple, purple);
-
-    SimpleObject red = injector.getSimpleRed();
-    assertNotNull(red);
-    assertSame(purple, red);
-
-    SimpleObject blue = injector.getSimpleBlue();
-    assertNotNull(blue);
-    assertSame(blue, red);
   }
 
   public void testSyntheticProvider() {
@@ -166,91 +130,8 @@ public class InjectTest extends GWTTestCase {
     assertEquals(GWT.getModuleBaseURL() + "myRemoteService",
         ((ServiceDefTarget) service).getServiceEntryPoint());
 
-    // Make sure that the @Singleton annotation worked
+    // Make sure that we always return the same instance
     assertSame(service, injector.getMyRemoteServiceAsync());
-  }
-
-  public void testMethodInjection() {
-    MyAppGinjector injector = GWT.create(MyAppGinjector.class);
-
-    MyMethodApp myApp = new MyMethodApp();
-
-    injector.injectMembers(myApp);
-
-    SimpleObject simple = injector.getSimple();
-    assertNotNull(simple);
-
-    // Ensure we get the same instance each time
-    assertSame(simple, injector.getSimple());
-
-    assertNotNull(myApp);
-    assertSame(simple, myApp.getSimple());
-
-    assertNotNull(myApp.getMsgs());
-    assertEquals(MyMessages.FUN_MSG, myApp.getMsgs().getFunMessage());
-
-    MyService service = injector.getMyService();
-    assertTrue(service instanceof MyServiceImpl);
-    assertSame(service, myApp.getService());
-
-    // Even the separately bound MyServiceImpl is the same instance
-    assertSame(service, injector.getMyServiceImpl());
-
-    assertSame(MyProvidedObject.getInstance(), injector.getSingleton());
-  }
-
-  public void testInnerClassInjection() {
-    InnerGinjector injector = GWT.create(InnerGinjector.class);
-    InnerType innerType = injector.getG();
-    assertTrue(innerType.injected);
-  }
-
-  public void testNestedProviderInjection() {
-    InnerGinjector injector = GWT.create(InnerGinjector.class);
-    MyType myType = injector.getMyType();
-    assertTrue(myType != null);
-  }
-
-  public void testTypeLiteral() {
-    InnerGinjector injector = GWT.create(InnerGinjector.class);
-    List<String> list = injector.getList();
-    assertTrue(list != null);
-  }
-
-  public static class InnerType {
-    boolean injected;
-
-    @Inject
-    InnerType(Dependency d) {
-      if (d != null) {
-        injected = true;
-      }
-    }
-  }
-
-  @GinModules(MyAppGinModule.MyModule.class)
-  public interface InnerGinjector extends Ginjector {
-    @MyBindingAnnotation
-    InnerType getG();
-
-    MyType getMyType();
-
-    List<String> getList();
-  }
-
-  public static class Dependency {
-  }
-
-  public interface MyType {
-  }
-
-  public static class MyTypeImpl implements MyType {
-  }
-
-  public static class MyProvider implements Provider<InjectTest.MyType> {
-    public InjectTest.MyType get() {
-      return new InjectTest.MyTypeImpl();
-    }
   }
 
   public String getModuleName() {

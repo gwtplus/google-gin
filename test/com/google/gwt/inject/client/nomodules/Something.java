@@ -13,11 +13,10 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.nomodules;
 
 /**
- * A simple injector interface for test cases.
+ * A trivial object to create from the injector.
  */
-public interface SimpleGinjector extends Ginjector {
-  SimpleObject getSimple();
+public class Something {
 }

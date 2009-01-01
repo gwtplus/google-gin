@@ -15,14 +15,8 @@
  */
 package com.google.gwt.inject.client;
 
-import com.google.gwt.inject.client.binder.GinBinder;
 import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
-import com.google.inject.Provider;
 import com.google.inject.name.Names;
-
-import java.util.List;
-import java.util.Arrays;
 
 /**
  * GIN module for test cases.
@@ -33,7 +27,7 @@ public class MyAppGinModule extends AbstractGinModule {
     // Note that MyServiceImpl has @Singleton on itself
     bind(MyService.class).to(MyServiceImpl.class);
 
-    bind(MyProvidedObject.class).toProvider(MyProvidedProvider.class).in(Singleton.class);
+    bind(MyProvided.class).toProvider(MyProvidedProvider.class).in(Singleton.class);
 
     // SimpleObject (all three flavors) are singletons
     bind(SimpleObject.class).in(Singleton.class);
@@ -44,19 +38,5 @@ public class MyAppGinModule extends AbstractGinModule {
 
     bindConstant().annotatedWith(MyBindingAnnotation.class)
         .to(MyAppGinjector.ANNOTATED_STRING_VALUE);
-  }
-
-  static class MyModule implements GinModule {
-    public void configure(GinBinder binder) {
-      binder.bind(new TypeLiteral<List<String>>() { }).toProvider(ListOfStringProvider.class);
-      binder.bind(InjectTest.InnerType.class).annotatedWith(MyBindingAnnotation.class).to(InjectTest.InnerType.class);
-      binder.bind(InjectTest.MyType.class).toProvider(InjectTest.MyProvider.class);
-    }
-  }
-
-  static class ListOfStringProvider implements Provider<List<String>> {
-    public List<String> get() {
-      return Arrays.asList("blah");
-    }
   }
 }

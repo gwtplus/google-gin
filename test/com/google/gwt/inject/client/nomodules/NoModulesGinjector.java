@@ -13,15 +13,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.nomodules;
 
-import com.google.inject.Provider;
+import com.google.gwt.inject.client.Ginjector;
 
 /**
- * Provider to call static getter on {@link MyProvided}.
+ * A simple injector interface for test cases.
  */
-public class MyProvidedProvider implements Provider<MyProvided> {
-  public MyProvided get() {
-    return MyProvided.getInstance();
-  }
+public interface NoModulesGinjector extends Ginjector {
+  Something getSomething();
 }

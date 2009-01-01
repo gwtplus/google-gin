@@ -34,7 +34,7 @@ public interface MyAppGinjector extends Ginjector {
 
   MyServiceImpl getMyServiceImpl();
 
-  MyProvidedObject getSingleton();
+  MyProvided getMyProvided();
 
   @Named("blue") SimpleObject getSimpleBlue();
   @Named("red") SimpleObject getSimpleRed();
@@ -49,6 +49,4 @@ public interface MyAppGinjector extends Ginjector {
   @MyBindingAnnotation String getAnnotatedString();
 
   MyRemoteServiceAsync getMyRemoteServiceAsync();
-
-  void injectMembers(MyMethodApp methodApp);
 }

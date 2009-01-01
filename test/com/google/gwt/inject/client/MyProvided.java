@@ -15,16 +15,18 @@
  */
 package com.google.gwt.inject.client;
 
-import com.google.inject.Singleton;
-import com.google.inject.name.Names;
-
 /**
- * Module to test that GIN works for hierarchical modules.
-*/
-public class HierarchicalMyAppGinModule extends AbstractGinModule {
+ * This is a simple test object to prove that you can write a provider
+ * that calls an existing static method. Note that there is no reason to write
+ * new code with manual singletons like this.
+ */
+public class MyProvided {
+  private static final MyProvided INSTANCE = new MyProvided();
 
-  protected void configure() {
-    bind(SimpleObject.class).annotatedWith(Names.named("purple"))
-        .to(SimpleObject.class).in(Singleton.class);
+  public static MyProvided getInstance() {
+    return INSTANCE;
+  }
+
+  private MyProvided() {
   }
 }

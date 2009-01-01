@@ -13,20 +13,20 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.hierarchical;
+
+import com.google.gwt.inject.client.AbstractGinModule;
+import com.google.gwt.inject.client.SimpleObject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Names;
 
 /**
- * This is a simple test object to prove that you can write a provider
- * that calls an existing static method. Note that there is no reason to write
- * new code with manual singletons like this.
- */
-public class MyProvidedObject {
-  private static final MyProvidedObject INSTANCE = new MyProvidedObject();
+ * Module to test that GIN works for hierarchical modules.
+*/
+public class HierarchicalMyAppGinModule extends AbstractGinModule {
 
-  public static MyProvidedObject getInstance() {
-    return INSTANCE;
-  }
-
-  private MyProvidedObject() {
+  protected void configure() {
+    bind(SimpleObject.class).annotatedWith(Names.named("purple"))
+        .to(SimpleObject.class).in(Singleton.class);
   }
 }
