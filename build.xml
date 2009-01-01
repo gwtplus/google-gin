@@ -123,7 +123,7 @@
     <mkdir dir="${gin.testoutput.dir}"/>
     <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
       <compilerarg line="${compiler.args}"/>
-      <classpath refid="gin.classpath"/>
+      <classpath refid="gin.test.classpath"/>
       <classpath location="${gin.output.dir}"/>
       <src refid="gin.test.sourcepath"/>
     </javac>
