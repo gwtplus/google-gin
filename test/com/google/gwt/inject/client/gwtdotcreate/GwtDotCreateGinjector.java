@@ -13,10 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.gwtdotcreate;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.Ginjector;
 
-public interface MyRemoteServiceAsync {
-  void hello(String name, AsyncCallback<String> callback);
+/**
+ */
+@GinModules(GwtDotCreateGinModule.class)
+public interface GwtDotCreateGinjector extends Ginjector {
+  Main getMain();
 }

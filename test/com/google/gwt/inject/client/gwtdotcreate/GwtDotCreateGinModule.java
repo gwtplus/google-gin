@@ -13,10 +13,16 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.gwtdotcreate;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.inject.client.AbstractGinModule;
+import com.google.inject.Singleton;
 
-public interface MyRemoteServiceAsync {
-  void hello(String name, AsyncCallback<String> callback);
+/**
+ */
+public class GwtDotCreateGinModule extends AbstractGinModule {
+
+  protected void configure() {
+    bind(Main.class).to(MainImpl.class).in(Singleton.class);
+  }
 }

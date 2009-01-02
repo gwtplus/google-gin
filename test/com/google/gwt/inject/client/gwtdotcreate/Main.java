@@ -13,10 +13,18 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.gwtdotcreate;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.inject.client.MyMessages;
+import com.google.gwt.inject.client.MyRemoteServiceAsync;
 
-public interface MyRemoteServiceAsync {
-  void hello(String name, AsyncCallback<String> callback);
+/**
+ */
+public interface Main {
+
+  MyMessages getMessages();
+
+  MyConstants getConstants();
+
+  MyRemoteServiceAsync getRemoteService();
 }

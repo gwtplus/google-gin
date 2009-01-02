@@ -13,10 +13,23 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client;
+package com.google.gwt.inject.client.gwtdotcreate;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.junit.client.GWTTestCase;
 
-public interface MyRemoteServiceAsync {
-  void hello(String name, AsyncCallback<String> callback);
+/**
+ */
+public class GwtDotCreateInjectTest extends GWTTestCase {
+
+  public void testFoo() throws Exception {
+    GwtDotCreateGinjector ginjector = GWT.create(GwtDotCreateGinjector.class);
+    Main main = ginjector.getMain();
+
+    assertEquals(12, main.getConstants().getTwelve());
+  }
+
+  public String getModuleName() {
+    return "com.google.gwt.inject.InjectTest";
+  }
 }

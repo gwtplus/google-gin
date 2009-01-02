@@ -15,7 +15,6 @@
  */
 package com.google.gwt.inject.rebind;
 
-import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
@@ -32,6 +31,7 @@ import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
+import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
@@ -68,7 +68,6 @@ import java.util.Set;
 @Singleton
 class BindingsProcessor {
   private final TreeLogger logger;
-  private final GeneratorContext ctx;
 
   /**
    * Generates names for code we produce to resolve injection requests.
@@ -98,27 +97,32 @@ class BindingsProcessor {
   private final MemberCollector completeCollector;
 
   /**
-   * Provider for {@link com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding}s.
+   * Provider for {@link CallGwtDotCreateBinding}s.
    */
   private final Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider;
 
   /**
-   * Provider for {@link com.google.gwt.inject.rebind.binding.CallConstructorBinding}s.
+   * Provider for {@link RemoteServiceProxyBinding}s.
+   */
+  private final Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider;
+
+  /**
+   * Provider for {@link CallConstructorBinding}s.
    */
   private final Provider<CallConstructorBinding> callConstructorBinding;
 
   /**
-   * Provider for {@link com.google.gwt.inject.rebind.binding.BindClassBinding}s.
+   * Provider for {@link BindClassBinding}s.
    */
   private final Provider<BindClassBinding> bindClassBindingProvider;
 
   /**
-   * Provider for {@link com.google.gwt.inject.rebind.binding.BindProviderBinding}s.
+   * Provider for {@link BindProviderBinding}s.
    */
   private final Provider<BindProviderBinding> bindProviderBindingProvider;
 
   /**
-   * Provider for {@link com.google.gwt.inject.rebind.binding.ImplicitProviderBinding}s.
+   * Provider for {@link ImplicitProviderBinding}s.
    */
   private final Provider<ImplicitProviderBinding> implicitProviderBindingProvider;
 
@@ -128,6 +132,8 @@ class BindingsProcessor {
    * Interface of the injector that this class is implementing.
    */
   private final JClassType ginjectorInterface;
+
+  private final LieToGuiceModule lieToGuiceModule;
 
   /**
    * Keeps track of whether we've found an error so we can eventually throw
@@ -141,11 +147,13 @@ class BindingsProcessor {
       Provider<MemberCollector> collectorProvider,
       Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider,
       Provider<CallConstructorBinding> callConstructorBinding,
-      KeyUtil keyUtil, GeneratorContext ctx,
+      KeyUtil keyUtil,
       Provider<BindClassBinding> bindClassBindingProvider,
       Provider<BindProviderBinding> bindProviderBindingProvider,
       Provider<ImplicitProviderBinding> implicitProviderBindingProvider,
-      @GinjectorInterfaceType JClassType ginjectorInterface) {
+      @GinjectorInterfaceType JClassType ginjectorInterface,
+      LieToGuiceModule lieToGuiceModule,
+      Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider) {
     this.nameGenerator = nameGenerator;
     this.logger = logger;
     this.callGwtDotCreateBindingProvider = callGwtDotCreateBindingProvider;
@@ -154,8 +162,9 @@ class BindingsProcessor {
     this.implicitProviderBindingProvider = implicitProviderBindingProvider;
     this.bindProviderBindingProvider = bindProviderBindingProvider;
     this.keyUtil = keyUtil;
-    this.ctx = ctx;
     this.ginjectorInterface = ginjectorInterface;
+    this.lieToGuiceModule = lieToGuiceModule;
+    this.remoteServiceProxyBindingProvider = remoteServiceProxyBindingProvider;
 
     completeCollector = collectorProvider.get();
     completeCollector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
@@ -163,15 +172,31 @@ class BindingsProcessor {
 
   public void process() throws UnableToCompleteException {
     validateMethods();
-
     addUnresolvedEntriesForInjectorInterface();
 
-    createBindingsForModules(ginjectorInterface);
+    List<Module> modules = createModules();
 
+    createBindingsForModules(modules);
+    createImplicitBindingsForUnresolved();
+    validateModulesUsingGuice(modules);
+  }
+
+  private void createImplicitBindingsForUnresolved() throws UnableToCompleteException {
     while (!unresolved.isEmpty()) {
       // Iterate through a copy because we will modify it during iteration
       for (Key<?> key : new ArrayList<Key<?>>(unresolved)) {
-        createImplicitBinding(key);
+        Binding binding = createImplicitBinding(key);
+
+        if (binding != null) {
+          if (binding instanceof CallGwtDotCreateBinding) {
+            // Need to lie to Guice about any implicit GWT.create bindings
+            // we install that Guice would otherwise not see.
+            // http://code.google.com/p/google-gin/issues/detail?id=13
+            lieToGuiceModule.registerImplicitBinding(key);
+          }
+
+          addBinding(key, binding);
+        }
       }
 
       if (foundError) {
@@ -191,14 +216,15 @@ class BindingsProcessor {
   public GinScope determineScope(Key<?> key) {
     GinScope scope = getScopes().get(key);
     if (scope == null) {
-      scope = GinScope.NO_SCOPE;
-    }
-
-    if (scope == GinScope.NO_SCOPE) {
-      // Look for scope annotation as a fallback
       Class<?> raw = keyUtil.getRawType(key);
       if (raw.getAnnotation(Singleton.class) != null) {
+        // Look for scope annotation as a fallback
         scope = GinScope.SINGLETON;
+      } else if (RemoteServiceProxyBinding.isRemoteServiceProxy(keyUtil.getRawClassType(key))) {
+        // Special case for remote services
+        scope = GinScope.SINGLETON;
+      } else {
+        scope = GinScope.NO_SCOPE;
       }
     }
 
@@ -214,8 +240,8 @@ class BindingsProcessor {
         foundError = true;
       }
 
-      // Member inject method.
       if (method.getParameters().length == 1) {
+        // Member inject method.
         if (method.getParameters()[0].getType().isClassOrInterface() == null) {
           logger.log(TreeLogger.Type.ERROR, "Injector method parameter types must be a class or "
               + "interface, found: " + method.getReadableDeclaration());
@@ -227,9 +253,8 @@ class BindingsProcessor {
               + "return type, found: " + method.getReadableDeclaration());
           foundError = true;
         }
-
-      // Constructor injection.
       } else if (method.getReturnType().isClassOrInterface() == null) {
+        // Constructor injection.
         logger.log(TreeLogger.Type.ERROR, "Injector methods with no parameters must return a class "
             + "or interface, found: " + method.getReadableDeclaration());
         foundError = true;
@@ -252,36 +277,41 @@ class BindingsProcessor {
     }
   }
 
-  private void createBindingsForModules(JClassType injectorInterface)
-      throws UnableToCompleteException {
-    List<Module> modules = new ArrayList<Module>();
-    populateModulesFromInjectorInterface(injectorInterface, modules);
+  private void createBindingsForModules(List<Module> modules) throws UnableToCompleteException {
+    List<Element> elements = Elements.getElements(modules);
+    for (Element element : elements) {
+      GuiceElementVisitor visitor = new GuiceElementVisitor();
+      element.acceptVisitor(visitor);
 
-    if (!modules.isEmpty()) {
-      // Validate module consistency using Guice.
-      try {
-        Guice.createInjector(Stage.TOOL, modules);
-      } catch (Exception e) {
-        logger.log(TreeLogger.ERROR, "Errors from Guice: " + e.getMessage(), e);
-        throw new UnableToCompleteException();
-      }
+      // Capture any binding errors, any of which we treat as fatal
+      List<Message> messages = visitor.getMessages();
+      if (!messages.isEmpty()) {
+        foundError = true;
 
-      List<Element> elements = Elements.getElements(modules);
-      for (Element element : elements) {
-        GuiceElementVisitor visitor = new GuiceElementVisitor();
-        element.acceptVisitor(visitor);
-
-        // Capture any binding errors, any of which we treat as fatal
-        List<Message> messages = visitor.getMessages();
-        if (!messages.isEmpty()) {
-          foundError = true;
-
-          for (Message message : messages) {
-            // tostring has both source and message so use that
-            logger.log(TreeLogger.ERROR, message.toString(), message.getCause());
-          }
+        for (Message message : messages) {
+          // tostring has both source and message so use that
+          logger.log(TreeLogger.ERROR, message.toString(), message.getCause());
         }
       }
+    }
+  }
+
+  private List<Module> createModules() {
+    List<Module> modules = new ArrayList<Module>();
+    populateModulesFromInjectorInterface(ginjectorInterface, modules);
+    return modules;
+  }
+
+  private void validateModulesUsingGuice(List<Module> modules) throws UnableToCompleteException {
+    // Validate module consistency using Guice.
+    try {
+      List<Module> modulesForGuice = new ArrayList<Module>(modules.size() + 1);
+      modulesForGuice.add(lieToGuiceModule);
+      modulesForGuice.addAll(modules);
+      Guice.createInjector(Stage.TOOL, modulesForGuice);
+    } catch (Exception e) {
+      logger.log(TreeLogger.ERROR, "Errors from Guice: " + e.getMessage(), e);
+      throw new UnableToCompleteException();
     }
   }
 
@@ -324,7 +354,7 @@ class BindingsProcessor {
     return null;
   }
 
-  private void createImplicitBinding(Key<?> key) {
+  private Binding createImplicitBinding(Key<?> key) {
     Binding binding = null;
     Type keyType = key.getTypeLiteral().getType();
 
@@ -341,8 +371,7 @@ class BindingsProcessor {
     }
 
     if (binding == null) {
-      JClassType classType = ctx.getTypeOracle().findType(
-          nameGenerator.binaryNameToSourceName(keyUtil.getRawType(key).getName()));
+      JClassType classType = keyUtil.getRawClassType(key);
       if (classType != null) {
         binding = createImplicitBindingForClass(classType);
       } else {
@@ -352,20 +381,21 @@ class BindingsProcessor {
     }
 
     logger.log(TreeLogger.TRACE, "Implicit binding for " + key + ": " + binding);
-
-    if (binding != null) {
-      addBinding(key, binding);
-    }
+    return binding;
   }
 
   private Binding createImplicitBindingForClass(JClassType classType) {
     // Either call the @Inject constructor or use GWT.create
-    JConstructor[] constructors = classType.getConstructors();
-    if (constructors.length == 0 ||
-        (constructors.length == 1 && constructors[0].getParameters().length == 0)) {
-      CallGwtDotCreateBinding binding = callGwtDotCreateBindingProvider.get();
-      binding.setClassType(classType);
-      return binding;
+    if (hasZeroArgConstructor(classType)) {
+      if (RemoteServiceProxyBinding.isRemoteServiceProxy(classType)) {
+        RemoteServiceProxyBinding binding = remoteServiceProxyBindingProvider.get();
+        binding.setClassType(classType);
+        return binding;
+      } else {
+        CallGwtDotCreateBinding binding = callGwtDotCreateBindingProvider.get();
+        binding.setClassType(classType);
+        return binding;
+      }
     } else {
       JConstructor constructor = getInjectConstructor(classType);
       if (constructor != null) {
@@ -380,7 +410,17 @@ class BindingsProcessor {
     return null;
   }
 
+  private boolean hasZeroArgConstructor(JClassType classType) {
+    JConstructor[] constructors = classType.getConstructors();
+    return constructors.length == 0
+        || (constructors.length == 1 && constructors[0].getParameters().length == 0);
+  }
+
   private void addBinding(Key<?> key, Binding binding) {
+    if (binding == null) {
+      return;
+    }
+
     if (bindings.containsKey(key)) {
       logger.log(TreeLogger.ERROR, "Double-bound: " + key + ". "
           + bindings.get(key) + ", " + binding);
@@ -496,8 +536,11 @@ class BindingsProcessor {
 
     @Override
     public Void visitUntargetted() {
-      // Do nothing -- this just means to use our normal implicit strategies
-      // We need this override to avoid giving an error due to visitOther.
+      // Register a Gin binding for the default-case binding that
+      // Guice saw. We need to register this to avoid later adding
+      // this key to the Guice-lies module, which would make it
+      // double bound.
+      addBinding(targetKey, createImplicitBinding(targetKey));
       return null;
     }
 

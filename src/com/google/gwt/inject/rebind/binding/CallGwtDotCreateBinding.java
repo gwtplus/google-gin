@@ -15,13 +15,9 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.inject.Inject;
 
 /**
@@ -30,39 +26,20 @@ import com.google.inject.Inject;
  * a non-default constructor annotated with {@code @Inject}.
  */
 public class CallGwtDotCreateBinding extends CreatorBinding {
-
-  /**
-   * Suffix that is appended to the name of a GWT-RPC service interface to build
-   * the name of the asynchronous proxy interface.
-   */
-  private static final String ASYNC_SERVICE_PROXY_SUFFIX = "Async";
-
-  private final GeneratorContext ctx;
-
   @Inject
   public CallGwtDotCreateBinding(@InjectionPoint MemberCollector memberCollector,
-      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, GeneratorContext ctx) {
+      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
     super(memberCollector, sourceWriteUtil, keyUtil);
-    this.ctx = ctx;
   }
 
-  @Override protected void appendCreationStatement(StringBuilder sb) {
-    // Special case: When injecting a remote service proxy call GWT.create on
-    // the synchronous service interface
-    String name = getClassType().getQualifiedSourceName();
-    if (getClassType().isInterface() != null && name.endsWith(ASYNC_SERVICE_PROXY_SUFFIX)) {
-      String serviceInterfaceName =
-          name.substring(0, name.length() - ASYNC_SERVICE_PROXY_SUFFIX.length());
-      TypeOracle typeOracle = ctx.getTypeOracle();
-      JClassType serviceInterface = typeOracle.findType(serviceInterfaceName);
-      JClassType marker = typeOracle.findType(RemoteService.class.getName());
-      if (serviceInterface != null && marker != null && serviceInterface.isAssignableTo(marker)) {
-        name = serviceInterface.getQualifiedSourceName();
-      }
-    }
-
+  @Override protected final void appendCreationStatement(StringBuilder sb) {
+    String name = getTypeNameToCreate();
     sb.append("GWT.create(")
         .append(name)
         .append(".class);");
+  }
+
+  protected String getTypeNameToCreate() {
+    return getClassType().getQualifiedSourceName();
   }
 }
