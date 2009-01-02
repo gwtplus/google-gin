@@ -41,7 +41,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class AbstractUtilTester extends TestCase {
-  private static final String PACKAGE = "com.google.gwt.inject.client.foo";
+  private static final String PACKAGE = "com.google.gwt.inject.rebind.util.types";
   
   private TypeOracle typeOracle;
 

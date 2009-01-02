@@ -19,10 +19,10 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.inject.client.foo.SuperClass;
-import com.google.gwt.inject.client.foo.SubClass;
-import com.google.gwt.inject.client.foo.SuperInterface;
-import com.google.gwt.inject.client.foo.SubInterface;
+import com.google.gwt.inject.rebind.util.types.SubClass;
+import com.google.gwt.inject.rebind.util.types.SubInterface;
+import com.google.gwt.inject.rebind.util.types.SuperClass;
+import com.google.gwt.inject.rebind.util.types.SuperInterface;
 
 import java.util.Collection;
 

@@ -13,12 +13,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client.foo;
+package com.google.gwt.inject.rebind.util.types;
 
-import java.util.Map;
+public interface SuperInterface {
 
-public class WildcardFieldClass {
+  void fooIA();
 
-  private Map<String, ? extends SuperInterface> map;
+  void fooIB();
 
+  void noCollect(String x);
 }

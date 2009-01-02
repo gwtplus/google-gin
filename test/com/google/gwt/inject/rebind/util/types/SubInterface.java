@@ -13,25 +13,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client.foo;
+package com.google.gwt.inject.rebind.util.types;
 
-public abstract class SuperClass implements SimpleInterface {
+public interface SubInterface extends SuperInterface {
 
-  private int a;
-  protected String b;
-  public SubClass c;
-
-  private void barA() {
-
-  }
-
-  protected abstract void bazA();
-
-  public void fooA() {
-
-  }
-
-  private void fooIC() {
-
-  }
+  void fooIC();
 }
