@@ -63,6 +63,7 @@
   <property name="gin.testoutput.dir" value="${gin.output.base}/test"/>
   <property name="gin.testrun.dir" value="${gin.output.base}/testrun"/>
   <property name="gin.testrungen.dir" value="${gin.output.base}/testrun/gen"/>
+  <property name="gin.testrunout.dir" value="${gin.output.base}/testrun/out"/>
 
   <path id="gin.classpath">
     <path refid="library.guice.classpath"/>
@@ -138,40 +139,38 @@
 
   <target name="test" depends="test.web, test.hosted" />
 
-  <!-- TODO: Some way to avoid this copy/paste -->
+  <macrodef name="test-macro">
+    <attribute name="extragwtargs" default="" />
+
+    <sequential>
+      <mkdir dir="${gin.testrun.dir}"/>
+      <mkdir dir="${gin.testrungen.dir}"/>
+
+      <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
+             haltonerror="true">
+        <jvmarg line="${macJvmArgs}"/>
+        <formatter type="brief" />
+
+        <!-- Add -logLevel TRACE to get more debug output -->
+        <jvmarg value="-Dgwt.args=@{extragwtargs} -gen ${gin.testrungen.dir} -out ${gin.testrunout.dir}"/>
+
+        <classpath refid="gin.test.classpath"/>
+        <batchtest todir="${gin.testrun.dir}">
+          <fileset dir="${gin.testoutput.dir}">
+            <include name="com/google/gwt/inject/rebind/**/*Test.class"/>
+            <include name="com/google/gwt/inject/*TestSuite.class"/>
+          </fileset>
+        </batchtest>
+      </junit>
+    </sequential>
+  </macrodef>
+
   <target name="test.web" depends="compile">
-    <mkdir dir="${gin.testrun.dir}"/>
-    <mkdir dir="${gin.testrungen.dir}"/>
-
-    <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
-           haltonerror="true" >
-      <jvmarg line="${macJvmArgs}"/>
-      <formatter type="brief" />
-
-      <!-- Switches from hosted to Web mode and saves intermediate output -->
-      <!-- Add -logLevel TRACE to get more debug output -->
-      <jvmarg value="-Dgwt.args=-web -gen ${gin.testrungen.dir} "/>
-
-      <classpath refid="gin.test.classpath"/>
-      <batchtest todir="${gin.testrun.dir}">
-        <fileset dir="${gin.testoutput.dir}" includes="**/*Test.class" />
-      </batchtest>
-    </junit>
+    <test-macro extragwtargs="-web -style PRETTY" />
   </target>
 
   <target name="test.hosted" depends="compile">
-    <mkdir dir="${gin.testrun.dir}"/>
-
-    <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
-           haltonerror="true" >
-      <jvmarg line="${macJvmArgs}"/>
-      <formatter type="brief" />
-
-      <classpath refid="gin.test.classpath"/>
-      <batchtest todir="${gin.testrun.dir}">
-        <fileset dir="${gin.testoutput.dir}" includes="**/*Test.class" />
-      </batchtest>
-    </junit>
+    <test-macro />
   </target>
 
   <target name="dist">
@@ -190,9 +189,7 @@
     <delete dir="${gin.output.base}"/>
   </target>
 
-  <target name="init" description="Build initialization">
-    <!-- Perform any build initialization in this target -->
-  </target>
+  <target name="init" description="Build initialization" />
 
   <target name="javadoc" description="Creates javadoc">
     <javadoc sourcepath="${gin.source.dir}" destdir="${gin.javadoc.dir}" classpathref="gin.classpath">
