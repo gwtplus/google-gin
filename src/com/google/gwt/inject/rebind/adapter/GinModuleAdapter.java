@@ -15,22 +15,26 @@
  */
 package com.google.gwt.inject.rebind.adapter;
 
+import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.gwt.inject.client.GinModule;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 
 /**
- * Makes a {@link com.google.gwt.inject.client.GinModule}
- * available as a {@link com.google.inject.Module}.
+ * Makes a {@link GinModule} available as a {@link Module}.
  */
 public final class GinModuleAdapter implements Module {
-  private final GinModule gmodule;
+  private final GinModule ginModule;
 
   public GinModuleAdapter(GinModule ginModule) {
-    this.gmodule = ginModule;
+    this.ginModule = ginModule;
   }
 
   public void configure(Binder binder) {
-    gmodule.configure(new BinderAdapter(binder));
+    // For Guice error reporting, ignore the adapters
+    binder = binder.skipSources(GinModuleAdapter.class, BinderAdapter.class,
+        AbstractGinModule.class);
+
+    ginModule.configure(new BinderAdapter(binder));
   }
 }

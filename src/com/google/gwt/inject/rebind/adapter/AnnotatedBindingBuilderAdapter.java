@@ -50,10 +50,11 @@ class AnnotatedBindingBuilderAdapter<T> implements GinAnnotatedBindingBuilder<T>
   }
 
   public void asEagerSingleton() {
-    annotatedBindingBuilder.asEagerSingleton();
+    GwtDotCreateProvider.bind(annotatedBindingBuilder).asEagerSingleton();
   }
 
   public void in(Class<? extends Annotation> scopeAnnotation) {
-    annotatedBindingBuilder.in(scopeAnnotation);
+    GwtDotCreateProvider.bind(annotatedBindingBuilder).in(scopeAnnotation);
   }
+
 }

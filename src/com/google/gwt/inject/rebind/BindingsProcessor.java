@@ -24,6 +24,7 @@ import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
+import com.google.gwt.inject.rebind.adapter.GwtDotCreateProvider;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
@@ -48,6 +49,7 @@ import com.google.inject.spi.DefaultBindingTargetVisitor;
 import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
+import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.Message;
 
 import java.lang.annotation.Annotation;
@@ -506,6 +508,16 @@ class BindingsProcessor {
       binding.setProviderKey(providerKey);
       addBinding(targetKey, binding);
       return null;
+    }
+
+    @Override
+    public Void visitProvider(Provider<? extends T> provider, Set<InjectionPoint> injectionPoints) {
+      if (provider instanceof GwtDotCreateProvider) {
+        visitUntargetted();
+        return null;
+      }
+      
+      return super.visitProvider(provider, injectionPoints);
     }
 
     @Override

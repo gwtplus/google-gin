@@ -17,8 +17,8 @@ package com.google.gwt.inject.rebind.adapter;
 
 import com.google.gwt.inject.client.binder.GinLinkedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinScopedBindingBuilder;
-import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.Provider;
+import com.google.inject.binder.LinkedBindingBuilder;
 
 import java.lang.annotation.Annotation;
 
@@ -38,7 +38,12 @@ class LinkedBindingBuilderAdapter<T> implements GinLinkedBindingBuilder<T> {
     return new ScopedBindingBuilderAdapter(linkedBindingBuilder.toProvider(provider));
   }
 
+  public void asEagerSingleton() {
+    GwtDotCreateProvider.bind(linkedBindingBuilder).asEagerSingleton();
+  }
+
   public void in(Class<? extends Annotation> scopeAnnotation) {
-    linkedBindingBuilder.in(scopeAnnotation);
+    GwtDotCreateProvider.bind(linkedBindingBuilder)
+        .in(scopeAnnotation);
   }
 }

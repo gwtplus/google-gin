@@ -23,6 +23,7 @@ import com.google.gwt.inject.client.gwtdotcreate.GwtDotCreateInjectTest;
 import com.google.gwt.inject.client.hierarchical.HierarchicalTest;
 import com.google.gwt.inject.client.method.MethodInjectTest;
 import com.google.gwt.inject.client.nomodules.NoModulesTest;
+import com.google.gwt.inject.client.scopedimplicit.ScopedImplicitTest;
 import com.google.gwt.junit.tools.GWTTestSuite;
 
 import junit.framework.Test;
@@ -44,6 +45,7 @@ public class GinClientTestSuite {
     suite.addTestSuite(HierarchicalTest.class);
     suite.addTestSuite(MethodInjectTest.class);
     suite.addTestSuite(NoModulesTest.class);
+    suite.addTestSuite(ScopedImplicitTest.class);
     
     // TODO(bstoler): Add back once other patch is submitted
     // http://code.google.com/p/google-gin/issues/detail?id=16
