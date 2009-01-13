@@ -419,10 +419,6 @@ class BindingsProcessor {
   }
 
   private void addBinding(Key<?> key, Binding binding) {
-    if (binding == null) {
-      return;
-    }
-
     if (bindings.containsKey(key)) {
       logger.log(TreeLogger.ERROR, "Double-bound: " + key + ". "
           + bindings.get(key) + ", " + binding);
@@ -529,7 +525,7 @@ class BindingsProcessor {
     }
 
     @Override
-    public Void visitInstance(T instance, Set<com.google.inject.spi.InjectionPoint> injectionPoints) {
+    public Void visitInstance(T instance, Set<InjectionPoint> injectionPoints) {
       return visitInstance(instance);
     }
 

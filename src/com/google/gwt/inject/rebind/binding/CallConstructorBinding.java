@@ -33,7 +33,7 @@ public class CallConstructorBinding extends CreatorBinding {
   private JConstructor constructor;
 
   @Inject
-  public CallConstructorBinding(@InjectionPoint MemberCollector memberCollector,
+  public CallConstructorBinding(@Injectable MemberCollector memberCollector,
       SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
     super(memberCollector, sourceWriteUtil, keyUtil);
     this.sourceWriteUtil = sourceWriteUtil;

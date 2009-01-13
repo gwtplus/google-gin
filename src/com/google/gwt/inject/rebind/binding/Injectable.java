@@ -25,10 +25,10 @@ import java.lang.annotation.Target;
 
 /**
  * Binding for {@link com.google.gwt.inject.rebind.util.MemberCollector}s
- * that collect injectable methods and fields (i.e. methods & fields with
- * @Inject on them).
+ * that collect injectable methods and fields (i.e. methods and fields with
+ * {@code @Inject} on them).
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PARAMETER, ElementType.FIELD, ElementType.METHOD})
 @BindingAnnotation
-public @interface InjectionPoint {}
+public @interface Injectable {}

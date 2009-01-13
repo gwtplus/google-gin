@@ -21,7 +21,7 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.inject.rebind.binding.InjectionPoint;
+import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -57,18 +57,18 @@ class GinjectorGeneratorModule extends AbstractModule {
   }
 
   @Provides
-  @InjectionPoint
+  @Injectable
   @Singleton
   MemberCollector provideInjectablesCollector(
-      @InjectionPoint MemberCollector.MethodFilter methodFilter,
-      @InjectionPoint MemberCollector.FieldFilter fieldFilter, MemberCollector collector) {
+      @Injectable MemberCollector.MethodFilter methodFilter,
+      @Injectable MemberCollector.FieldFilter fieldFilter, MemberCollector collector) {
     collector.setMethodFilter(methodFilter);
     collector.setFieldFilter(fieldFilter);
     return collector;
   }
 
   @Provides
-  @InjectionPoint
+  @Injectable
   @Singleton
   MemberCollector.MethodFilter provideInjectablesMethodFilter() {
     return new MemberCollector.MethodFilter() {
@@ -83,7 +83,7 @@ class GinjectorGeneratorModule extends AbstractModule {
   }
 
   @Provides
-  @InjectionPoint
+  @Injectable
   @Singleton
   MemberCollector.FieldFilter provideInjectablesFieldFilter() {
     return new MemberCollector.FieldFilter() {

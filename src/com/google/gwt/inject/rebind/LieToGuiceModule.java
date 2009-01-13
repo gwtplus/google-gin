@@ -31,7 +31,7 @@ import java.util.List;
  * A module to tell Guice about implicit bindings Gin has invented.
  */
 class LieToGuiceModule extends AbstractModule {
-  private final List<Module> implicitBindings = new ArrayList<Module>();
+  private final List<Module> lies = new ArrayList<Module>();
   private final TreeLogger logger;
 
   @Inject
@@ -40,8 +40,8 @@ class LieToGuiceModule extends AbstractModule {
   }
 
   protected void configure() {
-    for (Module implicitBinding : implicitBindings) {
-      install(implicitBinding);
+    for (Module lie : lies) {
+      install(lie);
     }
   }
 
@@ -55,7 +55,7 @@ class LieToGuiceModule extends AbstractModule {
    */
   <T> void registerImplicitBinding(Key<T> key) {
     logger.log(TreeLogger.Type.TRACE, "Implicit binding registered with Guice for " + key);
-    implicitBindings.add(new ImplicitBindingModule<T>(key));
+    lies.add(new ImplicitBindingModule<T>(key));
   }
 
   private class ImplicitBindingModule<T> implements Module, Provider<T> {

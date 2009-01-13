@@ -23,7 +23,7 @@ import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.inject.rebind.binding.Binding;
-import com.google.gwt.inject.rebind.binding.InjectionPoint;
+import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
@@ -96,7 +96,7 @@ class GinjectorOutputter {
   @Inject
   GinjectorOutputter(NameGenerator nameGenerator, TreeLogger logger,
       Provider<MemberCollector> collectorProvider,
-      @InjectionPoint MemberCollector injectableCollector, SourceWriteUtil sourceWriteUtil,
+      @Injectable MemberCollector injectableCollector, SourceWriteUtil sourceWriteUtil,
       final KeyUtil keyUtil, GeneratorContext ctx,
       BindingsProcessor bindingsProcessor,
       @GinjectorInterfaceType JClassType ginjectorInterface) {
