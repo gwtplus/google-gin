@@ -13,27 +13,16 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client.method;
+package com.google.gwt.inject.client.constructor;
 
-import com.google.gwt.inject.client.GinModules;
-import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.AbstractGinModule;
+import com.google.inject.name.Names;
 
-@GinModules(ShapeGinModule.class)
-public interface ShapeGinjector extends Ginjector {
+public class AnimalGinModule extends AbstractGinModule {
 
-  Circle getCircle();
+  public static final String NAME = "Moritz";
 
-  Rectangle getRectangle();
-
-  ThinRectangle getThinRectangle();
-
-  Square getSquare();
-
-  Rectangle.Border getBorder();
-
-  Jigsaw getJigsaw();
-
-  void injectMembers(Rectangle rectObj);
-
-  void injectSquare(Square square);
+  protected void configure() {
+    bindConstant().annotatedWith(Names.named("name")).to(NAME);
+  }
 }

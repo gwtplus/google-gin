@@ -36,14 +36,10 @@ public class Rectangle {
     return height;
   }
 
-  // TODO(schmitt):  Uncomment all tests currently disable once private
-  // injection is implemented.
-  // See issue http://code.google.com/p/google-gin/issues/detail?id=14
-
-  /*@Inject
+  @Inject
   private void setOtherHeight(@Named("height") int height) {
     this.height = height;
-  }*/
+  }
 
   public static class Border {
 

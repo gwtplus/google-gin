@@ -20,10 +20,6 @@ import com.google.gwt.junit.client.GWTTestCase;
 
 public class MethodInjectTest extends GWTTestCase {
 
-  // TODO(schmitt):  Uncomment all tests currently disable once private
-  // injection is implemented.
-  // See issue http://code.google.com/p/google-gin/issues/detail?id=14
-
   public void testSimpleInject() {
     ShapeGinjector injector = GWT.create(ShapeGinjector.class);
 
@@ -35,14 +31,14 @@ public class MethodInjectTest extends GWTTestCase {
     ShapeGinjector injector = GWT.create(ShapeGinjector.class);
     Rectangle rectangle = injector.getRectangle();
 
-    // assertEquals(ShapeGinModule.HEIGHT, rectangle.getHeight());
+    assertEquals(ShapeGinModule.HEIGHT, rectangle.getHeight());
   }
 
   public void testSuperInject() {
     ShapeGinjector injector = GWT.create(ShapeGinjector.class);
 
-    // assertEquals(ShapeGinModule.HEIGHT, injector.getThinRectangle().getHeight());
-    // assertEquals(ShapeGinModule.HEIGHT, injector.getJigsaw().getThinRectangle().getHeight());
+    assertEquals(ShapeGinModule.HEIGHT, injector.getThinRectangle().getHeight());
+    assertEquals(ShapeGinModule.HEIGHT, injector.getJigsaw().getThinRectangle().getHeight());
   }
 
   public void testInnerClassInject() {
@@ -66,12 +62,36 @@ public class MethodInjectTest extends GWTTestCase {
     assertInterfaceInject(injector.getJigsaw().getCircle());
   }
 
+  public void testMemberInject() {
+    ShapeGinjector injector = GWT.create(ShapeGinjector.class);
+    Rectangle rectangle = new Rectangle();
+
+    assertEquals(0, rectangle.getHeight());
+    injector.injectMembers(rectangle);
+    assertEquals(ShapeGinModule.WIDTH, rectangle.getWidth());
+  }
+
+  public void testSubclassMemberInject() {
+    ShapeGinjector injector = GWT.create(ShapeGinjector.class);
+    Square square = new Square();
+
+    assertEquals(0, square.getHeight());
+
+    // Note that this will be filled as if it were a plain rectangle!
+    injector.injectMembers(square);
+    assertEquals(ShapeGinModule.HEIGHT, square.getHeight());
+    assertEquals(0, square.getOtherHeight());
+
+    injector.injectSquare(square);
+    assertEquals(ShapeGinModule.OTHER_HEIGHT, square.getOtherHeight());
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }
 
   private void assertOverrideInject(Square square) {
-    // assertEquals(ShapeGinModule.HEIGHT, square.getHeight());
+    assertEquals(ShapeGinModule.HEIGHT, square.getHeight());
     assertEquals(0, square.getWidth());
     assertEquals(ShapeGinModule.OTHER_HEIGHT, square.getOtherHeight());
     assertEquals(ShapeGinModule.OTHER_WIDTH, square.getOtherWidth());

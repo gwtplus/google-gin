@@ -48,6 +48,27 @@ public class FieldInjectTest extends GWTTestCase {
     assertNotNull(injector.getBasket().getWorm().getName());
   }
 
+  public void testMemberInject() {
+    FruitGinjector injector = GWT.create(FruitGinjector.class);
+    Fruit fruit = new Fruit();
+
+    assertNull(fruit.getTree());
+    injector.injectMembers(fruit);
+    assertNotNull(fruit.getTree());
+  }
+
+  public void testSubclassMemberInject() {
+    FruitGinjector injector = GWT.create(FruitGinjector.class);
+    Pear pear = new Pear();
+
+    assertNull(pear.getTree());
+    injector.injectMembers(pear);
+    assertNotNull(pear.getTree());
+    assertNull(pear.getAlternativeColor());
+    injector.injectPear(pear);
+    assertNotNull(pear.getAlternativeColor());
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }

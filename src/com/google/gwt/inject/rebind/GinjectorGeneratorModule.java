@@ -73,6 +73,10 @@ class GinjectorGeneratorModule extends AbstractModule {
   MemberCollector.MethodFilter provideInjectablesMethodFilter() {
     return new MemberCollector.MethodFilter() {
        public boolean accept(JMethod method) {
+
+         // TODO(schmitt): Does this require at least one parameter?
+         // TODO(schmitt): Do not include static methods?
+         // TODO(schmitt): Support static injection?
          return method.isAnnotationPresent(Inject.class);
        }
      };
@@ -84,6 +88,9 @@ class GinjectorGeneratorModule extends AbstractModule {
   MemberCollector.FieldFilter provideInjectablesFieldFilter() {
     return new MemberCollector.FieldFilter() {
       public boolean accept(JField field) {
+
+        // TODO(schmitt): Do not include static fields?
+        // TODO(schmitt): Support static injection?
         return field.isAnnotationPresent(Inject.class);
       }
     };

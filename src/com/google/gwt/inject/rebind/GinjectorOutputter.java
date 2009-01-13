@@ -223,17 +223,11 @@ class GinjectorOutputter {
     JParameter injectee = ginjectorMethod.getParameters()[0];
     JClassType targetType = injectee.getType().isClassOrInterface();
 
-    
-    for (JMethod method : injectableCollector.getMethods(targetType)) {
-      body.append(injectee.getName()).append(".");
-      sourceWriteUtil.appendInvoke(body, method);
-    }
+    Collection<JMethod> methods = injectableCollector.getMethods(targetType);
+    body.append(sourceWriteUtil.createMethodInjection(writer, methods, injectee.getName()));
 
     Collection<JField> fields = injectableCollector.getFields(targetType);
-    if (!fields.isEmpty()) {
-      body.append(
-          sourceWriteUtil.appendFieldInjection(writer, targetType, fields, injectee.getName()));
-    }
+    body.append(sourceWriteUtil.appendFieldInjection(writer, fields, injectee.getName()));
 
     return body.toString();
   }

@@ -18,6 +18,7 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
+import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 
 /**
@@ -32,7 +33,8 @@ public class CallGwtDotCreateBinding extends CreatorBinding {
     super(memberCollector, sourceWriteUtil, keyUtil);
   }
 
-  @Override protected final void appendCreationStatement(StringBuilder sb) {
+  @Override protected final void appendCreationStatement(SourceWriter sourceWriter,
+      StringBuilder sb) {
     String name = getTypeNameToCreate();
     sb.append("GWT.create(")
         .append(name)

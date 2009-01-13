@@ -17,15 +17,19 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
-import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.core.ext.typeinfo.JField;
+import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
+import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
+import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Simple helper object for source writing.
@@ -43,87 +47,195 @@ public class SourceWriteUtil {
   }
 
   /**
-   * Appends a method invocation call to the provided string builder.  The
-   * value for each parameter is retrieved by writing a call to the parameter
-   * type's getter method
-   * (see {@link NameGenerator#getGetterMethodName(com.google.inject.Key)}).
-   * The written call is terminated with a semicolon.
-   *
-   * @param sb string builder
-   * @param method method that gets called
-   */
-  public void appendInvoke(StringBuilder sb, JAbstractMethod method) {
-    String name = method.getName();
-    if (method instanceof JConstructor) {
-      name = method.getEnclosingType().getQualifiedSourceName();
-    }
-
-    sb.append(name);
-
-    JParameter[] params = method.getParameters();
-    sb.append("(");
-    for (int i = 0; i < params.length; i++) {
-      if (i != 0) {
-        sb.append(", ");
-      }
-
-      sb.append(nameGenerator.getGetterMethodName(keyUtil.getKey(params[i]))).append("()");
-    }
-    sb.append(");");
-  }
-
-  /**
-   * Appends a field injecting method to the {@code sourceWriter} and returns
-   * a string that invokes the written method.
+   * Appends a field injecting method for each passed field to the
+   * {@code sourceWriter} and returns a string that invokes all written
+   * methods.
    *
    * @param sourceWriter writer to which the injecting method is written
-   * @param injecteeType type of the object into which fields are injected
    * @param fields fields to be injected
    * @param injecteeName variable that references the object into which values
    *          are injected, in the context of the returned call string
    * @return string calling the generated method
    */
-  public String appendFieldInjection(SourceWriter sourceWriter, JClassType injecteeType,
-      Collection<JField> fields, String injecteeName) {
-    String nativeName = nameGenerator.convertToValidMemberName(injecteeType + "_native");
-    String nativeMethodName = nameGenerator.createMethodName(nativeName);
+  public String appendFieldInjection(SourceWriter sourceWriter, Iterable<JField> fields,
+      String injecteeName) {
 
-    StringBuilder paramsCall = new StringBuilder();
-    paramsCall.append(injecteeName);
-    StringBuilder paramsSignature = new StringBuilder();
-    paramsSignature.append(injecteeType.getQualifiedSourceName())
-        .append(" result");
+    StringBuilder methodInvocations = new StringBuilder();
 
-    int i = 0;
-    StringBuilder body = new StringBuilder();
     for (JField field : fields) {
-
-      // Register parameter
-      paramsSignature.append(", ")
-          .append(field.getType().getParameterizedQualifiedSourceName())
-          .append(" _")
-          .append(++i);
-      paramsCall.append(", ")
-          .append(nameGenerator.getGetterMethodName(keyUtil.getKey(field)))
-          .append("()");
-
-      // Access field.
-      body.append("result.@")
-          .append(nameGenerator
-              .binaryNameToSourceName(field.getEnclosingType().getQualifiedSourceName()))
-          .append("::")
-          .append(field.getName())
-
-              // Assign value from parameter.
-          .append(" = _")
-          .append(i)
-          .append(";");
+      methodInvocations.append(createFieldInjection(sourceWriter, field, injecteeName))
+          .append("\n");
     }
 
-    writeNativeMethod(sourceWriter,
-        "private native void " + nativeMethodName + "(" + paramsSignature + ")", body.toString());
+    return methodInvocations.toString();
+  }
 
-    return nativeMethodName + "(" + paramsCall + ");";
+  /**
+   * Appends a field injecting method to the {@code sourceWriter} and returns a
+   * string that invokes the written method.
+   *
+   * @param sourceWriter writer to which the injecting method is written
+   * @param field field to be injected
+   * @param injecteeName variable that references the object into which values
+   *          are injected, in the context of the returned call string
+   * @return string calling the generated method
+   */
+  public String createFieldInjection(SourceWriter sourceWriter, JField field, String injecteeName) {
+    boolean hasInjectee = injecteeName != null;
+
+    // Determine native method signature parts.
+    String injecteeTypeName
+        = nameGenerator.binaryNameToSourceName(field.getEnclosingType().getQualifiedSourceName());
+    String fieldTypeName
+        = nameGenerator.binaryNameToSourceName(field.getType().getQualifiedSourceName());
+    String nativeName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
+        + field.getName() + "_fieldInjection");
+    String nativeMethodName = nameGenerator.createMethodName(nativeName);
+    String nativeSignatureParams = fieldTypeName + " value";
+    String nativeCallParams = nameGenerator.getGetterMethodName(keyUtil.getKey(field)) + "()";
+
+    if (hasInjectee) {
+      nativeSignatureParams = injecteeTypeName + " injectee, " + nativeSignatureParams;
+      nativeCallParams = injecteeName + ", " + nativeCallParams;
+    }
+
+    // Compose method implementation and invocation.
+
+    String nativeSignature = "private native void " + nativeMethodName + "("
+        + nativeSignatureParams + ")";
+
+    String nativeCall = nativeMethodName + "(" + nativeCallParams + ");";
+
+    String nativeBody = (hasInjectee ? "injectee." : "") + getJsniSignature(field) + " = value;";
+
+    writeNativeMethod(sourceWriter, nativeSignature, nativeBody);
+
+    return nativeCall;
+  }
+
+  /**
+   * Appends a method injecting method to the {@code sourceWriter} and returns
+   * a string that invokes the written method.  The values for the passed
+   * method's parameters are retrieved through the
+   * {@link com.google.gwt.inject.client.Ginjector}.
+   * <p/>
+   * If the passed method collection contains only one actual method, the native
+   * method will pass on (i.e. return) the result of the actual method's
+   * invocation, if any.
+   * <p/>
+   * The passed method collection can contain constructors (they'll be treated
+   * correctly) if no {@code injecteeName} is passed.  The same applies for
+   * static methods.
+   * <p/>
+   * If a method without parameters is provided, that method will be called and
+   * no parameters will be passed.
+   *
+   * @param sourceWriter writer to which the injecting method is written
+   * @param methods methods to be called & injected
+   * @param injecteeName variable that references the object into which values
+   *            are injected, in the context of the returned call string. If
+   *            {@code null} all passed methods are called as static/constructors.
+   * @return string calling the generated method
+   */
+  public String createMethodInjection(SourceWriter sourceWriter,
+      Iterable<? extends JAbstractMethod> methods, String injecteeName) {
+
+    StringBuilder methodInvocations = new StringBuilder();
+
+    for (JAbstractMethod method : methods) {
+      methodInvocations.append(createMethodCallWithInjection(sourceWriter, method, injecteeName))
+          .append("\n");
+    }
+
+    return methodInvocations.toString();
+  }
+
+  /**
+   * Appends a constructor injecting method to the {@code sourceWriter} and
+   * returns a string that invokes the written method.  The written method
+   * returns the constructed object.
+   *
+   * @param sourceWriter writer to which the injecting method is written
+   * @param constructor constructor to call
+   * @return string calling the generated method
+   */
+  public String createConstructorInjection(SourceWriter sourceWriter, JConstructor constructor) {
+    return createMethodCallWithInjection(sourceWriter, constructor, null);
+  }
+
+  /**
+   * Appends a new method to the {@code sourceWriter} that calls the passed
+   * method and returns a string that invokes the written method.  The written
+   * method returns the passed method's return value, if any.
+   * <p/>
+   * If a method without parameters is provided, that method will be called and
+   * no parameters will be passed.
+   *
+   * @param sourceWriter writer to which the injecting method is written
+   * @param method method to call (can be constructor)
+   * @param injecteeName variable that references the object into which values
+   *          are injected, in the context of the returned call string. If null
+   *          all passed methods are called as static/constructors.
+   * @return string calling the generated method
+   */
+  public String createMethodCallWithInjection(SourceWriter sourceWriter, JAbstractMethod method,
+      String injecteeName) {
+    boolean returning = false;
+    boolean hasInjectee = injecteeName != null;
+
+    // Determine native method signature parts.
+    String injecteeTypeName
+        = nameGenerator.binaryNameToSourceName(method.getEnclosingType().getQualifiedSourceName());
+    String nativeName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
+        + method.getName() + "_methodInjection");
+    String nativeMethodName = nameGenerator.createMethodName(nativeName);
+    String nativeReturnType = "void";
+    if (method.isConstructor() != null) {
+      nativeReturnType = injecteeTypeName;
+      returning = true;
+    } else {
+      JType returnType = ((JMethod) method).getReturnType();
+      if (returnType != JPrimitiveType.VOID) {
+        nativeReturnType
+            = nameGenerator.binaryNameToSourceName(returnType.getQualifiedSourceName());
+        returning = true;
+      }
+    }
+
+    // Collect method parameters to be passed to the native and actual method.
+    int nativeParamCount = method.getParameters().length + (hasInjectee ? 1 : 0);
+    List<String> nativeCallParams = new ArrayList<String>(nativeParamCount);
+    List<String> nativeSignatureParams = new ArrayList<String>(nativeParamCount);
+    List<String> methodCallParams = new ArrayList<String>(method.getParameters().length);
+
+    if (hasInjectee) {
+      nativeCallParams.add(injecteeName);
+      nativeSignatureParams.add(injecteeTypeName + " injectee");
+    }
+
+    int paramCount = 0;
+    for (JParameter param : method.getParameters()) {
+      String paramName = "_" + paramCount;
+      nativeCallParams.add(nameGenerator.getGetterMethodName(keyUtil.getKey(param)) + "()");
+      nativeSignatureParams.add(
+          nameGenerator.binaryNameToSourceName(param.getType().getQualifiedSourceName()) + " "
+              + paramName);
+      methodCallParams.add(paramName);
+      paramCount++;
+    }
+
+    // Compose method implementation and invocation.
+    String nativeSignature = "private native " + nativeReturnType + " " + nativeMethodName
+        + "(" + join(", ", nativeSignatureParams) + ")";
+
+    String nativeCall = nativeMethodName + "(" + join(", ", nativeCallParams) + ");";
+
+    String nativeBody = (returning ? "return " : "") + (hasInjectee ? "injectee." : "")
+        + getJsniSignature(method) + "(" + join(", ", methodCallParams) + ");";
+
+    writeNativeMethod(sourceWriter, nativeSignature, nativeBody);
+
+    return nativeCall;
   }
 
   /**
@@ -159,5 +271,53 @@ public class SourceWriteUtil {
     writer.outdent();
     writer.println("}-*/;");
     writer.println();
+  }
+
+  private String getJsniSignature(JAbstractMethod method) {
+
+    StringBuilder signature = new StringBuilder();
+
+    signature.append("@");
+
+    signature.append(nameGenerator.binaryNameToSourceName(
+        method.getEnclosingType().getQualifiedSourceName()));
+
+    String name = method instanceof JConstructor ? "new" : method.getName();
+    signature.append("::").append(name).append("(");
+
+    for (JParameter param : method.getParameters()) {
+      signature.append(param.getType().getJNISignature());
+    }
+
+    signature.append(")");
+
+    return signature.toString();
+  }
+
+  private String getJsniSignature(JField field) {
+
+    StringBuilder signature = new StringBuilder();
+
+    signature.append("@");
+
+    signature.append(nameGenerator.binaryNameToSourceName(
+        field.getEnclosingType().getQualifiedSourceName()));
+
+    signature.append("::").append(field.getName());
+
+    return signature.toString();
+  }
+
+  private static CharSequence join(CharSequence delimiter, Iterable<? extends CharSequence> list) {
+    Iterator<? extends CharSequence> it = list.iterator();
+    if (it.hasNext()) {
+      StringBuilder sb = new StringBuilder(it.next());
+      while (it.hasNext()) {
+        sb.append(delimiter);
+        sb.append(it.next());
+      }
+      return sb.toString();
+    }
+    return "";
   }
 }

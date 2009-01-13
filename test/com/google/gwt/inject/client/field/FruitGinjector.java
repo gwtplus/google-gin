@@ -30,4 +30,8 @@ public interface FruitGinjector extends Ginjector {
   Fruit.Worm getWorm();
 
   Basket getBasket();
+
+  void injectMembers(Fruit fruity);
+
+  void injectPear(Pear pear);
 }

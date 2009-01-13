@@ -70,16 +70,16 @@ abstract class CreatorBinding implements Binding {
 
     StringBuilder sb = new StringBuilder();
     sb.append(getTypeName()).append(" result = ");
-    appendCreationStatement(sb);
+    appendCreationStatement(writer, sb);
 
-    for (JMethod method : memberCollector.getMethods(classType)) {
-      sb.append("result.");
-      sourceWriteUtil.appendInvoke(sb, method);
+    Collection<JMethod> methods = memberCollector.getMethods(classType);
+    if (!methods.isEmpty()) {
+      sb.append(sourceWriteUtil.createMethodInjection(writer, methods, "result"));
     }
 
     Collection<JField> fields = memberCollector.getFields(classType);
     if (!fields.isEmpty()) {
-      sb.append(sourceWriteUtil.appendFieldInjection(writer, classType, fields, "result"));
+      sb.append(sourceWriteUtil.appendFieldInjection(writer, fields, "result"));
     }
 
     sb.append("return result;");
@@ -96,7 +96,7 @@ abstract class CreatorBinding implements Binding {
     return classType;
   }
 
-  protected abstract void appendCreationStatement(StringBuilder sb);
+  protected abstract void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb);
 
   protected String getTypeName() {
     assert (classType != null);

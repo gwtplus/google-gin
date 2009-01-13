@@ -19,6 +19,7 @@ import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
+import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 
 /**
@@ -44,9 +45,8 @@ public class CallConstructorBinding extends CreatorBinding {
     addParamTypes(constructor);
   }
 
-  @Override protected void appendCreationStatement(StringBuilder sb) {
+  @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb) {
     assert (constructor != null);
-    sb.append("new ");
-    sourceWriteUtil.appendInvoke(sb, constructor);
+    sb.append(sourceWriteUtil.createConstructorInjection(sourceWriter, constructor));
   }
 }

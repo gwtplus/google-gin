@@ -15,51 +15,15 @@
  */
 package com.google.gwt.inject.rebind.util;
 
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Key;
 
 public class SourceWriteUtilTest extends AbstractUtilTester {
 
   private NameGenerator nameGenerator;
   private SourceWriteUtil sourceWriteUtil;
 
-  public void testAppendInvokeZeroParam() throws NotFoundException {
-    JMethod method = getClassType(String.class).getMethod("toString", new JType[0]);
-
-    StringBuilder sb = new StringBuilder();
-    sourceWriteUtil.appendInvoke(sb, method);
-    assertEquals("toString();", sb.toString());
-  }
-
-  public void testAppendInvokeOneParam() throws NotFoundException {
-    JMethod concatMethod =
-        getClassType(String.class).getMethod("concat", new JType[] {getClassType(String.class)});
-
-    String methodInvocation =
-        "concat(" + nameGenerator.getGetterMethodName(Key.get(String.class)) + "());";
-
-    StringBuilder sb = new StringBuilder();
-    sourceWriteUtil.appendInvoke(sb, concatMethod);
-    assertEquals(methodInvocation, sb.toString());
-  }
-
-  public void testAppendInvokeTwoParams() throws NotFoundException {
-    JMethod concatMethod =
-        getClassType(String.class).getMethod("substring",
-            new JType[] {getPrimitiveType(int.class), getPrimitiveType(int.class)});
-
-    String methodInvocation =
-        "substring(" + nameGenerator.getGetterMethodName(Key.get(int.class)) + "(), "
-            + nameGenerator.getGetterMethodName(Key.get(int.class)) + "());";
-
-    StringBuilder sb = new StringBuilder();
-    sourceWriteUtil.appendInvoke(sb, concatMethod);
-    assertEquals(methodInvocation, sb.toString());
-  }
+  // TODO(schmitt):  Add unit tests for method and field inject generation.
 
   public void testWriteMethod() {
     SourceWriter writer = new UnitTestSourceWriter();
