@@ -28,10 +28,10 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.JWildcardType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.inject.BindingAnnotation;
+import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
-import com.google.inject.Inject;
 import com.google.inject.util.Types;
 
 import java.lang.annotation.Annotation;
@@ -99,25 +99,38 @@ public class KeyUtil {
    *     one and only one {@link BindingAnnotation}, it will be included in the
    *     key. If it includes more than one, an exception will be thrown.
    * @return Guice Key instance for this type/annotations
-   * @throws com.google.inject.ProvisionException in case of any failure
+   * @throws ProvisionException in case of any failure
    */
-  public Key<?> getKey(JType gwtType, Annotation... annotations)
-      throws ProvisionException {
+  public Key<?> getKey(JType gwtType, Annotation... annotations) throws ProvisionException {
     try {
       Type type = gwtTypeToJavaType(gwtType);
-      Annotation bindingAnnotation = getBindingAnnotation(annotations);
-
-      if (bindingAnnotation == null) {
-        return Key.get(type);
-      } else {
-        return Key.get(type, bindingAnnotation);
-      }
+      return getKey(type, annotations);
     } catch (ClassNotFoundException e) {
       throw new ProvisionException("Error creating key for " + gwtType, e);
     } catch (NoSuchFieldException e) {
       throw new ProvisionException("Error creating key for " + gwtType, e);
     } catch (IllegalAccessException e) {
       throw new ProvisionException("Error creating key for " + gwtType, e);
+    }
+  }
+
+  /**
+   * Gets the Guice binding key for a given Java type with optional annotations.
+   *
+   * @param type Java type to convert in to a key
+   * @param annotations Optional array of {@code Annotation}s. If this contains
+   *     one and only one {@link BindingAnnotation}, it will be included in the
+   *     key. If it includes more than one, an exception will be thrown.
+   * @return Guice Key instance for this type/annotations
+   * @throws ProvisionException in case of any failure
+   */
+  public Key<?> getKey(Type type, Annotation... annotations) throws ProvisionException {
+    Annotation bindingAnnotation = getBindingAnnotation(annotations);
+
+    if (bindingAnnotation == null) {
+      return Key.get(type);
+    } else {
+      return Key.get(type, bindingAnnotation);
     }
   }
 

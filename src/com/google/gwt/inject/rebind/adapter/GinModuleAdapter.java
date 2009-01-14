@@ -19,6 +19,8 @@ import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.gwt.inject.client.GinModule;
 import com.google.inject.Binder;
 import com.google.inject.Module;
+import com.google.inject.Singleton;
+import com.google.inject.internal.ProviderMethodsModule;
 
 /**
  * Makes a {@link GinModule} available as a {@link Module}.
@@ -36,5 +38,11 @@ public final class GinModuleAdapter implements Module {
         AbstractGinModule.class);
 
     ginModule.configure(new BinderAdapter(binder));
+
+    // Bind the module itself in singleton scope, since provider methods instantiate it
+    binder.bind(ginModule.getClass()).in(Singleton.class);
+   
+    // Install provider methods from the GinModule
+    binder.install(ProviderMethodsModule.forObject(ginModule));
   }
 }

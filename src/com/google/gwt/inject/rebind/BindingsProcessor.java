@@ -32,6 +32,7 @@ import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
+import com.google.gwt.inject.rebind.binding.ProviderMethodBinding;
 import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
@@ -44,13 +45,19 @@ import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.Singleton;
 import com.google.inject.Stage;
+import com.google.inject.internal.ProviderMethod;
 import com.google.inject.spi.BindingScopingVisitor;
 import com.google.inject.spi.DefaultBindingTargetVisitor;
 import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
-import com.google.inject.spi.InjectionPoint;
+import com.google.inject.spi.InstanceBinding;
+import com.google.inject.spi.LinkedKeyBinding;
 import com.google.inject.spi.Message;
+import com.google.inject.spi.ProviderInstanceBinding;
+import com.google.inject.spi.ProviderKeyBinding;
+import com.google.inject.spi.ProviderLookup;
+import com.google.inject.spi.UntargettedBinding;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -98,35 +105,13 @@ class BindingsProcessor {
    */
   private final MemberCollector completeCollector;
 
-  /**
-   * Provider for {@link CallGwtDotCreateBinding}s.
-   */
   private final Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider;
-
-  /**
-   * Provider for {@link RemoteServiceProxyBinding}s.
-   */
   private final Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider;
-
-  /**
-   * Provider for {@link CallConstructorBinding}s.
-   */
   private final Provider<CallConstructorBinding> callConstructorBinding;
-
-  /**
-   * Provider for {@link BindClassBinding}s.
-   */
   private final Provider<BindClassBinding> bindClassBindingProvider;
-
-  /**
-   * Provider for {@link BindProviderBinding}s.
-   */
   private final Provider<BindProviderBinding> bindProviderBindingProvider;
-
-  /**
-   * Provider for {@link ImplicitProviderBinding}s.
-   */
   private final Provider<ImplicitProviderBinding> implicitProviderBindingProvider;
+  private final Provider<ProviderMethodBinding> providerMethodBindingProvider;
 
   private final KeyUtil keyUtil;
 
@@ -139,7 +124,7 @@ class BindingsProcessor {
 
   /**
    * Keeps track of whether we've found an error so we can eventually throw
-   * an {@link com.google.gwt.core.ext.UnableToCompleteException}. We do this instead of throwing
+   * an {@link UnableToCompleteException}. We do this instead of throwing
    * immediately so that we can find more than one error per compilation cycle.
    */
   private boolean foundError = false;
@@ -155,7 +140,8 @@ class BindingsProcessor {
       Provider<ImplicitProviderBinding> implicitProviderBindingProvider,
       @GinjectorInterfaceType JClassType ginjectorInterface,
       LieToGuiceModule lieToGuiceModule,
-      Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider) {
+      Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider,
+      Provider<ProviderMethodBinding> providerMethodBindingProvider) {
     this.nameGenerator = nameGenerator;
     this.logger = logger;
     this.callGwtDotCreateBindingProvider = callGwtDotCreateBindingProvider;
@@ -167,6 +153,7 @@ class BindingsProcessor {
     this.ginjectorInterface = ginjectorInterface;
     this.lieToGuiceModule = lieToGuiceModule;
     this.remoteServiceProxyBindingProvider = remoteServiceProxyBindingProvider;
+    this.providerMethodBindingProvider = providerMethodBindingProvider;
 
     completeCollector = collectorProvider.get();
     completeCollector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
@@ -201,9 +188,13 @@ class BindingsProcessor {
         }
       }
 
-      if (foundError) {
-        throw new UnableToCompleteException();
-      }
+      checkForError();
+    }
+  }
+
+  private void checkForError() throws UnableToCompleteException {
+    if (foundError) {
+      throw new UnableToCompleteException();
     }
   }
 
@@ -263,9 +254,7 @@ class BindingsProcessor {
       }
     }
 
-    if (foundError) {
-      throw new UnableToCompleteException();
-    }
+    checkForError();
   }
 
   private void addUnresolvedEntriesForInjectorInterface() {
@@ -373,12 +362,19 @@ class BindingsProcessor {
     }
 
     if (binding == null) {
-      JClassType classType = keyUtil.getRawClassType(key);
-      if (classType != null) {
-        binding = createImplicitBindingForClass(classType);
-      } else {
-        logger.log(TreeLogger.ERROR, "Class not found: " + key);
+      // Only use implicit GWT.create binding if there is no binding annotation.
+      // This is compatible with Guice.
+      if (key.getAnnotation() != null || key.getAnnotationType() != null) {
+        logger.log(TreeLogger.Type.ERROR, "No implementation bound for key " + key);
         foundError = true;
+      } else {
+        JClassType classType = keyUtil.getRawClassType(key);
+        if (classType != null) {
+          binding = createImplicitBindingForClass(classType);
+        } else {
+          logger.log(TreeLogger.ERROR, "Class not found: " + key);
+          foundError = true;
+        }
       }
     }
 
@@ -466,7 +462,8 @@ class BindingsProcessor {
 
     @Override
     public <T> Void visitBinding(com.google.inject.Binding<T> command) {
-      GuiceBindingVisitor<T> bindingVisitor = new GuiceBindingVisitor<T>(command.getKey());
+      GuiceBindingVisitor<T> bindingVisitor = new GuiceBindingVisitor<T>(command.getKey(),
+          messages);
       command.acceptTargetVisitor(bindingVisitor);
       command.acceptScopingVisitor(bindingVisitor);
       return null;
@@ -475,6 +472,14 @@ class BindingsProcessor {
     @Override
     public Void visitMessage(Message message) {
       messages.add(message);
+      return null;
+    }
+
+    @Override
+    public <T> Void visitProviderLookup(ProviderLookup<T> providerLookup) {
+      // Ignore provider lookups for now
+      // TODO(bstoler): I guess we should error if you try to lookup a provider
+      // that is not bound?
       return null;
     }
 
@@ -493,69 +498,84 @@ class BindingsProcessor {
   private class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
       implements BindingScopingVisitor<Void> {
     private final Key<T> targetKey;
+    private final List<Message> messages;
 
-    public GuiceBindingVisitor(Key<T> targetKey) {
+    public GuiceBindingVisitor(Key<T> targetKey, List<Message> messages) {
       this.targetKey = targetKey;
+      this.messages = messages;
     }
 
     @Override
-    public Void visitProviderKey(Key<? extends Provider<? extends T>> providerKey) {
+    public Void visitProviderKey(ProviderKeyBinding<? extends T> providerKeyBinding) {
       BindProviderBinding binding = bindProviderBindingProvider.get();
-      binding.setProviderKey(providerKey);
+      binding.setProviderKey(providerKeyBinding.getProviderKey());
       addBinding(targetKey, binding);
       return null;
     }
 
     @Override
-    public Void visitProvider(Provider<? extends T> provider, Set<InjectionPoint> injectionPoints) {
-      if (provider instanceof GwtDotCreateProvider) {
-        visitUntargetted();
+    public Void visitProviderInstance(
+        ProviderInstanceBinding<? extends T> providerInstanceBinding) {
+      // Detect provider methods and handle them
+      // TODO(bstoler): Update this when the SPI explicitly has a case for provider methods
+      Provider<? extends T> provider = providerInstanceBinding.getProviderInstance();
+      if (provider instanceof ProviderMethod) {
+        ProviderMethodBinding binding = providerMethodBindingProvider.get();
+        binding.setProviderMethod((ProviderMethod) provider);
+        addBinding(targetKey, binding);
         return null;
       }
-      
-      return super.visitProvider(provider, injectionPoints);
+
+      if (provider instanceof GwtDotCreateProvider) {
+        addImplicitBinding();
+        return null;
+      }
+
+      // OTt, use the normal default handler (and error)
+      return super.visitProviderInstance(providerInstanceBinding);
     }
 
     @Override
-    public Void visitKey(Key<? extends T> key) {
+    public Void visitLinkedKey(LinkedKeyBinding<? extends T> linkedKeyBinding) {
       BindClassBinding binding = bindClassBindingProvider.get();
-      binding.setBoundClassKey(key);
+      binding.setBoundClassKey(linkedKeyBinding.getLinkedKey());
       addBinding(targetKey, binding);
       return null;
     }
 
     @Override
-    public Void visitInstance(T instance, Set<InjectionPoint> injectionPoints) {
-      return visitInstance(instance);
-    }
-
-    public Void visitInstance(T instance) {
+    public Void visitInstance(InstanceBinding<? extends T> instanceBinding) {
+      T instance = instanceBinding.getInstance();
       Binding binding = BindConstantBinding.create(targetKey, instance);
       if (binding != null) {
         addBinding(targetKey, binding);
       } else {
-        logger.log(TreeLogger.ERROR, "Instance binding not supported; key="
-            + targetKey + " inst=" + instance);
-        foundError = true;
+        messages.add(new Message(instanceBinding.getSource(),
+            "Instance binding not supported; key=" + targetKey + " inst=" + instance));
       }
 
       return null;
     }
 
     @Override
-    public Void visitUntargetted() {
+    public Void visitUntargetted(UntargettedBinding<? extends T> untargettedBinding) {
+      addImplicitBinding();
+
+      return null;
+    }
+
+    private void addImplicitBinding() {
       // Register a Gin binding for the default-case binding that
       // Guice saw. We need to register this to avoid later adding
       // this key to the Guice-lies module, which would make it
       // double bound.
       addBinding(targetKey, createImplicitBinding(targetKey));
-      return null;
     }
 
     @Override
-    protected Void visitOther() {
-      logger.log(TreeLogger.ERROR, "Unsupported binding provided for key: " + targetKey);
-      foundError = true;
+    protected Void visitOther(com.google.inject.Binding<? extends T> binding) {
+      messages.add(new Message(binding.getSource(),
+          "Unsupported binding provided for key: " + targetKey + ": " + binding));
       return null;
     }
 
@@ -565,9 +585,8 @@ class BindingsProcessor {
     }
 
     public Void visitScope(Scope scope) {
-      logger.log(TreeLogger.ERROR, "Explicit scope unsupported: key=" + targetKey
-          + " scope=" + scope);
-      foundError = true;
+      messages.add(new Message("Explicit scope unsupported: key=" + targetKey
+          + " scope=" + scope));
       return null;
     }
 
@@ -575,9 +594,8 @@ class BindingsProcessor {
       if (scopeAnnotation == Singleton.class) {
         scopes.put(targetKey, GinScope.SINGLETON);
       } else {
-        logger.log(TreeLogger.ERROR, "Unsupported scope annoation: key=" + targetKey
-            + " scope=" + scopeAnnotation);
-        foundError = true;
+        messages.add(new Message("Unsupported scope annoation: key=" + targetKey
+            + " scope=" + scopeAnnotation));
       }
       return null;
     }
