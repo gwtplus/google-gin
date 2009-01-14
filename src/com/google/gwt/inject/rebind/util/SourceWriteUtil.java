@@ -245,9 +245,7 @@ public class SourceWriteUtil {
    * @param signature method's signature
    * @param body method's body
    */
-  // Static for access from BindConstantBinding.
-  // TODO(schmitt):  Make BCB non-static to get rid of this.
-  public static void writeMethod(SourceWriter writer, String signature, String body) {
+  public void writeMethod(SourceWriter writer, String signature, String body) {
     writer.println(signature + " {");
     writer.indent();
     writer.println(body);

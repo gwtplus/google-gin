@@ -15,8 +15,10 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.core.ext.Generator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
+import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.lang.reflect.Type;
@@ -27,45 +29,65 @@ import java.util.Set;
  * Binding for a constant value.
  */
 public class BindConstantBinding implements Binding {
-  private final String valueToOutput;
+  private String valueToOutput;
 
   /**
-   * Creates a constant binding if {@code key} is of a supported type, or
-   * returns {@code null} otherwise.
+   * Returns true if the provided key is a valid constant key, i.e. if a
+   * constant binding can be legally created for it.
    *
-   * @param key Key to bind to
-   * @param value value to bind to
-   * @return binding, if {@code key} is a constant type, or {@code null} if not
+   * @param key key to check
+   * @return true if constant key
    */
-  public static <T> Binding create(Key<T> key, T value) {
+  public static boolean isConstantKey(Key<?> key) {
     Type type = key.getTypeLiteral().getType();
-    String valueToOutput;
 
-    if (type == String.class) {
-      // TODO(bstoler): Need to escape to work in all cases
-      valueToOutput = "\"" + value.toString() + "\"";
-    } else if (type == Character.class) {
-      // TODO(bstoler): Need to escape to work in all cases
-      valueToOutput = "'" + value.toString() + "'";
-    } else if (value instanceof Number || value instanceof Boolean) {
-      // TODO(bstoler): May need type qualifier on numbers
-      valueToOutput = value.toString();
-    } else if (value instanceof Enum) {
-      valueToOutput = value.getClass().getName() + "." + ((Enum) value).name();
-    } else {
-      // Unsupported type
-      return null;
+    if (!(type instanceof Class)) {
+      return false;
     }
 
-    return new BindConstantBinding(valueToOutput);
+    Class clazz = (Class) type;
+    return clazz == String.class || clazz.isPrimitive() || Number.class.isAssignableFrom(clazz)
+        || Character.class.isAssignableFrom(clazz) || Boolean.class.isAssignableFrom(clazz)
+        || clazz.isEnum();
   }
 
-  private BindConstantBinding(String valueToOutput) {
-    this.valueToOutput = valueToOutput;
+  private final SourceWriteUtil sourceWriteUtil;
+
+  @Inject
+  public BindConstantBinding(SourceWriteUtil sourceWriteUtil) {
+    this.sourceWriteUtil = sourceWriteUtil;
+  }
+
+  /**
+   * Sets this binding's key and instance.  Must be called before
+   * writeCreatorMethod is invoked.
+   *
+   * @param key key to bind to
+   * @param instance value to bind  to
+   */
+  public <T> void setKeyAndInstance(Key<T> key, T instance) {
+    Type type = key.getTypeLiteral().getType();
+
+    if (type == String.class) {
+      valueToOutput = "\"" + Generator.escape(instance.toString()) + "\"";
+    } else if (type == Character.class) {
+      // TODO(bstoler): Need to escape to work in all cases
+      valueToOutput = "'" + instance.toString() + "'";
+    } else if (instance instanceof Number || instance instanceof Boolean) {
+      // TODO(bstoler): May need type qualifier on numbers
+      valueToOutput = instance.toString();
+    } else if (instance instanceof Enum) {
+      valueToOutput = instance.getClass().getName() + "." + ((Enum) instance).name();
+    } else {
+      throw new IllegalArgumentException("Attempted to create a constant binding with a "
+          + "non-constant type: " + type);
+    }
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
-    SourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return " + valueToOutput + ";");
+    assert valueToOutput != null;
+
+    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return " + valueToOutput + ";");
   }
 
   public Set<Key<?>> getRequiredKeys() {

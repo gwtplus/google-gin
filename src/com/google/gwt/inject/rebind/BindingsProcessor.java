@@ -112,6 +112,7 @@ class BindingsProcessor {
   private final Provider<BindProviderBinding> bindProviderBindingProvider;
   private final Provider<ImplicitProviderBinding> implicitProviderBindingProvider;
   private final Provider<ProviderMethodBinding> providerMethodBindingProvider;
+  private final Provider<BindConstantBinding> bindConstantBindingProvider;
 
   private final KeyUtil keyUtil;
 
@@ -140,6 +141,7 @@ class BindingsProcessor {
       Provider<ImplicitProviderBinding> implicitProviderBindingProvider,
       @GinjectorInterfaceType JClassType ginjectorInterface,
       LieToGuiceModule lieToGuiceModule,
+      Provider<BindConstantBinding> bindConstantBindingProvider,
       Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider,
       Provider<ProviderMethodBinding> providerMethodBindingProvider) {
     this.nameGenerator = nameGenerator;
@@ -153,6 +155,7 @@ class BindingsProcessor {
     this.ginjectorInterface = ginjectorInterface;
     this.lieToGuiceModule = lieToGuiceModule;
     this.remoteServiceProxyBindingProvider = remoteServiceProxyBindingProvider;
+    this.bindConstantBindingProvider = bindConstantBindingProvider;
     this.providerMethodBindingProvider = providerMethodBindingProvider;
 
     completeCollector = collectorProvider.get();
@@ -348,6 +351,13 @@ class BindingsProcessor {
   private Binding createImplicitBinding(Key<?> key) {
     Binding binding = null;
     Type keyType = key.getTypeLiteral().getType();
+
+    if (BindConstantBinding.isConstantKey(key)) {
+      logger.log(TreeLogger.Type.ERROR, "Binding requested for constant key " + key
+          + " but no explicit binding was found.");
+      foundError = true;
+      return null;
+    }
 
     if (keyType instanceof ParameterizedType) {
       ParameterizedType keyParamType = (ParameterizedType) keyType;
@@ -546,8 +556,9 @@ class BindingsProcessor {
     @Override
     public Void visitInstance(InstanceBinding<? extends T> instanceBinding) {
       T instance = instanceBinding.getInstance();
-      Binding binding = BindConstantBinding.create(targetKey, instance);
-      if (binding != null) {
+      if (BindConstantBinding.isConstantKey(targetKey)) {
+        BindConstantBinding binding = bindConstantBindingProvider.get();
+        binding.setKeyAndInstance(targetKey, instance);
         addBinding(targetKey, binding);
       } else {
         messages.add(new Message(instanceBinding.getSource(),

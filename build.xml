@@ -48,6 +48,18 @@
     <pathelement location="${basedir}/lib/test/junit.jar"/>
   </path>
 
+  <path id="library.easymock.classpath">
+    <pathelement location="${basedir}/lib/test/easymock.jar"/>
+  </path>
+
+  <path id="library.easymockclassextension.classpath">
+    <pathelement location="${basedir}/lib/test/easymockclassextension.jar"/>
+  </path>
+
+  <path id="library.cglib.classpath">
+    <pathelement location="${basedir}/lib/test/cglib.jar"/>
+  </path>
+
   <path id="library.aopalliance.classpath">
     <pathelement location="${basedir}/lib/aopalliance.jar"/>
   </path>
@@ -77,6 +89,9 @@
     <pathelement location="${gin.testoutput.dir}"/>
     <path refid="gin.classpath"/>
     <path refid="library.junit.classpath"/>
+    <path refid="library.easymock.classpath"/>
+    <path refid="library.easymockclassextension.classpath"/>
+    <path refid="library.cglib.classpath"/>
 
     <!-- Put test sources on test classpath so GWT compiler can see them -->
     <path refid="gin.test.sourcepath"/>

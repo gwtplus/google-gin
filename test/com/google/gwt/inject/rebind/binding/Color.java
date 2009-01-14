@@ -13,24 +13,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client.binding;
+package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.junit.client.GWTTestCase;
-
-public class BindConstantBindingTest extends GWTTestCase {
-
-  // TODO(schmitt):  Add tests for other constant types.
-
-  public void testEnum() {
-    FruitGinjector injector = GWT.create(FruitGinjector.class);
-
-    Fruit fruit = injector.getFruit();
-    assertNotNull(fruit.getColor());
-    assertEquals(Color.Green, fruit.getColor());
-  }
-
-  public String getModuleName() {
-    return "com.google.gwt.inject.InjectTest";
-  }
+public enum Color {
+  Red, Green, Blue
 }
