@@ -531,8 +531,13 @@ class BindingsProcessor {
       Provider<? extends T> provider = providerInstanceBinding.getProviderInstance();
       if (provider instanceof ProviderMethod) {
         ProviderMethodBinding binding = providerMethodBindingProvider.get();
-        binding.setProviderMethod((ProviderMethod) provider);
-        addBinding(targetKey, binding);
+        try {
+          binding.setProviderMethod((ProviderMethod) provider);
+          addBinding(targetKey, binding);
+        } catch (UnableToCompleteException e) {
+          messages.add(new Message(providerInstanceBinding.getSource(),
+              "Error processing provider method"));
+        }
         return null;
       }
 

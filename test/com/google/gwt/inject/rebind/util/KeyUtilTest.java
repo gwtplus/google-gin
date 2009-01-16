@@ -124,7 +124,7 @@ public class KeyUtilTest extends AbstractUtilTester {
     Method foo2 = MethodsClass.class.getMethod("foo", String.class);
     Method bar = MethodsClass.class.getMethod("bar", String.class);
     JMethod gwtFoo = keyUtil.javaToGwtMethod(foo);
-    JMethod gwtFoo2 = keyUtil.javaToGwtMethod(foo);
+    JMethod gwtFoo2 = keyUtil.javaToGwtMethod(foo2);
     JMethod gwtBar = keyUtil.javaToGwtMethod(bar);
 
     assertEquals("foo", gwtFoo.getName());
