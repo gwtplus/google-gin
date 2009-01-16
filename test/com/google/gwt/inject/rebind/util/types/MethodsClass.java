@@ -13,23 +13,19 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client.providermethods;
+package com.google.gwt.inject.rebind.util.types;
 
-import com.google.gwt.inject.client.AbstractGinModule;
-import com.google.inject.Provides;
-import com.google.inject.name.Named;
+public class MethodsClass {
 
-/**
- * Test module with provider methods.
- */
-public class ConcatModule extends AbstractGinModule {
-  protected void configure() {
+  public void foo() {
+
   }
 
-  @Provides
-  @Named("all")
-  private String provideAll(@Named("Space") String space, @Named("a") String a,
-      @Named("b") String b, @Named("c") String c, @Named("d") String d) {
-    return a + space + b + space + c + space + d;
+  public void foo(String oof) {
+
+  }
+
+  public void bar(String baz) {
+
   }
 }

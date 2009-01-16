@@ -32,6 +32,10 @@ public class ProviderMethodsTest extends GWTTestCase {
     ProviderMethodsGinjector ginjector = GWT.create(ProviderMethodsGinjector.class);
     assertEquals(A_VALUE, ginjector.getA());
     assertEquals(B_VALUE, ginjector.getB());
+  }
+
+  public void testProviderMethodsPrivate() {
+    ProviderMethodsGinjector ginjector = GWT.create(ProviderMethodsGinjector.class);
     assertEquals(C_VALUE, ginjector.getC());
     assertEquals(D_VALUE, ginjector.getD());
   }
@@ -43,6 +47,6 @@ public class ProviderMethodsTest extends GWTTestCase {
   }
 
   public String getModuleName() {
-    return "com.google.gwt.inject.InjectTest";    
+    return "com.google.gwt.inject.InjectTest";
   }
 }

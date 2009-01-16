@@ -18,8 +18,11 @@ package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
+import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.client.MyBindingAnnotation;
+import com.google.gwt.inject.rebind.util.types.MethodsClass;
 import com.google.gwt.inject.rebind.util.types.SuperInterface;
 import com.google.gwt.inject.rebind.util.types.WildcardFieldClass;
 import com.google.inject.Key;
@@ -28,6 +31,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
@@ -113,6 +117,25 @@ public class KeyUtilTest extends AbstractUtilTester {
     JField field = classType.getField("map");
     Key<?> key = keyUtil.getKey(field);
     assertEquals(key, Key.get(new TypeLiteral<Map<String, ? extends SuperInterface>>() {}));
+  }
+
+  public void testJavaToGwtMethod() throws NoSuchMethodException, NotFoundException {
+    Method foo = MethodsClass.class.getMethod("foo");
+    Method foo2 = MethodsClass.class.getMethod("foo", String.class);
+    Method bar = MethodsClass.class.getMethod("bar", String.class);
+    JMethod gwtFoo = keyUtil.javaToGwtMethod(foo);
+    JMethod gwtFoo2 = keyUtil.javaToGwtMethod(foo);
+    JMethod gwtBar = keyUtil.javaToGwtMethod(bar);
+
+    assertEquals("foo", gwtFoo.getName());
+    assertEquals(0, gwtFoo.getParameters().length);
+
+    assertEquals("bar", gwtBar.getName());
+    assertEquals(1, gwtBar.getParameters().length);
+    assertEquals("java.lang.String", gwtBar.getParameters()[0].getType().getQualifiedSourceName());
+
+    assertEquals("foo", gwtFoo2.getName());
+    assertEquals(1, gwtFoo2.getParameters().length);
   }
 
   private void checkClass(JClassType type, Key<?> key) {

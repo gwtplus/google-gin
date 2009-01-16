@@ -15,6 +15,11 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
@@ -41,24 +46,32 @@ public class ProviderMethodBinding implements Binding {
   private final KeyUtil keyUtil;
   private final SourceWriteUtil sourceWriteUtil;
   private final NameGenerator nameGenerator;
+  private final TreeLogger logger;
 
-  private String methodName;
   private Key<?> moduleClassKey;
   private List<Key<?>> parameterKeys;
+  private JMethod gwtProviderMethod;
 
   @Inject
   public ProviderMethodBinding(KeyUtil keyUtil, SourceWriteUtil sourceWriteUtil,
-      NameGenerator nameGenerator) {
+      NameGenerator nameGenerator, TypeOracle typeOracle, TreeLogger logger) {
     this.keyUtil = keyUtil;
     this.sourceWriteUtil = sourceWriteUtil;
     this.nameGenerator = nameGenerator;
+    this.logger = logger;
   }
 
-  public void setProviderMethod(ProviderMethod providerMethod) {
+  public void setProviderMethod(ProviderMethod providerMethod) throws UnableToCompleteException {
+    try {
+      this.gwtProviderMethod = keyUtil.javaToGwtMethod(providerMethod.getMethod());
+    } catch (NotFoundException e) {
+      logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
+      throw new UnableToCompleteException();
+    }
+
     moduleClassKey = Key.get(providerMethod.getInstance().getClass());
 
     Method method = providerMethod.getMethod();
-    methodName = method.getName();
 
     Type[] parameterTypes = method.getGenericParameterTypes();
     Annotation[][] parameterAnnotations = method.getParameterAnnotations();
@@ -71,36 +84,17 @@ public class ProviderMethodBinding implements Binding {
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
-    StringBuilder sb = new StringBuilder();
-
-    sb.append("return ");
-
-    // Get the module
-    sb.append(nameGenerator.getGetterMethodName(moduleClassKey)).append("()");
-
-    // Start method call
-    sb.append(".").append(methodName).append("(");
-
-    // Output each parameter
-    for (int i = 0; i < parameterKeys.size(); i++) {
-      if (i > 0) {
-        sb.append(", ");
-      }
-
-      Key<?> parameterKey = parameterKeys.get(i);
-      sb.append(nameGenerator.getGetterMethodName(parameterKey)).append("()");
-    }
-
-    sb.append(");");
-
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, sb.toString());
+    String getterMethodCall = nameGenerator.getGetterMethodName(moduleClassKey) + "()";
+    sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
+        "return " + sourceWriteUtil.createMethodCallWithInjection(writer, gwtProviderMethod,
+            getterMethodCall));
   }
 
   public Set<Key<?>> getRequiredKeys() {
     Set<Key<?>> keys = new HashSet<Key<?>>(parameterKeys.size() + 1);
     keys.add(moduleClassKey);
     keys.addAll(parameterKeys);
-    
+
     return keys;
   }
 }

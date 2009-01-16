@@ -35,13 +35,13 @@ public class CdModule extends AbstractGinModule {
 
   @Provides
   @Named("c")
-  String provideC() {
+  private String provideC() {
     return C_VALUE;
   }
 
   @Provides
   @Named("d")
-  String provideD() {
+  private String provideD() {
     return D_VALUE;
   }
 }

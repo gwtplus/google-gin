@@ -24,7 +24,6 @@ import com.google.gwt.inject.client.method.MethodInjectTest;
 import com.google.gwt.inject.client.nomodules.NoModulesTest;
 import com.google.gwt.inject.client.providermethods.ProviderMethodsTest;
 import com.google.gwt.inject.client.scopedimplicit.ScopedImplicitTest;
-import com.google.gwt.inject.rebind.binding.BindConstantBindingTest;
 import com.google.gwt.junit.tools.GWTTestSuite;
 
 import junit.framework.Test;
@@ -40,7 +39,6 @@ public class GinClientTestSuite {
     GWTTestSuite suite = new GWTTestSuite("Gin client tests");
     suite.addTestSuite(InjectTest.class);
     suite.addTestSuite(InnerGinjectorTest.class);
-    suite.addTestSuite(BindConstantBindingTest.class);
     suite.addTestSuite(FieldInjectTest.class);
     suite.addTestSuite(GwtDotCreateInjectTest.class);
     suite.addTestSuite(HierarchicalTest.class);

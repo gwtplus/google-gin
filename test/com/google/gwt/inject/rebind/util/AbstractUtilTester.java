@@ -42,7 +42,7 @@ import java.util.Set;
 
 public abstract class AbstractUtilTester extends TestCase {
   private static final String PACKAGE = "com.google.gwt.inject.rebind.util.types";
-  
+
   private TypeOracle typeOracle;
 
   protected TypeOracle getTypeOracle() {
@@ -128,6 +128,7 @@ public abstract class AbstractUtilTester extends TestCase {
     units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SuperClass")));
     units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SubClass")));
     units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "WildcardFieldClass")));
+    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "MethodsClass")));
     return units;
   }
 

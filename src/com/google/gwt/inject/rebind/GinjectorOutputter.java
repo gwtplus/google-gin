@@ -18,6 +18,7 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
@@ -124,7 +125,8 @@ class GinjectorOutputter {
       });
   }
 
-  void output(String packageName, String implClassName, PrintWriter printWriter) {
+  void output(String packageName, String implClassName, PrintWriter printWriter)
+      throws UnableToCompleteException {
     ClassSourceFileComposerFactory composerFactory = new ClassSourceFileComposerFactory(
         packageName, implClassName);
 
@@ -140,7 +142,7 @@ class GinjectorOutputter {
     writer.commit(logger);
 }
 
-  private void outputBindings() {
+  private void outputBindings() throws UnableToCompleteException {
     // Write out each binding
     for (Map.Entry<Key<?>, Binding> entry : bindingsProcessor.getBindings().entrySet()) {
       Key<?> key = entry.getKey();

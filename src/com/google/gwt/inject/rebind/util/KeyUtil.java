@@ -26,6 +26,7 @@ import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.JWildcardType;
+import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Inject;
@@ -90,7 +91,7 @@ public class KeyUtil {
   public JClassType getRawClassType(Key<?> key) {
     return typeOracle.findType(nameGenerator.binaryNameToSourceName(getRawType(key).getName()));
   }
-  
+
   /**
    * Gets the Guice binding key for a given GWT type with optional annotations.
    *
@@ -132,6 +133,47 @@ public class KeyUtil {
     } else {
       return Key.get(type, bindingAnnotation);
     }
+  }
+
+  /**
+   * Returns a {@link JMethod} that represents the same method as the provided
+   * {@link Method} reflection object.
+   *
+   * @param javaMethod method as used by reflection
+   * @return method as used by the GWT compiler
+   * @throws NotFoundException if method cannot be found in source
+   */
+  public JMethod javaToGwtMethod(Method javaMethod) throws NotFoundException {
+    JClassType gwtEnclosingType = typeOracle.findType(
+        nameGenerator.binaryNameToSourceName(javaMethod.getDeclaringClass().getName()));
+
+    JMethod resultingMethod = null;
+    for (JMethod gwtMethod : gwtEnclosingType.getMethods()) {
+      if (gwtMethod.getName().equals(javaMethod.getName())) {
+        JParameter[] gwtParameters = gwtMethod.getParameters();
+        Class<?>[] javaParameters = javaMethod.getParameterTypes();
+
+        if (gwtParameters.length != javaParameters.length) {
+          continue;
+        }
+
+        boolean found = true;
+        for (int i = 0; i < gwtParameters.length; i++) {
+          found = found && gwtParameters[i].getType().getQualifiedSourceName().equals(
+              nameGenerator.binaryNameToSourceName(javaParameters[i].getName()));
+        }
+        if (found) {
+          resultingMethod = gwtMethod;
+          break;
+        }
+      }
+    }
+
+    if (resultingMethod == null) {
+      throw new NotFoundException("Couldn't locate requested method in source: " + javaMethod);
+    }
+
+    return resultingMethod;
   }
 
   private Annotation getBindingAnnotation(Annotation[] annotations) {
@@ -193,7 +235,6 @@ public class KeyUtil {
       for (JClassType typeArg : typeArgs) {
         JWildcardType wildcard = typeArg.isWildcard();
 
-        // TODO(schmitt):  This might not work, but I have no better idea.
         if (wildcard == null || wildcard.getBoundType() != JWildcardType.BoundType.UNBOUND) {
           javaTypeArgs.add(gwtTypeToJavaType(typeArg));
         }
