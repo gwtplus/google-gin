@@ -48,4 +48,46 @@ public class BindConstantBindingTest extends TestCase {
 
     verify(utilMock);
   }
+
+  public void testCharacter() {
+    Key<Character> charKey = Key.get(Character.class);
+    SourceWriteUtil utilMock = createMock(SourceWriteUtil.class);
+    SourceWriter writerMock = createMock(SourceWriter.class);
+
+    char value = '\u1234';
+    String signature = "";
+
+    utilMock.writeMethod(writerMock, signature, "return '" + value + "';");
+    replay(utilMock);
+
+    BindConstantBinding binding = new BindConstantBinding(utilMock);
+    binding.setKeyAndInstance(charKey, value);
+
+    assertTrue(binding.getRequiredKeys().isEmpty());
+
+    binding.writeCreatorMethods(writerMock, signature);
+
+    verify(utilMock);
+  }
+
+  public void testCharacterEscaped() {
+    Key<Character> charKey = Key.get(Character.class);
+    SourceWriteUtil utilMock = createMock(SourceWriteUtil.class);
+    SourceWriter writerMock = createMock(SourceWriter.class);
+
+    char value = '\'';
+    String signature = "";
+
+    utilMock.writeMethod(writerMock, signature, "return '\\'';");
+    replay(utilMock);
+
+    BindConstantBinding binding = new BindConstantBinding(utilMock);
+    binding.setKeyAndInstance(charKey, value);
+
+    assertTrue(binding.getRequiredKeys().isEmpty());
+
+    binding.writeCreatorMethods(writerMock, signature);
+
+    verify(utilMock);
+  }
 }

@@ -71,11 +71,15 @@ public class BindConstantBinding implements Binding {
     if (type == String.class) {
       valueToOutput = "\"" + Generator.escape(instance.toString()) + "\"";
     } else if (type == Character.class) {
-      // TODO(bstoler): Need to escape to work in all cases
-      valueToOutput = "'" + instance.toString() + "'";
+      valueToOutput = "'" + (Character.valueOf('\'').equals(instance) ? "\\" : "") + instance + "'";
+    } else if (type == Float.class) {
+      valueToOutput = instance.toString() + "f";
+    } else if (type == Long.class) {
+      valueToOutput = instance.toString() + "L";
+    } else if (type == Double.class) {
+      valueToOutput = instance.toString() + "d";
     } else if (instance instanceof Number || instance instanceof Boolean) {
-      // TODO(bstoler): May need type qualifier on numbers
-      valueToOutput = instance.toString();
+      valueToOutput = instance.toString(); // Includes int & short.
     } else if (instance instanceof Enum) {
       valueToOutput = instance.getClass().getName() + "." + ((Enum) instance).name();
     } else {

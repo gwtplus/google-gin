@@ -249,10 +249,9 @@ class BindingsProcessor {
               + "return type, found: " + method.getReadableDeclaration());
           foundError = true;
         }
-      } else if (method.getReturnType().isClassOrInterface() == null) {
+      } else if (method.getReturnType() == JPrimitiveType.VOID) {
         // Constructor injection.
-        logger.log(TreeLogger.Type.ERROR, "Injector methods with no parameters must return a class "
-            + "or interface, found: " + method.getReadableDeclaration());
+        logger.log(TreeLogger.Type.ERROR, "Injector methods with no parameters cannot return void");
         foundError = true;
       }
     }

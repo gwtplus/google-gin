@@ -17,6 +17,7 @@ package com.google.gwt.inject;
 
 import com.google.gwt.inject.client.InjectTest;
 import com.google.gwt.inject.client.InnerGinjectorTest;
+import com.google.gwt.inject.client.binding.ConstantBindingTest;
 import com.google.gwt.inject.client.field.FieldInjectTest;
 import com.google.gwt.inject.client.gwtdotcreate.GwtDotCreateInjectTest;
 import com.google.gwt.inject.client.hierarchical.HierarchicalTest;
@@ -39,6 +40,7 @@ public class GinClientTestSuite {
     GWTTestSuite suite = new GWTTestSuite("Gin client tests");
     suite.addTestSuite(InjectTest.class);
     suite.addTestSuite(InnerGinjectorTest.class);
+    suite.addTestSuite(ConstantBindingTest.class);
     suite.addTestSuite(FieldInjectTest.class);
     suite.addTestSuite(GwtDotCreateInjectTest.class);
     suite.addTestSuite(HierarchicalTest.class);
