@@ -393,6 +393,15 @@ class BindingsProcessor {
 
   private Binding createImplicitBindingForClass(JClassType classType) {
     // Either call the @Inject constructor or use GWT.create
+
+    JConstructor constructor = getInjectConstructor(classType);
+
+    if (constructor != null) {
+      CallConstructorBinding binding = callConstructorBinding.get();
+      binding.setConstructor(constructor);
+      return binding;
+    }
+
     if (hasZeroArgConstructor(classType)) {
       if (RemoteServiceProxyBinding.isRemoteServiceProxy(classType)) {
         RemoteServiceProxyBinding binding = remoteServiceProxyBindingProvider.get();
@@ -401,13 +410,6 @@ class BindingsProcessor {
       } else {
         CallGwtDotCreateBinding binding = callGwtDotCreateBindingProvider.get();
         binding.setClassType(classType);
-        return binding;
-      }
-    } else {
-      JConstructor constructor = getInjectConstructor(classType);
-      if (constructor != null) {
-        CallConstructorBinding binding = callConstructorBinding.get();
-        binding.setConstructor(constructor);
         return binding;
       }
     }
@@ -419,8 +421,14 @@ class BindingsProcessor {
 
   private boolean hasZeroArgConstructor(JClassType classType) {
     JConstructor[] constructors = classType.getConstructors();
-    return constructors.length == 0
-        || (constructors.length == 1 && constructors[0].getParameters().length == 0);
+
+    for (JConstructor constructor : constructors) {
+      if (constructor.getParameters().length == 0) {
+        return true;
+      }
+    }
+    
+    return constructors.length == 0;
   }
 
   private void addBinding(Key<?> key, Binding binding) {

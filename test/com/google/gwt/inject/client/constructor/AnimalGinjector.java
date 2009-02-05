@@ -24,4 +24,6 @@ public interface AnimalGinjector extends Ginjector {
   Dog getDog();
 
   Cat getCat();
+
+  Giraffe getGiraffe();
 }

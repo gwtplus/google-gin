@@ -34,6 +34,12 @@ public class ConstructorInjectTest extends GWTTestCase {
     assertEquals(AnimalGinModule.NAME, injector.getDog().getName());
   }
 
+  public void testSelectDefaultConstructorInject() {
+    AnimalGinjector injector = GWT.create(AnimalGinjector.class);
+
+    assertEquals(Giraffe.DEFAULT_NECK_LENGTH, injector.getGiraffe().getNeckLength());
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }
