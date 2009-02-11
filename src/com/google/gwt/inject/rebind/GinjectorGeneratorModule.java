@@ -59,40 +59,22 @@ class GinjectorGeneratorModule extends AbstractModule {
   @Provides
   @Injectable
   @Singleton
-  MemberCollector provideInjectablesCollector(
-      @Injectable MemberCollector.MethodFilter methodFilter,
-      @Injectable MemberCollector.FieldFilter fieldFilter, MemberCollector collector) {
-    collector.setMethodFilter(methodFilter);
-    collector.setFieldFilter(fieldFilter);
+  MemberCollector provideInjectablesCollector(MemberCollector collector) {
+    collector.setMethodFilter(
+        new MemberCollector.MethodFilter() {
+          public boolean accept(JMethod method) {
+            // TODO(schmitt): Do injectable methods require at least one parameter?
+            return method.isAnnotationPresent(Inject.class) && !method.isStatic();
+          }
+        });
+
+    collector.setFieldFilter(
+        new MemberCollector.FieldFilter() {
+          public boolean accept(JField field) {
+            return field.isAnnotationPresent(Inject.class) && !field.isStatic();
+          }
+        });
+
     return collector;
-  }
-
-  @Provides
-  @Injectable
-  @Singleton
-  MemberCollector.MethodFilter provideInjectablesMethodFilter() {
-    return new MemberCollector.MethodFilter() {
-       public boolean accept(JMethod method) {
-
-         // TODO(schmitt): Does this require at least one parameter?
-         // TODO(schmitt): Do not include static methods?
-         // TODO(schmitt): Support static injection?
-         return method.isAnnotationPresent(Inject.class);
-       }
-     };
-  }
-
-  @Provides
-  @Injectable
-  @Singleton
-  MemberCollector.FieldFilter provideInjectablesFieldFilter() {
-    return new MemberCollector.FieldFilter() {
-      public boolean accept(JField field) {
-
-        // TODO(schmitt): Do not include static fields?
-        // TODO(schmitt): Support static injection?
-        return field.isAnnotationPresent(Inject.class);
-      }
-    };
   }
 }

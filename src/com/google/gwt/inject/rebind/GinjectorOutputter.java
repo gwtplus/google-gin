@@ -23,6 +23,7 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
+import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.util.KeyUtil;
@@ -35,8 +36,12 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.google.inject.spi.InjectionPoint;
 
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 
@@ -94,6 +99,11 @@ class GinjectorOutputter {
    */
   private SourceWriter writer;
 
+  /**
+   * Body for the Ginjector's constructor.
+   */
+  private StringBuilder constructorBody = new StringBuilder();
+
   @Inject
   GinjectorOutputter(NameGenerator nameGenerator, TreeLogger logger,
       Provider<MemberCollector> collectorProvider,
@@ -138,6 +148,9 @@ class GinjectorOutputter {
 
     outputInterfaceMethods();
     outputBindings();
+    outputStaticInjections();
+
+    writeConstructor(implClassName);
 
     writer.commit(logger);
 }
@@ -218,6 +231,42 @@ class GinjectorOutputter {
           method.getReadableDeclaration(false, false, false, false, true),
           generateMethodBodyForMemberInjection(method));
     }
+  }
+
+  private void outputStaticInjections() throws UnableToCompleteException {
+    boolean foundError = false;
+
+    for (Class<?> type : bindingsProcessor.getStaticInjectionRequests()) {
+      String methodName = nameGenerator.convertToValidMemberName("injectStatic_" + type.getName());
+      StringBuilder body = new StringBuilder();
+      for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(type)) {
+        Member member = injectionPoint.getMember();
+        if (member instanceof Method) {
+          try {
+            body.append(sourceWriteUtil.createMethodCallWithInjection(writer,
+              keyUtil.javaToGwtMethod((Method) member), null));
+          } catch (NotFoundException e) {
+            foundError = true;
+            logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
+          }
+        } else if (member instanceof Field) {
+          body.append(sourceWriteUtil.createFieldInjection(writer,
+              keyUtil.javaToGwtField((Field) member), null));
+        }
+      }
+
+      sourceWriteUtil.writeMethod(writer, "private void " + methodName + "()", body.toString());
+      constructorBody.append(methodName).append("();\n");
+    }
+
+    if (foundError) {
+      throw new UnableToCompleteException();
+    }
+  }
+
+  private void writeConstructor(String implClassName) {
+    sourceWriteUtil.writeMethod(writer, "public " + implClassName + "()",
+        constructorBody.toString());
   }
 
   private String generateMethodBodyForMemberInjection(JMethod ginjectorMethod) {

@@ -45,4 +45,7 @@ class BinderAdapter implements GinBinder {
     binder.install(new GinModuleAdapter(install));
   }
 
+  public void requestStaticInjection(Class<?>... types) {
+    binder.requestStaticInjection(types);
+  }
 }

@@ -48,4 +48,8 @@ public abstract class AbstractGinModule implements GinModule {
   protected final void install(GinModule install) {
     binder.install(install);
   }
+
+  protected void requestStaticInjection(Class<?>... types) {
+    binder.requestStaticInjection(types);
+  }
 }

@@ -58,6 +58,7 @@ import com.google.inject.spi.ProviderInstanceBinding;
 import com.google.inject.spi.ProviderKeyBinding;
 import com.google.inject.spi.ProviderLookup;
 import com.google.inject.spi.UntargettedBinding;
+import com.google.inject.spi.StaticInjectionRequest;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -99,6 +100,11 @@ class BindingsProcessor {
    * When this set becomes empty, we know we've satisfied all dependencies.
    */
   private final Set<Key<?>> unresolved = new HashSet<Key<?>>();
+
+  /**
+   * All types for which static injection has been requested.
+   */
+  private final Set<Class<?>> staticInjectionRequests = new HashSet<Class<?>>();
 
   /**
    * Collector that gathers all methods from an injector.
@@ -207,6 +213,10 @@ class BindingsProcessor {
 
   public Map<Key<?>, GinScope> getScopes() {
     return scopes;
+  }
+
+  public Set<Class<?>> getStaticInjectionRequests() {
+    return staticInjectionRequests;
   }
 
   public GinScope determineScope(Key<?> key) {
@@ -427,7 +437,7 @@ class BindingsProcessor {
         return true;
       }
     }
-    
+
     return constructors.length == 0;
   }
 
@@ -504,6 +514,12 @@ class BindingsProcessor {
     protected Void visitElement(Element element) {
       visitMessage(new Message(element.getSource(),
           "Ignoring unsupported Module element: " + element));
+      return null;
+    }
+
+    @Override
+    public Void visitStaticInjectionRequest(StaticInjectionRequest staticInjectionRequest) {
+      staticInjectionRequests.add(staticInjectionRequest.getType());
       return null;
     }
 

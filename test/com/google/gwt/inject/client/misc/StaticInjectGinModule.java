@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2009 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,20 +13,18 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client.binder;
+package com.google.gwt.inject.client.misc;
 
-import com.google.gwt.inject.client.GinModule;
-import com.google.inject.TypeLiteral;
+import com.google.gwt.inject.client.AbstractGinModule;
+import com.google.inject.name.Names;
 
-public interface GinBinder {
+public class StaticInjectGinModule extends AbstractGinModule {
 
-  <T> GinAnnotatedBindingBuilder<T> bind(Class<T> clazz);
+  public static final String NAME = "bar";
 
-  <T> GinAnnotatedBindingBuilder<T> bind(TypeLiteral<T> type);
+  protected void configure() {
+    bindConstant().annotatedWith(Names.named("bar")).to(NAME);
 
-  GinAnnotatedConstantBindingBuilder bindConstant();
-
-  void install(GinModule install); // not using proper generics for compat with Guice 1.0
-
-  void requestStaticInjection(Class<?>... types);
+    requestStaticInjection(StaticClass.class);
+  }
 }

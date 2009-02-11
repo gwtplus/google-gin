@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2009 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,34 +13,15 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.client.binding;
+package com.google.gwt.inject.client.misc;
 
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
-import com.google.inject.name.Named;
 
-@GinModules(FruitGinModule.class)
-public interface FruitGinjector extends Ginjector {
+@GinModules(StaticInjectGinModule.class)
+public interface StaticInjectGinjector extends Ginjector {
 
-  @Named("seeds") int getSeeds();
+  StaticClass getStaticClass();
 
-  @Named("weight") float getWeight();
-
-  @Named("volume") double getVolume();
-
-  @Named("worms") long getWorms();
-
-  @Named("initial") char getInital();
-
-  // TODO(schmitt):  Maybe fix this eventually.
-  // Guice does not support byte constants.
-  /*@Named("id") byte getId();*/
-
-  @Named("leaves") short getLeaves();
-
-  @Named("eaten") boolean isEaten();
-
-  @Named("name") String getName();
-
-  @Named("color") Color getColor();
+  DynamicClass getDynamicClass();
 }
