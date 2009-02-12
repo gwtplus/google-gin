@@ -185,7 +185,7 @@
     <test-macro />
   </target>
 
-  <target name="dist">
+  <target name="dist" depends="compile">
     <mkdir dir="${gin.dist.dir}"/>
     <jar destfile="${gin.dist.dir}/gin.jar">
       <fileset dir="${gin.output.dir}" />
