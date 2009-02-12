@@ -20,6 +20,7 @@ import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
@@ -57,8 +58,8 @@ import com.google.inject.spi.Message;
 import com.google.inject.spi.ProviderInstanceBinding;
 import com.google.inject.spi.ProviderKeyBinding;
 import com.google.inject.spi.ProviderLookup;
-import com.google.inject.spi.UntargettedBinding;
 import com.google.inject.spi.StaticInjectionRequest;
+import com.google.inject.spi.UntargettedBinding;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -241,28 +242,24 @@ class BindingsProcessor {
   private void validateMethods() throws UnableToCompleteException {
     for (JMethod method : completeCollector.getMethods(ginjectorInterface)) {
       if (method.getParameters().length > 1) {
-        logger.log(TreeLogger.Type.ERROR, "Injector methods cannot have more than one parameter, "
+        logError("Injector methods cannot have more than one parameter, "
             + " found: " + method.getReadableDeclaration());
-        foundError = true;
       }
 
       if (method.getParameters().length == 1) {
         // Member inject method.
         if (method.getParameters()[0].getType().isClassOrInterface() == null) {
-          logger.log(TreeLogger.Type.ERROR, "Injector method parameter types must be a class or "
+          logError("Injector method parameter types must be a class or "
               + "interface, found: " + method.getReadableDeclaration());
-          foundError = true;
         }
 
         if (method.getReturnType() != JPrimitiveType.VOID) {
-          logger.log(TreeLogger.Type.ERROR, "Injector methods with a parameter must have a void "
+          logError("Injector methods with a parameter must have a void "
               + "return type, found: " + method.getReadableDeclaration());
-          foundError = true;
         }
       } else if (method.getReturnType() == JPrimitiveType.VOID) {
         // Constructor injection.
-        logger.log(TreeLogger.Type.ERROR, "Injector methods with no parameters cannot return void");
-        foundError = true;
+        logError("Injector methods with no parameters cannot return void");
       }
     }
 
@@ -289,11 +286,9 @@ class BindingsProcessor {
       // Capture any binding errors, any of which we treat as fatal
       List<Message> messages = visitor.getMessages();
       if (!messages.isEmpty()) {
-        foundError = true;
-
         for (Message message : messages) {
           // tostring has both source and message so use that
-          logger.log(TreeLogger.ERROR, message.toString(), message.getCause());
+          logError(message.toString(), message.getCause());
         }
       }
     }
@@ -313,7 +308,7 @@ class BindingsProcessor {
       modulesForGuice.addAll(modules);
       Guice.createInjector(Stage.TOOL, modulesForGuice);
     } catch (Exception e) {
-      logger.log(TreeLogger.ERROR, "Errors from Guice: " + e.getMessage(), e);
+      logError("Errors from Guice: " + e.getMessage(), e);
       throw new UnableToCompleteException();
     }
   }
@@ -344,16 +339,15 @@ class BindingsProcessor {
         constructor.setAccessible(false);
       }
     } catch (IllegalAccessException e) {
-      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
+      logError("Error creating module: " + moduleClassName, e);
     } catch (InstantiationException e) {
-      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
+      logError("Error creating module: " + moduleClassName, e);
     } catch (NoSuchMethodException e) {
-      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
+      logError("Error creating module: " + moduleClassName, e);
     } catch (InvocationTargetException e) {
-      logger.log(TreeLogger.ERROR, "Error creating module: " + moduleClassName, e);
+      logError("Error creating module: " + moduleClassName, e);
     }
 
-    foundError = true;
     return null;
   }
 
@@ -362,9 +356,8 @@ class BindingsProcessor {
     Type keyType = key.getTypeLiteral().getType();
 
     if (BindConstantBinding.isConstantKey(key)) {
-      logger.log(TreeLogger.Type.ERROR, "Binding requested for constant key " + key
+      logError("Binding requested for constant key " + key
           + " but no explicit binding was found.");
-      foundError = true;
       return null;
     }
 
@@ -384,15 +377,13 @@ class BindingsProcessor {
       // Only use implicit GWT.create binding if there is no binding annotation.
       // This is compatible with Guice.
       if (key.getAnnotation() != null || key.getAnnotationType() != null) {
-        logger.log(TreeLogger.Type.ERROR, "No implementation bound for key " + key);
-        foundError = true;
+        logError("No implementation bound for key " + key);
       } else {
         JClassType classType = keyUtil.getRawClassType(key);
         if (classType != null) {
           binding = createImplicitBindingForClass(classType);
         } else {
-          logger.log(TreeLogger.ERROR, "Class not found: " + key);
-          foundError = true;
+          logError("Class not found: " + key);
         }
       }
     }
@@ -424,8 +415,7 @@ class BindingsProcessor {
       }
     }
 
-    logger.log(TreeLogger.ERROR, "No @Inject or default constructor found for " + classType);
-    foundError = true;
+    logError("No @Inject or default constructor found for " + classType);
     return null;
   }
 
@@ -443,9 +433,13 @@ class BindingsProcessor {
 
   private void addBinding(Key<?> key, Binding binding) {
     if (bindings.containsKey(key)) {
-      logger.log(TreeLogger.ERROR, "Double-bound: " + key + ". "
-          + bindings.get(key) + ", " + binding);
-      foundError = true;
+      logError("Double-bound: " + key + ". " + bindings.get(key) + ", " + binding);
+      return;
+    }
+
+    JClassType classType = keyUtil.getRawClassType(key);
+    if (classType != null && !isClassAccessibleFromGinjector(classType)) {
+      logError("Can not inject an instance of an inaccessible class. Key=" + key);
       return;
     }
 
@@ -465,6 +459,31 @@ class BindingsProcessor {
     logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
   }
 
+  private boolean isClassAccessibleFromGinjector(JClassType classType) {
+    if (classType.isPublic()) {
+      return true;
+    }
+
+    // Null class package could be if it's not an object type
+    JPackage classPackage = classType.getPackage();
+    if (classPackage == null) {
+      return false;
+    }
+
+    JPackage ginjectorPackage = ginjectorInterface.getPackage();
+    return (ginjectorPackage.isDefault() && classPackage.isDefault())
+        || classPackage.getName().equals(ginjectorPackage.getName());
+  }
+
+  private void logError(String message) {
+    logError(message, null);
+  }
+
+  private void logError(String message, Throwable t) {
+    logger.log(TreeLogger.ERROR, message, t);
+    foundError = true;
+  }
+
   private JConstructor getInjectConstructor(JClassType classType) {
     JConstructor[] constructors = classType.getConstructors();
 
@@ -474,9 +493,8 @@ class BindingsProcessor {
         if (injectConstructor == null) {
           injectConstructor = constructor;
         } else {
-          logger.log(TreeLogger.ERROR, "More than one @Inject constructor found for "
+          logError("More than one @Inject constructor found for "
               + classType + "; " + injectConstructor + ", " + constructor);
-          foundError = true;
         }
       }
     }
