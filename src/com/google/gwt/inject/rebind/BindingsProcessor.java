@@ -625,8 +625,11 @@ class BindingsProcessor {
       // Register a Gin binding for the default-case binding that
       // Guice saw. We need to register this to avoid later adding
       // this key to the Guice-lies module, which would make it
-      // double bound.
-      addBinding(targetKey, createImplicitBinding(targetKey));
+      // double bound. If binding was null, an error was already logged.
+      Binding binding = createImplicitBinding(targetKey);
+      if (binding != null) {
+        addBinding(targetKey, binding);
+      }
     }
 
     @Override
