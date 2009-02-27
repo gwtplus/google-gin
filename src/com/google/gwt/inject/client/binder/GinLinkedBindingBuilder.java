@@ -15,11 +15,16 @@
  */
 package com.google.gwt.inject.client.binder;
 
+import com.google.inject.Key;
 import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
 
 public interface GinLinkedBindingBuilder<T> extends GinScopedBindingBuilder {
 
   <I extends T> GinScopedBindingBuilder to(Class<I> implementation);
+  <I extends T> GinScopedBindingBuilder to(TypeLiteral<I> implementation);
+  <I extends T> GinScopedBindingBuilder to(Key<I> targetKey);
 
   <I extends Provider<? extends T>> GinScopedBindingBuilder toProvider(Class<I> provider);
+  <I extends Provider<? extends T>> GinScopedBindingBuilder toProvider(Key<I> providerKey);
 }

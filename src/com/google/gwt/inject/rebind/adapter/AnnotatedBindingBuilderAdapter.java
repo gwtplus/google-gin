@@ -16,10 +16,12 @@
 package com.google.gwt.inject.rebind.adapter;
 
 import com.google.gwt.inject.client.binder.GinAnnotatedBindingBuilder;
-import com.google.gwt.inject.client.binder.GinScopedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinLinkedBindingBuilder;
-import com.google.inject.binder.AnnotatedBindingBuilder;
+import com.google.gwt.inject.client.binder.GinScopedBindingBuilder;
+import com.google.inject.Key;
 import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
+import com.google.inject.binder.AnnotatedBindingBuilder;
 
 import java.lang.annotation.Annotation;
 
@@ -32,6 +34,18 @@ class AnnotatedBindingBuilderAdapter<T> implements GinAnnotatedBindingBuilder<T>
 
   public <I extends T> GinScopedBindingBuilder to(Class<I> implementation) {
     return new ScopedBindingBuilderAdapter(annotatedBindingBuilder.to(implementation));
+  }
+
+  public <I extends T> GinScopedBindingBuilder to(TypeLiteral<I> implementation) {
+    return new ScopedBindingBuilderAdapter(annotatedBindingBuilder.to(implementation));
+  }
+
+  public <I extends T> GinScopedBindingBuilder to(Key<I> targetKey) {
+    return new ScopedBindingBuilderAdapter(annotatedBindingBuilder.to(targetKey));
+  }
+
+  public <I extends Provider<? extends T>> GinScopedBindingBuilder toProvider(Key<I> providerKey) {
+    return new ScopedBindingBuilderAdapter(annotatedBindingBuilder.toProvider(providerKey));
   }
 
   public <I extends Provider<? extends T>> GinScopedBindingBuilder toProvider(

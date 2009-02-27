@@ -13,14 +13,17 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.inject;
+package com.google.gwt.inject.client.generics;
 
-/**
- * Fake equivalent to Guice's TypeLiteral.
- * This hackery is required due to the dual nature of {@code GinModule}
- * implementations.
- *
- * @see com.google.gwt.inject.client.GinModule
- */
-public class TypeLiteral<T> {
+import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.Ginjector;
+
+import java.util.LinkedList;
+import java.util.List;
+
+@GinModules(GenericsGinModule.class)
+public interface GenericsGinjector extends Ginjector {
+  List<String> getListOfString();
+  List<Integer> getListOfInteger();
+  LinkedList<Integer> getLinkedListOfInteger();
 }
