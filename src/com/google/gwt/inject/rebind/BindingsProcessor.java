@@ -403,7 +403,7 @@ class BindingsProcessor {
       return binding;
     }
 
-    if (hasZeroArgConstructor(classType)) {
+    if (hasAccessibleZeroArgConstructor(classType)) {
       if (RemoteServiceProxyBinding.isRemoteServiceProxy(classType)) {
         RemoteServiceProxyBinding binding = remoteServiceProxyBindingProvider.get();
         binding.setClassType(classType);
@@ -419,11 +419,11 @@ class BindingsProcessor {
     return null;
   }
 
-  private boolean hasZeroArgConstructor(JClassType classType) {
+  private boolean hasAccessibleZeroArgConstructor(JClassType classType) {
     JConstructor[] constructors = classType.getConstructors();
 
     for (JConstructor constructor : constructors) {
-      if (constructor.getParameters().length == 0) {
+      if (constructor.getParameters().length == 0 && constructor.isPublic()) {
         return true;
       }
     }
