@@ -82,35 +82,40 @@ public class SourceWriteUtil {
    */
   public String createFieldInjection(SourceWriter sourceWriter, JField field, String injecteeName) {
     boolean hasInjectee = injecteeName != null;
+    boolean isPublic = field.isPublic() && field.getEnclosingType().isPublic();
 
-    // Determine native method signature parts.
+    // Determine method signature parts.
     String injecteeTypeName
         = nameGenerator.binaryNameToSourceName(field.getEnclosingType().getQualifiedSourceName());
     String fieldTypeName
         = nameGenerator.binaryNameToSourceName(field.getType().getQualifiedSourceName());
-    String nativeName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
+    String methodBaseName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
         + field.getName() + "_fieldInjection");
-    String nativeMethodName = nameGenerator.createMethodName(nativeName);
-    String nativeSignatureParams = fieldTypeName + " value";
-    String nativeCallParams = nameGenerator.getGetterMethodName(keyUtil.getKey(field)) + "()";
+    String methodName = nameGenerator.createMethodName(methodBaseName);
+    String signatureParams = fieldTypeName + " value";
+    String callParams = nameGenerator.getGetterMethodName(keyUtil.getKey(field)) + "()";
 
     if (hasInjectee) {
-      nativeSignatureParams = injecteeTypeName + " injectee, " + nativeSignatureParams;
-      nativeCallParams = injecteeName + ", " + nativeCallParams;
+      signatureParams = injecteeTypeName + " injectee, " + signatureParams;
+      callParams = injecteeName + ", " + callParams;
     }
 
     // Compose method implementation and invocation.
+    String signature = "private" + (isPublic ? "" : " native") + " void " + methodName + "("
+        + signatureParams + ")";
 
-    String nativeSignature = "private native void " + nativeMethodName + "("
-        + nativeSignatureParams + ")";
+    String call = methodName + "(" + callParams + ");";
 
-    String nativeCall = nativeMethodName + "(" + nativeCallParams + ");";
+    if (isPublic) {
+      String body =
+          (hasInjectee ? "injectee." : injecteeTypeName + ".") + field.getName() + " = value;";
+      writeMethod(sourceWriter, signature, body);
+    } else {
+      String body = (hasInjectee ? "injectee." : "") + getJsniSignature(field) + " = value;";
+      writeNativeMethod(sourceWriter, signature, body);
+    }
 
-    String nativeBody = (hasInjectee ? "injectee." : "") + getJsniSignature(field) + " = value;";
-
-    writeNativeMethod(sourceWriter, nativeSignature, nativeBody);
-
-    return nativeCall;
+    return call;
   }
 
   /**
@@ -182,60 +187,88 @@ public class SourceWriteUtil {
       String injecteeName) {
     boolean returning = false;
     boolean hasInjectee = injecteeName != null;
+    boolean isPublic = method.isPublic() && method.getEnclosingType().isPublic();
 
-    // Determine native method signature parts.
+    // Determine method signature parts.
     String injecteeTypeName
         = nameGenerator.binaryNameToSourceName(method.getEnclosingType().getQualifiedSourceName());
-    String nativeName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
+    String methodBaseName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
         + method.getName() + "_methodInjection");
-    String nativeMethodName = nameGenerator.createMethodName(nativeName);
-    String nativeReturnType = "void";
+    String methodName = nameGenerator.createMethodName(methodBaseName);
+    String returnTypeString = "void";
     if (method.isConstructor() != null) {
-      nativeReturnType = injecteeTypeName;
+      returnTypeString = injecteeTypeName;
       returning = true;
     } else {
       JType returnType = ((JMethod) method).getReturnType();
       if (returnType != JPrimitiveType.VOID) {
-        nativeReturnType
+        returnTypeString
             = nameGenerator.binaryNameToSourceName(returnType.getQualifiedSourceName());
         returning = true;
       }
     }
 
     // Collect method parameters to be passed to the native and actual method.
-    int nativeParamCount = method.getParameters().length + (hasInjectee ? 1 : 0);
-    List<String> nativeCallParams = new ArrayList<String>(nativeParamCount);
-    List<String> nativeSignatureParams = new ArrayList<String>(nativeParamCount);
-    List<String> methodCallParams = new ArrayList<String>(method.getParameters().length);
+    int invokerParamCount = method.getParameters().length + (hasInjectee ? 1 : 0);
+    List<String> invokerCallParams = new ArrayList<String>(invokerParamCount);
+    List<String> invokerSignatureParams = new ArrayList<String>(invokerParamCount);
+    List<String> invokeeCallParams = new ArrayList<String>(method.getParameters().length);
 
     if (hasInjectee) {
-      nativeCallParams.add(injecteeName);
-      nativeSignatureParams.add(injecteeTypeName + " injectee");
+      invokerCallParams.add(injecteeName);
+      invokerSignatureParams.add(injecteeTypeName + " injectee");
     }
 
     int paramCount = 0;
     for (JParameter param : method.getParameters()) {
       String paramName = "_" + paramCount;
-      nativeCallParams.add(nameGenerator.getGetterMethodName(keyUtil.getKey(param)) + "()");
-      nativeSignatureParams.add(
+      invokerCallParams.add(nameGenerator.getGetterMethodName(keyUtil.getKey(param)) + "()");
+      invokerSignatureParams.add(
           nameGenerator.binaryNameToSourceName(param.getType().getQualifiedSourceName()) + " "
               + paramName);
-      methodCallParams.add(paramName);
+      invokeeCallParams.add(paramName);
       paramCount++;
     }
 
     // Compose method implementation and invocation.
-    String nativeSignature = "private native " + nativeReturnType + " " + nativeMethodName
-        + "(" + join(", ", nativeSignatureParams) + ")";
+    String invokerSignature = "private " + (isPublic ? "" : "native ") + returnTypeString + " "
+        + methodName + "(" + join(", ", invokerSignatureParams) + ")";
 
-    String nativeCall = nativeMethodName + "(" + join(", ", nativeCallParams) + ");";
+    String invokerCall = methodName + "(" + join(", ", invokerCallParams) + ");";
 
-    String nativeBody = (returning ? "return " : "") + (hasInjectee ? "injectee." : "")
-        + getJsniSignature(method) + "(" + join(", ", methodCallParams) + ");";
+    StringBuilder invokerBody = new StringBuilder();
+    if (returning) {
+      invokerBody.append("return ");
+    }
+    if (isPublic) {
+      if (hasInjectee) {
+        invokerBody.append("injectee.")
+            .append(method.getName());
+      } else if (method.isConstructor() != null) {
+        invokerBody.append("new ")
+            .append(injecteeTypeName);
+      } else {
+        invokerBody.append(injecteeTypeName)
+            .append(".")
+            .append(method.getName());
+      }
+    } else {
+      if (hasInjectee) {
+        invokerBody.append("injectee.");
+      }
+      invokerBody.append(getJsniSignature(method));
+    }
+    invokerBody.append("(")
+        .append(join(", ", invokeeCallParams))
+        .append(");");
 
-    writeNativeMethod(sourceWriter, nativeSignature, nativeBody);
+    if (isPublic) {
+      writeMethod(sourceWriter, invokerSignature, invokerBody.toString());
+    } else {
+      writeNativeMethod(sourceWriter, invokerSignature, invokerBody.toString());
+    }
 
-    return nativeCall;
+    return invokerCall;
   }
 
   /**
