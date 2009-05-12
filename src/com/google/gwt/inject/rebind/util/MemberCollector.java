@@ -20,6 +20,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.inject.Inject;
 
 import java.util.Collection;
@@ -54,6 +55,11 @@ public class MemberCollector {
   /**
    * Filter used during the collection of methods to restrict the kind of
    * collected methods.
+   * <p/>
+   * Note: The method filter influences override detection!  If a method A
+   * overrides a method A*, without a filter only A would be collected.  If the
+   * filter only accepts A* and not A, A will not be collected, and A* will be
+   * collected <b>despite being overriden</b> by A.
    */
   public static interface MethodFilter {
     boolean accept(JMethod method);
@@ -79,10 +85,10 @@ public class MemberCollector {
         return 0;
       }
 
-      if (!m1.getName().equals(m2.getName())) {
-        return m1.getName().compareTo(m2.getName());
+      int nameCompare = m1.getName().compareTo(m2.getName());
+      if (nameCompare != 0) {
+        return nameCompare;
       }
-
 
       if (m1.getParameters().length != m2.getParameters().length) {
         return m1.getParameters().length - m2.getParameters().length;
@@ -92,22 +98,40 @@ public class MemberCollector {
         String param1 = m1.getParameters()[i].getType().getQualifiedSourceName();
         String param2 = m2.getParameters()[i].getType().getQualifiedSourceName();
 
-        if (!param1.equals(param2)) {
-          return param1.compareTo(param2);
+        int paramCompare = param1.compareTo(param2);
+        if (paramCompare != 0) {
+          return paramCompare;
         }
       }
 
       /* If either of the methods is private, it is either (a) in the
-       * superclass, and thus overridable, or (b) in the subclass, which
-       * implies that the method must be private in the superclass as well.
+       * superclass, and thus invisible to the subclass, or (b) in the
+       * subclass, which implies that the method must be private in the
+       * superclass as well.
+       *
+       * If either of the methods has default access and the classes are not in
+       * the same package then they are invisible to each other and thus not
+       * override-equivalent.
        */
-      if (m1.isPrivate() || m2.isPrivate()) {
+      if (m1.isPrivate() || m2.isPrivate()
+          || ((m1.isDefaultAccess() || m2.isDefaultAccess()) && !samePackage(m1, m2))) {
         return m1.getEnclosingType().getQualifiedSourceName().compareTo(
             m2.getEnclosingType().getQualifiedSourceName());
       }
 
       // Methods have same name, parameter types and compatible visibility
       return 0;
+    }
+
+    private boolean samePackage(JMethod m1, JMethod m2) {
+      JPackage p1 = m1.getEnclosingType().getPackage();
+      JPackage p2 = m2.getEnclosingType().getPackage();
+
+      if (p1 == null || p2 == null) {
+        return p1 == p2;
+      }
+
+      return (p1.isDefault() && p2.isDefault()) || (p1.getName().equals(p2.getName()));
     }
   };
 

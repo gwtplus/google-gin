@@ -129,6 +129,8 @@ public abstract class AbstractUtilTester extends TestCase {
     units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SubClass")));
     units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "WildcardFieldClass")));
     units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "MethodsClass")));
+    units.add(
+        new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE + ".secret", "SecretSubClass")));
     return units;
   }
 

@@ -31,6 +31,10 @@ public abstract class SuperClass implements SimpleInterface {
 
   }
 
+  void fooB() {
+    
+  }
+
   private void fooIC() {
 
   }

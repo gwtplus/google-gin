@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2009 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,43 +13,23 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.rebind.util.types;
 
-public class SubClass extends SuperClass implements SubInterface {
+package com.google.gwt.inject.rebind.util.types.secret;
 
-  private int a;
-  protected int b;
-  public SuperClass c;
+import com.google.gwt.inject.rebind.util.types.SuperClass;
 
-  private void barB() {
+public class SecretSubClass extends SuperClass {
 
-  }
 
   protected void bazA() {
 
   }
 
-  public void fooA() {
-
-  }
-
   public void fooB() {
-    
-  }
-
-  public void fooIA() {
 
   }
 
   public void fooIB() {
-
-  }
-
-  public void noCollect(String x) {
-
-  }
-
-  public void fooIC() {
 
   }
 }

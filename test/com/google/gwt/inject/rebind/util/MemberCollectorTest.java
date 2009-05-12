@@ -23,6 +23,7 @@ import com.google.gwt.inject.rebind.util.types.SubClass;
 import com.google.gwt.inject.rebind.util.types.SubInterface;
 import com.google.gwt.inject.rebind.util.types.SuperClass;
 import com.google.gwt.inject.rebind.util.types.SuperInterface;
+import com.google.gwt.inject.rebind.util.types.secret.SecretSubClass;
 
 import java.util.Collection;
 
@@ -68,27 +69,43 @@ public class MemberCollectorTest extends AbstractUtilTester {
 
     Collection<JMethod> methods = collector.getMethods(getClassType(SubClass.class));
 
-    int i = 0;
-    int j = 0;
-    int k = 0;
+    int numFooA = 0;
+    int numFooIB = 0;
+    int numFooIC = 0;
+    int numFooBSamePackage = 0;
+    int numFooBOtherPackage = 0;
     for (JMethod method : methods) {
       if (method.getName().equals("fooA")) {
         assertEquals("SubClass", method.getEnclosingType().getName());
-        i++;
+        numFooA++;
       }
 
       if (method.getName().equals("fooIB")) {
-        j++;
+        numFooIB++;
       }
 
       if (method.getName().equals("fooIC")) {
-        k++;
+        numFooIC++;
+      }
+
+      if (method.getName().equals("fooB")) {
+        assertEquals("SubClass", method.getEnclosingType().getName());
+        numFooBSamePackage++;
       }
     }
 
-    assertEquals(1, i);
-    assertEquals(1, j);
-    assertEquals(2, k);
+    methods = collector.getMethods(getClassType(SecretSubClass.class));
+    for (JMethod method : methods) {
+      if (method.getName().equals("fooB")) {
+        numFooBOtherPackage++;
+      }
+    }
+
+    assertEquals(1, numFooA);
+    assertEquals(1, numFooIB);
+    assertEquals(2, numFooIC);
+    assertEquals(1, numFooBSamePackage);
+    assertEquals(2, numFooBOtherPackage);
   }
 
   public void testInterfaceCollect() {
@@ -126,7 +143,7 @@ public class MemberCollectorTest extends AbstractUtilTester {
     assertEquals(3, b);
 
     // 5 from Object, others from test classes
-    assertEquals(14, methods.size());
+    assertEquals(15, methods.size());
   }
 
   public void testMethodFilter() {
