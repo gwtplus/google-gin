@@ -22,6 +22,7 @@ import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
+import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
@@ -32,6 +33,7 @@ import com.google.gwt.inject.rebind.binding.BindProviderBinding;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
+import com.google.gwt.inject.rebind.binding.GinjectorBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
 import com.google.gwt.inject.rebind.binding.ProviderMethodBinding;
 import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
@@ -78,6 +80,12 @@ import java.util.Set;
  */
 @Singleton
 class BindingsProcessor {
+
+  /**
+   * Type array representing zero arguments for a metohod.
+   */
+  private static final JType[] ZERO_ARGS = new JType[0];
+
   private final TreeLogger logger;
 
   /**
@@ -120,6 +128,7 @@ class BindingsProcessor {
   private final Provider<ImplicitProviderBinding> implicitProviderBindingProvider;
   private final Provider<ProviderMethodBinding> providerMethodBindingProvider;
   private final Provider<BindConstantBinding> bindConstantBindingProvider;
+  private final Provider<GinjectorBinding> ginjectorBindingProvider;
 
   private final KeyUtil keyUtil;
 
@@ -150,7 +159,8 @@ class BindingsProcessor {
       LieToGuiceModule lieToGuiceModule,
       Provider<BindConstantBinding> bindConstantBindingProvider,
       Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider,
-      Provider<ProviderMethodBinding> providerMethodBindingProvider) {
+      Provider<ProviderMethodBinding> providerMethodBindingProvider,
+      Provider<GinjectorBinding> ginjectorBindingProvider) {
     this.nameGenerator = nameGenerator;
     this.logger = logger;
     this.callGwtDotCreateBindingProvider = callGwtDotCreateBindingProvider;
@@ -164,6 +174,7 @@ class BindingsProcessor {
     this.remoteServiceProxyBindingProvider = remoteServiceProxyBindingProvider;
     this.bindConstantBindingProvider = bindConstantBindingProvider;
     this.providerMethodBindingProvider = providerMethodBindingProvider;
+    this.ginjectorBindingProvider = ginjectorBindingProvider;
 
     completeCollector = collectorProvider.get();
     completeCollector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
@@ -187,7 +198,7 @@ class BindingsProcessor {
         Binding binding = createImplicitBinding(key);
 
         if (binding != null) {
-          if (binding instanceof CallGwtDotCreateBinding) {
+          if (binding instanceof CallGwtDotCreateBinding || binding instanceof GinjectorBinding) {
             // Need to lie to Guice about any implicit GWT.create bindings
             // we install that Guice would otherwise not see.
             // http://code.google.com/p/google-gin/issues/detail?id=13
@@ -373,6 +384,10 @@ class BindingsProcessor {
       }
     }
 
+    if (keyUtil.getRawClassType(key).equals(ginjectorInterface)) {
+      binding = ginjectorBindingProvider.get();
+    }
+
     if (binding == null) {
       // Only use implicit GWT.create binding if there is no binding annotation.
       // This is compatible with Guice.
@@ -394,12 +409,11 @@ class BindingsProcessor {
 
   private Binding createImplicitBindingForClass(JClassType classType) {
     // Either call the @Inject constructor or use GWT.create
+    JConstructor injectConstructor = getInjectConstructor(classType);
 
-    JConstructor constructor = getInjectConstructor(classType);
-
-    if (constructor != null) {
+    if (injectConstructor != null) {
       CallConstructorBinding binding = callConstructorBinding.get();
-      binding.setConstructor(constructor);
+      binding.setConstructor(injectConstructor);
       return binding;
     }
 
@@ -415,20 +429,34 @@ class BindingsProcessor {
       }
     }
 
-    logError("No @Inject or default constructor found for " + classType);
+    logError("No @Inject or accessible default constructor found for " + classType);
     return null;
   }
 
+  /**
+   * Returns true iff the passed type has a constructor with zero arguments
+   * (default constructors included) and that constructor is non-private,
+   * excepting constructors for private classes where the constructor may be of
+   * any visibility.
+   *
+   * @param classType type to be checked for matching constructor
+   * @return true if a matching constructor is present on the passed type
+   */
   private boolean hasAccessibleZeroArgConstructor(JClassType classType) {
-    JConstructor[] constructors = classType.getConstructors();
-
-    for (JConstructor constructor : constructors) {
-      if (constructor.getParameters().length == 0 && constructor.isPublic()) {
-        return true;
-      }
+    if (classType.isInterface() != null) {
+      return true;
     }
 
-    return constructors.length == 0;
+    // This will return one constructor on any class that doesn't have any
+    // constructors specified:  The JDT compiler (internally used by GWT) adds
+    // a synthetic default constructor to every class with the class's
+    // visibility that gets picked up by GWT as a regular constructor.
+    //
+    // See also:
+    // http://code.google.com/p/google-web-toolkit/issues/detail?id=3514
+    // http://code.google.com/p/google-guice/wiki/Injections
+    JConstructor constructor = classType.findConstructor(ZERO_ARGS);
+    return constructor != null && (!constructor.isPrivate() || classType.isPrivate());
   }
 
   private void addBinding(Key<?> key, Binding binding) {
@@ -495,6 +523,7 @@ class BindingsProcessor {
         } else {
           logError("More than one @Inject constructor found for "
               + classType + "; " + injectConstructor + ", " + constructor);
+          return null;
         }
       }
     }

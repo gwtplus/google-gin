@@ -18,10 +18,8 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.rebind.util.KeyUtil;
-import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -31,9 +29,7 @@ import com.google.inject.internal.ProviderMethod;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -45,19 +41,17 @@ import java.util.Set;
 public class ProviderMethodBinding implements Binding {
   private final KeyUtil keyUtil;
   private final SourceWriteUtil sourceWriteUtil;
-  private final NameGenerator nameGenerator;
   private final TreeLogger logger;
 
-  private Key<?> moduleClassKey;
-  private List<Key<?>> parameterKeys;
+  private Class<?> moduleClass;
+  private Set<Key<?>> parameterKeys;
   private JMethod gwtProviderMethod;
 
   @Inject
   public ProviderMethodBinding(KeyUtil keyUtil, SourceWriteUtil sourceWriteUtil,
-      NameGenerator nameGenerator, TypeOracle typeOracle, TreeLogger logger) {
+      TreeLogger logger) {
     this.keyUtil = keyUtil;
     this.sourceWriteUtil = sourceWriteUtil;
-    this.nameGenerator = nameGenerator;
     this.logger = logger;
   }
 
@@ -69,14 +63,14 @@ public class ProviderMethodBinding implements Binding {
       throw new UnableToCompleteException();
     }
 
-    moduleClassKey = Key.get(providerMethod.getInstance().getClass());
+    moduleClass = providerMethod.getInstance().getClass();
 
     Method method = providerMethod.getMethod();
 
     Type[] parameterTypes = method.getGenericParameterTypes();
     Annotation[][] parameterAnnotations = method.getParameterAnnotations();
     assert parameterTypes.length == parameterAnnotations.length;
-    parameterKeys = new ArrayList<Key<?>>(parameterTypes.length);
+    parameterKeys = new HashSet<Key<?>>(parameterTypes.length);
 
     for (int i = 0; i < parameterTypes.length; i++) {
       parameterKeys.add(keyUtil.getKey(parameterTypes[i], parameterAnnotations[i]));
@@ -84,17 +78,13 @@ public class ProviderMethodBinding implements Binding {
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
-    String getterMethodCall = nameGenerator.getGetterMethodName(moduleClassKey) + "()";
+    String createModule = "new " + moduleClass.getName() + "()";
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + sourceWriteUtil.createMethodCallWithInjection(writer, gwtProviderMethod,
-            getterMethodCall));
+            createModule));
   }
 
   public Set<Key<?>> getRequiredKeys() {
-    Set<Key<?>> keys = new HashSet<Key<?>>(parameterKeys.size() + 1);
-    keys.add(moduleClassKey);
-    keys.addAll(parameterKeys);
-
-    return keys;
+    return parameterKeys;
   }
 }

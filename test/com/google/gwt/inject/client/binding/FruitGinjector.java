@@ -43,4 +43,6 @@ public interface FruitGinjector extends Ginjector {
   @Named("name") String getName();
 
   @Named("color") Color getColor();
+
+  FruitGinjector getGinjector();
 }

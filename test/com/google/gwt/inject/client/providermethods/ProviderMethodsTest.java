@@ -46,6 +46,14 @@ public class ProviderMethodsTest extends GWTTestCase {
         ginjector.getAll());
   }
 
+  public void testInjectAnnotatedProviderMethods() {
+    DamagedGinjector ginjector = GWT.create(DamagedGinjector.class);
+
+    // This should either simply work or we will go into an infinite loop in
+    // the ginjector generation. The latter is obviously bad. :)
+    assertEquals("8 foo", ginjector.getString());
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }
