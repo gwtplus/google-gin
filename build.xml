@@ -73,9 +73,7 @@
   <property name="gin.dist.dir" value="${gin.output.base}/dist"/>
   <property name="gin.javadoc.dir" value="${gin.output.base}/javadoc"/>
   <property name="gin.testoutput.dir" value="${gin.output.base}/test"/>
-  <property name="gin.testrun.dir" value="${gin.output.base}/testrun"/>
-  <property name="gin.testrungen.dir" value="${gin.output.base}/testrun/gen"/>
-  <property name="gin.testrunout.dir" value="${gin.output.base}/testrun/out"/>
+  <property name="gin.testrun.base" value="${gin.output.base}/testrun"/>
 
   <path id="gin.classpath">
     <path refid="library.guice.classpath"/>
@@ -153,36 +151,51 @@
 
   <macrodef name="test-macro">
     <attribute name="extragwtargs" default="" />
+    <attribute name="outputbase" />
 
     <sequential>
-      <mkdir dir="${gin.testrun.dir}"/>
-      <mkdir dir="${gin.testrungen.dir}"/>
+      <property name="gwt.gen.dir" value="@{outputbase}/gen"/>
+      <property name="gwt.out.dir" value="@{outputbase}/out"/>
+      <property name="junit.report.dir" value="@{outputbase}/reports"/>
+
+      <mkdir dir="${gwt.out.dir}"/>
+      <mkdir dir="${gwt.gen.dir}"/>
+      <mkdir dir="${junit.report.dir}"/>
 
       <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
-             haltonerror="true">
+          haltonerror="true" failureproperty="junit.failure">
         <jvmarg line="${macJvmArgs}"/>
         <formatter type="brief" />
+        <formatter type="xml"/>
 
         <!-- Add -logLevel TRACE to get more debug output -->
-        <jvmarg value="-Dgwt.args=@{extragwtargs} -gen ${gin.testrungen.dir} -out ${gin.testrunout.dir}"/>
+        <jvmarg value="-Dgwt.args=@{extragwtargs} -gen ${gwt.gen.dir} -out ${gwt.out.dir}"/>
 
         <classpath refid="gin.test.classpath"/>
-        <batchtest todir="${gin.testrun.dir}">
+        <batchtest todir="${junit.report.dir}">
           <fileset dir="${gin.testoutput.dir}">
             <include name="com/google/gwt/inject/rebind/**/*Test.class"/>
             <include name="com/google/gwt/inject/*TestSuite.class"/>
           </fileset>
         </batchtest>
       </junit>
+
+      <junitreport todir="${junit.report.dir}">
+        <fileset dir="${junit.report.dir}"/>
+        <report todir="${junit.report.dir}/html"/>
+      </junitreport>
+
+      <fail if="junit.failure" message="Tests failed. See reports in ${gin.testrun.dir}"/>
     </sequential>
   </macrodef>
 
   <target name="test.web" depends="compile">
-    <test-macro extragwtargs="-web -style PRETTY" />
+    <test-macro extragwtargs="-web -style PRETTY"
+      outputbase="${gin.testrun.base}/web" />
   </target>
 
   <target name="test.hosted" depends="compile">
-    <test-macro />
+    <test-macro outputbase="${gin.testrun.base}/hosted" />
   </target>
 
   <target name="dist" depends="compile">
