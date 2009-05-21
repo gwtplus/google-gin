@@ -47,6 +47,15 @@ public class InnerGinjectorTest extends GWTTestCase {
     assertNotNull(list);
   }
 
+  /**
+   * Tests issue #34 (http://code.google.com/p/google-gin/issues/detail?id=34).
+   */
+  public void testInnerParameterizedType() {
+    ParameterizedGinjector ginjector = GWT.create(ParameterizedGinjector.class);
+    MyParameterized<String, Integer> parameterized = ginjector.getParameterized();
+    assertNotNull(parameterized);
+  }
+
   public static class InnerType {
     boolean injected;
 
@@ -93,6 +102,23 @@ public class InnerGinjectorTest extends GWTTestCase {
   static class ListOfStringProvider implements Provider<List<String>> {
     public List<String> get() {
       return Arrays.asList("blah");
+    }
+  }
+
+  static class MyParameterized<A, B> {
+  }
+
+  static class MyParameterizedImpl extends MyParameterized<String, Integer> {
+  }
+
+  @GinModules(ParameterizedGinModule.class)
+  static interface ParameterizedGinjector extends Ginjector {
+    MyParameterized<String, Integer> getParameterized();
+  }
+
+  static class ParameterizedGinModule extends AbstractGinModule {
+    protected void configure() {
+      bind(new TypeLiteral<MyParameterized<String, Integer>>() {}).to(MyParameterizedImpl.class);
     }
   }
 

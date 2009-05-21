@@ -36,12 +36,16 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import com.google.inject.internal.MoreTypes;
 import com.google.inject.spi.InjectionPoint;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.Map;
 
@@ -161,7 +165,7 @@ class GinjectorOutputter {
       Key<?> key = entry.getKey();
 
       // toString on TypeLiteral outputs the binary name, not the source name
-      String typeName = nameGenerator.binaryNameToSourceName(key.getTypeLiteral().toString());
+      String typeName = nameGenerator.binaryNameToSourceName(toString(key.getTypeLiteral()));
       Binding binding = entry.getValue();
 
       String getter = nameGenerator.getGetterMethodName(key);
@@ -209,6 +213,38 @@ class GinjectorOutputter {
       }
 
       writer.println();
+    }
+  }
+
+  /**
+   * Alternate toString method for TypeLiterals that fixes a JDK bug that was
+   * replicated in Guice.
+   *
+   * @see http://code.google.com/p/google-guice/issues/detail?id=293
+   */
+  private String toString(TypeLiteral<?> typeLiteral) {
+    Type type = typeLiteral.getType();
+    return toString(type);
+  }
+
+  private String toString(Type type) {
+    if (type instanceof ParameterizedType && ((ParameterizedType) type).getOwnerType() != null) {
+      ParameterizedType parameterizedType = (ParameterizedType) type;
+      Type[] arguments = parameterizedType.getActualTypeArguments();
+      StringBuilder stringBuilder = new StringBuilder();
+      stringBuilder.append(toString(parameterizedType.getRawType()));
+
+      if (arguments.length == 0) {
+        return stringBuilder.toString();
+      }
+      
+      stringBuilder.append("<").append(toString(arguments[0]));
+      for (int i = 1; i < arguments.length; i++) {
+        stringBuilder.append(", ").append(toString(arguments[i]));
+      }
+      return stringBuilder.append(">").toString();
+    } else {
+      return MoreTypes.toString(type);
     }
   }
 

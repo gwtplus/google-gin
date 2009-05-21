@@ -258,8 +258,15 @@ public class KeyUtil {
       javaTypeArgs.toArray(new Type[javaTypeArgs.size()]);
 
       Type rawType = gwtTypeToJavaType(parameterizedType.getRawType());
-      return
-          Types.newParameterizedType(rawType, javaTypeArgs.toArray(new Type[javaTypeArgs.size()]));
+
+      if (parameterizedType.getEnclosingType() != null) {
+        return Types.newParameterizedTypeWithOwner(
+            gwtTypeToJavaType(parameterizedType.getEnclosingType()), rawType,
+            javaTypeArgs.toArray(new Type[javaTypeArgs.size()]));
+      } else {
+        return Types.newParameterizedType(rawType,
+            javaTypeArgs.toArray(new Type[javaTypeArgs.size()]));
+      }
     }
 
     JClassType jClassType = gwtType.isClassOrInterface();
