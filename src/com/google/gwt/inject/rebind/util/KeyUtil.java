@@ -28,6 +28,7 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.JWildcardType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -189,6 +190,19 @@ public class KeyUtil {
         nameGenerator.binaryNameToSourceName(javaField.getDeclaringClass().getName()));
 
     return gwtEnclosingType.getField(javaField.getName());
+  }
+
+  /**
+   * Returns true if the passed class member has an {@literal @}{@code Inject}
+   * annotation and the injection is marked as optional (
+   * {@literal @}{@code Inject(optional=true)}).
+   *
+   * @param member member to be checked
+   * @return true if member is injected optionally
+   */
+  public boolean isOptional(HasAnnotations member) {
+    Inject annot = member.getAnnotation(Inject.class);
+    return annot != null && annot.optional();
   }
 
   private Annotation getBindingAnnotation(Annotation[] annotations) {

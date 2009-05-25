@@ -15,30 +15,33 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.util.Collections;
+import java.util.Set;
 
 /**
- * Simple binding that allows injection of the ginjector.
+ * Simple tuple wrapper for {@link Binding#getRequiredKeys()} return values.
  */
-public class GinjectorBinding implements Binding {
+public class RequiredKeys {
 
-  private final SourceWriteUtil sourceWriteUtil;
+  private final Set<Key<?>> requiredKeys;
+  private final Set<Key<?>> optionalKeys;
 
-  @Inject
-  public GinjectorBinding(SourceWriteUtil sourceWriteUtil) {
-    this.sourceWriteUtil = sourceWriteUtil;
+  public RequiredKeys(Set<Key<?>> requiredKeys, Set<Key<?>> optionalKeys) {
+    this.requiredKeys = requiredKeys;
+    this.optionalKeys = optionalKeys;
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return this;");
+  public RequiredKeys(Set<Key<?>> requiredKeys) {
+    this(requiredKeys, Collections.<Key<?>>emptySet());
   }
 
-  public RequiredKeys getRequiredKeys() {
-    return new RequiredKeys(Collections.<Key<?>>emptySet());
+  public Set<Key<?>> getRequiredKeys() {
+    return requiredKeys;
+  }
+
+  public Set<Key<?>> getOptionalKeys() {
+    return optionalKeys;
   }
 }

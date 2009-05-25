@@ -39,8 +39,9 @@ public class RemoteServiceProxyBinding extends CallGwtDotCreateBinding {
 
   @Inject
   public RemoteServiceProxyBinding(@Injectable MemberCollector memberCollector,
-      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, GeneratorContext ctx) {
-    super(memberCollector, sourceWriteUtil, keyUtil);
+      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, GeneratorContext ctx,
+      BindingIndex bindingIndex) {
+    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex);
     this.ctx = ctx;
   }
 

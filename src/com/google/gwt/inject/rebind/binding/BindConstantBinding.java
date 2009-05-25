@@ -23,7 +23,6 @@ import com.google.inject.Key;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.Set;
 
 /**
  * Binding for a constant value.
@@ -94,7 +93,7 @@ public class BindConstantBinding implements Binding {
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return " + valueToOutput + ";");
   }
 
-  public Set<Key<?>> getRequiredKeys() {
-    return Collections.emptySet();
+  public RequiredKeys getRequiredKeys() {
+    return new RequiredKeys(Collections.<Key<?>>emptySet());
   }
 }

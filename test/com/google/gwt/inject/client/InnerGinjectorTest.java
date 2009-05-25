@@ -76,7 +76,7 @@ public class InnerGinjectorTest extends GWTTestCase {
     List<String> getList();
   }
 
-  static class InnerModule implements GinModule {
+  public static class InnerModule implements GinModule {
     public void configure(GinBinder binder) {
       binder.bind(new TypeLiteral<List<String>>() {}).toProvider(ListOfStringProvider.class);
       binder.bind(InnerType.class).annotatedWith(MyBindingAnnotation.class).to(InnerType.class);
@@ -99,7 +99,7 @@ public class InnerGinjectorTest extends GWTTestCase {
     }
   }
 
-  static class ListOfStringProvider implements Provider<List<String>> {
+  public static class ListOfStringProvider implements Provider<List<String>> {
     public List<String> get() {
       return Arrays.asList("blah");
     }

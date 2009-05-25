@@ -21,6 +21,7 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.inject.AbstractModule;
@@ -54,6 +55,7 @@ class GinjectorGeneratorModule extends AbstractModule {
     bind(TypeOracle.class).toInstance(ctx.getTypeOracle());
     bind(JClassType.class).annotatedWith(GinjectorInterfaceType.class)
         .toInstance(ginjectorInterface);
+    bind(BindingIndex.class).to(BindingsProcessor.class).in(Singleton.class);
   }
 
   @Provides

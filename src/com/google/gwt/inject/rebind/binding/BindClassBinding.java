@@ -22,7 +22,6 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.util.Collections;
-import java.util.Set;
 
 /**
  * Binding implementation that replaces one type with another.
@@ -50,8 +49,8 @@ public class BindClassBinding implements Binding {
         "return " + nameGenerator.getGetterMethodName(boundClassKey) + "();");
   }
 
-  public Set<Key<?>> getRequiredKeys() {
+  public RequiredKeys getRequiredKeys() {
     assert (boundClassKey != null);
-    return Collections.<Key<?>>singleton(boundClassKey);
+    return new RequiredKeys(Collections.<Key<?>>singleton(boundClassKey));
   }
 }

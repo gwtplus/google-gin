@@ -25,7 +25,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.Set;
 
 /**
  * Binding implementation for {@code Provider<T>} that just uses the binding
@@ -64,9 +63,9 @@ public class ImplicitProviderBinding implements Binding {
         + "};");
   }
 
-  public Set<Key<?>> getRequiredKeys() {
+  public RequiredKeys getRequiredKeys() {
     assert (targetKey != null);
-    return Collections.<Key<?>>singleton(targetKey);
+    return new RequiredKeys(Collections.<Key<?>>singleton(targetKey));
   }
 
   private Key<?> getKeyWithSameAnnotation(Type keyType, Key<?> baseKey) {

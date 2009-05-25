@@ -29,8 +29,8 @@ import com.google.inject.Inject;
 public class CallGwtDotCreateBinding extends CreatorBinding {
   @Inject
   public CallGwtDotCreateBinding(@Injectable MemberCollector memberCollector,
-      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
-    super(memberCollector, sourceWriteUtil, keyUtil);
+      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, BindingIndex bindingIndex) {
+    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex);
   }
 
   @Override protected final void appendCreationStatement(SourceWriter sourceWriter,

@@ -42,7 +42,7 @@ public class BindConstantBindingTest extends TestCase {
     BindConstantBinding binding = new BindConstantBinding(utilMock);
     binding.setKeyAndInstance(colorKey, Color.Green);
 
-    assertTrue(binding.getRequiredKeys().isEmpty());
+    assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
 
     binding.writeCreatorMethods(writerMock, signature);
 
@@ -63,7 +63,7 @@ public class BindConstantBindingTest extends TestCase {
     BindConstantBinding binding = new BindConstantBinding(utilMock);
     binding.setKeyAndInstance(charKey, value);
 
-    assertTrue(binding.getRequiredKeys().isEmpty());
+    assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
 
     binding.writeCreatorMethods(writerMock, signature);
 
@@ -84,7 +84,7 @@ public class BindConstantBindingTest extends TestCase {
     BindConstantBinding binding = new BindConstantBinding(utilMock);
     binding.setKeyAndInstance(charKey, value);
 
-    assertTrue(binding.getRequiredKeys().isEmpty());
+    assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
 
     binding.writeCreatorMethods(writerMock, signature);
 

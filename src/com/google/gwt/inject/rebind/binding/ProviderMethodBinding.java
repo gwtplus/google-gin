@@ -84,7 +84,7 @@ public class ProviderMethodBinding implements Binding {
             createModule));
   }
 
-  public Set<Key<?>> getRequiredKeys() {
-    return parameterKeys;
+  public RequiredKeys getRequiredKeys() {
+    return new RequiredKeys(parameterKeys);
   }
 }

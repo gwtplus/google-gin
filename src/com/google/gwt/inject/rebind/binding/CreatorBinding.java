@@ -27,15 +27,14 @@ import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Abstract binder that takes a type and performs the required key analysis and
  * method injection.  Calls
- * {@link #appendCreationStatement(StringBuilder, com.google.gwt.inject.rebind.util.NameGenerator)}
- * on subclass to retrieve the actual object creation statement (e.g.
+ * {@link #appendCreationStatement(SourceWriter, StringBuilder)} on subclass to
+ * retrieve the actual object creation statement (e.g.
  * {@code new MyObject();}).
  */
 abstract class CreatorBinding implements Binding {
@@ -43,15 +42,19 @@ abstract class CreatorBinding implements Binding {
   private final MemberCollector memberCollector;
   private final SourceWriteUtil sourceWriteUtil;
   private final KeyUtil keyUtil;
+  private final BindingIndex bindingIndex;
   private Set<Key<?>> requiredKeys;
+  private Set<Key<?>> optionalKeys;
   private JClassType classType;
 
   protected CreatorBinding(MemberCollector memberCollector, SourceWriteUtil sourceWriteUtil,
-      KeyUtil keyUtil) {
+      KeyUtil keyUtil, BindingIndex bindingIndex) {
     this.memberCollector = memberCollector;
     this.sourceWriteUtil = sourceWriteUtil;
     this.keyUtil = keyUtil;
+    this.bindingIndex = bindingIndex;
     this.requiredKeys = new HashSet<Key<?>>();
+    this.optionalKeys = new HashSet<Key<?>>();
   }
 
   public void setClassType(JClassType classType) {
@@ -61,7 +64,12 @@ abstract class CreatorBinding implements Binding {
     }
 
     for (JField field : memberCollector.getFields(classType)) {
-      requiredKeys.add(keyUtil.getKey(field));
+      Key<?> key = keyUtil.getKey(field);
+      if (keyUtil.isOptional(field)) {
+        optionalKeys.add(key);
+      } else {
+        requiredKeys.add(key);
+      }
     }
   }
 
@@ -72,12 +80,26 @@ abstract class CreatorBinding implements Binding {
     sb.append(getTypeName()).append(" result = ");
     appendCreationStatement(writer, sb);
 
-    Collection<JMethod> methods = memberCollector.getMethods(classType);
+    Set<JMethod> methods = new HashSet<JMethod>();
+
+    for (JMethod method : memberCollector.getMethods(classType)) {
+      if (shouldInject(method)) {
+        methods.add(method);
+      }
+    }
+
     if (!methods.isEmpty()) {
       sb.append(sourceWriteUtil.createMethodInjection(writer, methods, "result"));
     }
 
-    Collection<JField> fields = memberCollector.getFields(classType);
+    // Only inject fields that are non optional or where the key is bound.
+    Set<JField> fields = new HashSet<JField>();
+    for (JField field : memberCollector.getFields(classType)) {
+      if (!keyUtil.isOptional(field) || bindingIndex.isBound(keyUtil.getKey(field))) {
+        fields.add(field);
+      }
+    }
+
     if (!fields.isEmpty()) {
       sb.append(sourceWriteUtil.appendFieldInjection(writer, fields, "result"));
     }
@@ -87,8 +109,21 @@ abstract class CreatorBinding implements Binding {
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, sb.toString());
   }
 
-  public Set<Key<?>> getRequiredKeys() {
-    return requiredKeys;
+  private boolean shouldInject(JMethod method) {
+
+    // Only inject methods that are non optional or where all keys are bound.
+    if (keyUtil.isOptional(method)) {
+      for (JParameter param : method.getParameters()) {
+        if(!bindingIndex.isBound(keyUtil.getKey(param))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  public RequiredKeys getRequiredKeys() {
+    return new RequiredKeys(requiredKeys, optionalKeys);
   }
 
   public JClassType getClassType() {
@@ -105,7 +140,12 @@ abstract class CreatorBinding implements Binding {
 
   protected void addParamTypes(JAbstractMethod method) {
     for (JParameter param : method.getParameters()) {
-      requiredKeys.add(keyUtil.getKey(param));
+      Key<?> key = keyUtil.getKey(param);
+      if (keyUtil.isOptional(method)) {
+        optionalKeys.add(key);
+      } else {
+        requiredKeys.add(key);
+      }
     }
   }
 }

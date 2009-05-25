@@ -31,12 +31,14 @@ import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
 import com.google.gwt.inject.rebind.binding.Binding;
+import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.GinjectorBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
 import com.google.gwt.inject.rebind.binding.ProviderMethodBinding;
 import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
+import com.google.gwt.inject.rebind.binding.RequiredKeys;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
@@ -79,7 +81,7 @@ import java.util.Set;
  * Builds up the bindings and scopes for this {@code Ginjector}.
  */
 @Singleton
-class BindingsProcessor {
+class BindingsProcessor implements BindingIndex {
 
   /**
    * Type array representing zero arguments for a metohod.
@@ -106,9 +108,18 @@ class BindingsProcessor {
   /**
    * Set of keys for classes that we still need to resolve. Every time a
    * binding is added to {@code bindings}, the key is removed from this set.
-   * When this set becomes empty, we know we've satisfied all dependencies.
+   * When this set and {@code unresolvedOptional} becomes empty, we know we've
+   * satisfied all dependencies.
    */
   private final Set<Key<?>> unresolved = new HashSet<Key<?>>();
+
+  /**
+   * Set of keys for classes that we still need to resolve but that are
+   * optionally bound. Every time a binding is added to {@code bindings},
+   * the key is removed from this set. When this set and {@code unresolved}
+   * becomes empty, we know we've satisfied all dependencies.
+   */
+  private final Set<Key<?>> unresolvedOptional = new HashSet<Key<?>>();
 
   /**
    * All types for which static injection has been requested.
@@ -192,24 +203,35 @@ class BindingsProcessor {
   }
 
   private void createImplicitBindingsForUnresolved() throws UnableToCompleteException {
-    while (!unresolved.isEmpty()) {
-      // Iterate through a copy because we will modify it during iteration
+    while (!unresolved.isEmpty() || !unresolvedOptional.isEmpty()) {
+      // Iterate through copies because we will modify sets during iteration
       for (Key<?> key : new ArrayList<Key<?>>(unresolved)) {
-        Binding binding = createImplicitBinding(key);
+        createImplicitBindingForUnresolved(key, false);
+      }
 
-        if (binding != null) {
-          if (binding instanceof CallGwtDotCreateBinding || binding instanceof GinjectorBinding) {
-            // Need to lie to Guice about any implicit GWT.create bindings
-            // we install that Guice would otherwise not see.
-            // http://code.google.com/p/google-gin/issues/detail?id=13
-            lieToGuiceModule.registerImplicitBinding(key);
-          }
-
-          addBinding(key, binding);
-        }
+      for (Key<?> key : new ArrayList<Key<?>>(unresolvedOptional)) {
+        createImplicitBindingForUnresolved(key, true);
       }
 
       checkForError();
+    }
+  }
+
+  private void createImplicitBindingForUnresolved(Key<?> key, boolean optional) {
+    Binding binding = createImplicitBinding(key, optional);
+
+    if (binding != null) {
+      logger.log(TreeLogger.TRACE, "Implicit binding for " + key + ": " + binding);
+      if (binding instanceof CallGwtDotCreateBinding) {
+        // Need to lie to Guice about any implicit GWT.create bindings
+        // we install that Guice would otherwise not see.
+        // http://code.google.com/p/google-gin/issues/detail?id=13
+        lieToGuiceModule.registerImplicitBinding(key);
+      }
+
+      addBinding(key, binding);
+    } else if (optional) {
+      unresolvedOptional.remove(key);
     }
   }
 
@@ -248,6 +270,10 @@ class BindingsProcessor {
 
     logger.log(TreeLogger.TRACE, "scope for " + key + ": " + scope);
     return scope;
+  }
+
+  public boolean isBound(Key<?> key) {
+    return bindings.containsKey(key);
   }
 
   private void validateMethods() throws UnableToCompleteException {
@@ -362,52 +388,86 @@ class BindingsProcessor {
     return null;
   }
 
-  private Binding createImplicitBinding(Key<?> key) {
-    Binding binding = null;
-    Type keyType = key.getTypeLiteral().getType();
+  private Binding createImplicitBinding(Key<?> key, boolean optional) {
+    // All steps per:
+    // http://code.google.com/p/google-guice/wiki/BindingResolution
 
+    // 1. Explicit binding - already finished at this point.
+
+    // This is really an explicit binding, we add it here.
+    // TODO(schmitt): Can we just add a binding to the module?
+    if (keyUtil.getRawClassType(key).equals(ginjectorInterface)) {
+      return ginjectorBindingProvider.get();
+    }
+
+    // 2. Ask parent injector.
+    // TODO(schmitt): Implement parent/child injectors.
+
+    // 3. Ask child injector.
+    // TODO(schmitt): Implement parent/child injectors.
+
+    // 4. Provider injections.
+    if (isProviderKey(key)) {
+      if (optional) {
+
+        // We have to take special measures for optional implicit providers
+        // since they are only created/injected if their provided type can be
+        // bound.
+        return optionallyCreateImplicitProviderBinding(key);
+      }
+
+      ImplicitProviderBinding binding = implicitProviderBindingProvider.get();
+      binding.setProviderKey(key);
+      return binding;
+
+      // TODO(bstoler): Scope the provider binding like the thing being provided?
+    }
+
+    // 5. Convert constants.
+    // Already covered by resolving explicit bindings.
     if (BindConstantBinding.isConstantKey(key)) {
-      logError("Binding requested for constant key " + key
-          + " but no explicit binding was found.");
+      if (!optional) {
+        logError("Binding requested for constant key " + key
+            + " but no explicit binding was found.");
+      }
+
       return null;
     }
 
-    if (keyType instanceof ParameterizedType) {
-      ParameterizedType keyParamType = (ParameterizedType) keyType;
-
-      // Create implicit Provider<T> binding
-      if (keyParamType.getRawType() == Provider.class) {
-        binding = implicitProviderBindingProvider.get();
-        ((ImplicitProviderBinding) binding).setProviderKey(key);
-
-        // TODO(bstoler): Scope the provider binding like the thing being provided?
-      }
-    }
-
-    if (keyUtil.getRawClassType(key).equals(ginjectorInterface)) {
-      binding = ginjectorBindingProvider.get();
-    }
-
-    if (binding == null) {
-      // Only use implicit GWT.create binding if there is no binding annotation.
-      // This is compatible with Guice.
-      if (key.getAnnotation() != null || key.getAnnotationType() != null) {
+    // 6. If the dependency has a binding annotation, give up.
+    if (key.getAnnotation() != null || key.getAnnotationType() != null) {
+      if (!optional) {
         logError("No implementation bound for key " + key);
-      } else {
-        JClassType classType = keyUtil.getRawClassType(key);
-        if (classType != null) {
-          binding = createImplicitBindingForClass(classType);
-        } else {
-          logError("Class not found: " + key);
-        }
       }
+
+      return null;
     }
 
-    logger.log(TreeLogger.TRACE, "Implicit binding for " + key + ": " + binding);
-    return binding;
+    // 7. If the dependency is an array or enum, give up.
+    // Covered by step 5 (enum) and 11 (array).
+
+    // 8. Handle TypeLiteral injections.
+    // TODO(schmitt): Implement TypeLiteral injections.
+
+    // 9. Use resolution annotations (@ImplementedBy, @ProvidedBy)
+    // TODO(schmitt): Should be covered by Guice, test.
+
+    // 10. If the dependency is abstract or a non-static inner class, give up.
+    // Abstract classes are handled by GWT.create.
+    // TODO(schmitt): Introduce check.
+
+    // 11. Use a single @Inject or public no-arguments constructor.
+    JClassType classType = keyUtil.getRawClassType(key);
+    if (classType != null) {
+      return createImplicitBindingForClass(classType, optional);
+    } else if (!optional) {
+      logError("Class not found: " + key);
+    }
+
+    return null;
   }
 
-  private Binding createImplicitBindingForClass(JClassType classType) {
+  private Binding createImplicitBindingForClass(JClassType classType, boolean optional) {
     // Either call the @Inject constructor or use GWT.create
     JConstructor injectConstructor = getInjectConstructor(classType);
 
@@ -429,7 +489,10 @@ class BindingsProcessor {
       }
     }
 
-    logError("No @Inject or accessible default constructor found for " + classType);
+    if (!optional) {
+      logError("No @Inject or default constructor found for " + classType);
+    }
+
     return null;
   }
 
@@ -473,11 +536,24 @@ class BindingsProcessor {
 
     bindings.put(key, binding);
     unresolved.remove(key);
+    unresolvedOptional.remove(key);
 
+    RequiredKeys requiredKeys = binding.getRequiredKeys();
+
+    // Resolve optional keys.
     // Clone the returned set so we can safely mutate it
-    Set<Key<?>> nowUnresolved = new HashSet<Key<?>>(binding.getRequiredKeys());
-    nowUnresolved.removeAll(bindings.keySet());
+    Set<Key<?>> optionalKeys = new HashSet<Key<?>>(requiredKeys.getOptionalKeys());
+    optionalKeys.removeAll(bindings.keySet());
+    if (!optionalKeys.isEmpty()) {
+      logger.log(TreeLogger.TRACE, "Add optional unresolved as dep from binding to "
+          + key + ": " + optionalKeys);
+      unresolvedOptional.addAll(optionalKeys);
+    }
 
+    // Resolve required keys.
+    // Clone the returned set so we can safely mutate it
+    Set<Key<?>> nowUnresolved = new HashSet<Key<?>>(requiredKeys.getRequiredKeys());
+    nowUnresolved.removeAll(bindings.keySet());
     if (!nowUnresolved.isEmpty()) {
       logger.log(TreeLogger.TRACE, "Add unresolved as dep from binding to "
           + key + ": " + nowUnresolved);
@@ -485,6 +561,42 @@ class BindingsProcessor {
     }
 
     logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
+  }
+
+  /**
+   * Attempts to create an implicit provider by checking whether it's provided
+   * type can be bound.
+   *
+   * @return provider binding if all provider dependencies can be satisfied,
+   *     {@code null} otherwise
+   */
+  private ImplicitProviderBinding optionallyCreateImplicitProviderBinding(Key<?> providerKey) {
+    ImplicitProviderBinding providerBinding = implicitProviderBindingProvider.get();
+    providerBinding.setProviderKey(providerKey);
+    RequiredKeys requiredKeys = providerBinding.getRequiredKeys();
+
+    assert(requiredKeys.getOptionalKeys().isEmpty());
+
+    // Find out whether all requirements of this provider can be satisfied.
+    Set<Key<?>> unresolved = new HashSet<Key<?>>(requiredKeys.getRequiredKeys());
+    unresolved.removeAll(bindings.keySet());
+    for (Key<?> requiredKey : unresolved) {
+
+      // Note: This call doesn't cause a binding to be registered.
+      if (createImplicitBinding(requiredKey, true) == null) {
+
+        // A dependency cannot be constructed, this provider is not available.
+        return null;
+      }
+    }
+
+    return providerBinding;
+  }
+
+  private boolean isProviderKey(Key<?> key) {
+    Type keyType = key.getTypeLiteral().getType();
+    return keyType instanceof ParameterizedType &&
+        ((ParameterizedType) keyType).getRawType() == Provider.class;
   }
 
   private boolean isClassAccessibleFromGinjector(JClassType classType) {
@@ -655,8 +767,9 @@ class BindingsProcessor {
       // Guice saw. We need to register this to avoid later adding
       // this key to the Guice-lies module, which would make it
       // double bound. If binding was null, an error was already logged.
-      Binding binding = createImplicitBinding(targetKey);
+      Binding binding = createImplicitBinding(targetKey, false);
       if (binding != null) {
+        logger.log(TreeLogger.TRACE, "Implicit binding for " + targetKey + ": " + binding);
         addBinding(targetKey, binding);
       }
     }

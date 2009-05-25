@@ -34,8 +34,8 @@ public class CallConstructorBinding extends CreatorBinding {
 
   @Inject
   public CallConstructorBinding(@Injectable MemberCollector memberCollector,
-      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
-    super(memberCollector, sourceWriteUtil, keyUtil);
+      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, BindingIndex bindingIndex) {
+    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex);
     this.sourceWriteUtil = sourceWriteUtil;
   }
 

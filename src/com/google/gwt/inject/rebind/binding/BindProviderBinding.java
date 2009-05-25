@@ -23,7 +23,6 @@ import com.google.inject.Key;
 import com.google.inject.Provider;
 
 import java.util.Collections;
-import java.util.Set;
 
 /**
  * A binding to call the requested {@link com.google.inject.Provider}.
@@ -52,8 +51,8 @@ public class BindProviderBinding implements Binding {
         "return " + nameGenerator.getGetterMethodName(providerKey) + "().get();");
   }
 
-  public Set<Key<?>> getRequiredKeys() {
+  public RequiredKeys getRequiredKeys() {
     assert (providerKey != null);
-    return Collections.<Key<?>>singleton(providerKey);
+    return new RequiredKeys(Collections.<Key<?>>singleton(providerKey));
   }
 }

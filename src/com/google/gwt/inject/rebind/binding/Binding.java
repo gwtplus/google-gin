@@ -16,9 +16,6 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Key;
-
-import java.util.Set;
 
 /**
  * Interface used by {@code InjectorGeneratorImpl} to represent different kinds
@@ -37,8 +34,9 @@ public interface Binding {
   void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature);
 
   /**
-   * @return The set of keys that this binding requires. This set is used to
-   *     find more classes that need to be bound.
+   * @return A tuple of two sets:  One set of keys that this binding requires.
+   *     This set is used to find more classes that need to be bound. The
+   *     second set contains all keys that have been optionally requested.
    */
-  Set<Key<?>> getRequiredKeys();
+  RequiredKeys getRequiredKeys();
 }
