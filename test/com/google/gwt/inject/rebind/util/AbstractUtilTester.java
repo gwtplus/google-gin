@@ -37,6 +37,11 @@ import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -105,13 +110,10 @@ public abstract class AbstractUtilTester extends TestCase {
         ModuleDef userModule =
             ModuleDefLoader.loadFromClassPath(logger, "com.google.gwt.core.Core");
 
-        compilationState = userModule.getCompilationState();
+        compilationState = userModule.getCompilationState(logger);
 
-        for (CompilationUnit unit : getTestUnits()) {
-          compilationState.addGeneratedCompilationUnit(unit);
-        }
+        compilationState.addGeneratedCompilationUnits(logger, getTestUnits());
 
-        compilationState.compile(logger);
       } catch (UnableToCompleteException e) {
         throw new RuntimeException("Failed during compiler intialization!", e);
       }
@@ -134,18 +136,28 @@ public abstract class AbstractUtilTester extends TestCase {
     return units;
   }
 
+  /**
+   * Please note: Some of the methods here are redundant and/or superfluous but
+   * are included in anticipation of the next GWT release, where Resource will
+   * replace JavaSourceFile.
+   */
   private static class MyJavaSourceFile extends JavaSourceFile {
 
     private final String packageName;
     private final String shortName;
+    private File file;
 
     public MyJavaSourceFile(String packageName, String shortName) {
       this.packageName = packageName;
       this.shortName = shortName;
+
+      String fileName = getLocation().replaceAll("\\.", "/") + ".java";
+      String filePath = getClass().getClassLoader().getResource(fileName).getPath();
+      file = new File(filePath);
     }
 
     public String getLocation() {
-      return getTypeName();
+      return packageName + "." + shortName;
     }
 
     public String getPackageName() {
@@ -157,13 +169,43 @@ public abstract class AbstractUtilTester extends TestCase {
     }
 
     public String getTypeName() {
-      return packageName + "." + shortName;
+      return getLocation();
+    }
+
+    public boolean isSuperSource() {
+      return false;
     }
 
     public String readSource() {
-      String fileName = getTypeName().replaceAll("\\.", "/") + ".java";
-      String filePath = getClass().getClassLoader().getResource(fileName).getPath();
-      return Util.readFileAsString(new File(filePath));
+      return Util.readStreamAsString(openContents());
+    }
+
+    public String getPath() {
+      return getLocation() + ".java";
+    }
+
+    public URL getURL() {
+      try {
+        return file.toURL();
+      } catch (MalformedURLException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    public InputStream openContents() {
+      try {
+        return new FileInputStream(file);
+      } catch (FileNotFoundException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    public boolean wasRerooted() {
+      return false;
+    }
+
+    public long getLastModified() {
+      return 0;
     }
   }
 }
