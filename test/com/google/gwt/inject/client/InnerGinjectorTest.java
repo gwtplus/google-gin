@@ -21,6 +21,7 @@ import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
+import com.google.inject.Provides;
 
 import java.util.Arrays;
 import java.util.List;
@@ -56,6 +57,11 @@ public class InnerGinjectorTest extends GWTTestCase {
     assertNotNull(parameterized);
   }
 
+  public void testProviderMethod() {
+    InnerGinjector injector = GWT.create(InnerGinjector.class);
+    assertEquals("foo", injector.getMyString());
+  }
+
   public static class InnerType {
     boolean injected;
 
@@ -74,6 +80,9 @@ public class InnerGinjectorTest extends GWTTestCase {
     MyType getMyType();
 
     List<String> getList();
+
+    @MyBindingAnnotation
+    String getMyString();
   }
 
   public static class InnerModule implements GinModule {
@@ -81,6 +90,13 @@ public class InnerGinjectorTest extends GWTTestCase {
       binder.bind(new TypeLiteral<List<String>>() {}).toProvider(ListOfStringProvider.class);
       binder.bind(InnerType.class).annotatedWith(MyBindingAnnotation.class).to(InnerType.class);
       binder.bind(MyType.class).toProvider(MyProvider.class);
+    }
+
+    // This is an example of http://code.google.com/p/google-gin/issues/detail?id=39
+    @Provides
+    @MyBindingAnnotation
+    String provideString() {
+      return "foo";
     }
   }
 
