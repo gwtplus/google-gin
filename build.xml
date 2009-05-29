@@ -154,13 +154,9 @@
     <attribute name="outputbase" />
 
     <sequential>
-      <property name="gwt.gen.dir" value="@{outputbase}/gen"/>
-      <property name="gwt.out.dir" value="@{outputbase}/out"/>
-      <property name="junit.report.dir" value="@{outputbase}/reports"/>
-
-      <mkdir dir="${gwt.out.dir}"/>
-      <mkdir dir="${gwt.gen.dir}"/>
-      <mkdir dir="${junit.report.dir}"/>
+      <mkdir dir="@{outputbase}/out"/>
+      <mkdir dir="@{outputbase}/gen"/>
+      <mkdir dir="@{outputbase}/reports"/>
 
       <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
           haltonerror="true" failureproperty="junit.failure">
@@ -169,10 +165,10 @@
         <formatter type="xml"/>
 
         <!-- Add -logLevel TRACE to get more debug output -->
-        <jvmarg value="-Dgwt.args=@{extragwtargs} -gen ${gwt.gen.dir} -out ${gwt.out.dir}"/>
+        <jvmarg value="-Dgwt.args=@{extragwtargs} -gen @{outputbase}/gen -out @{outputbase}/out"/>
 
         <classpath refid="gin.test.classpath"/>
-        <batchtest todir="${junit.report.dir}">
+        <batchtest todir="@{outputbase}/reports">
           <fileset dir="${gin.testoutput.dir}">
             <include name="com/google/gwt/inject/rebind/**/*Test.class"/>
             <include name="com/google/gwt/inject/*TestSuite.class"/>
@@ -180,12 +176,12 @@
         </batchtest>
       </junit>
 
-      <junitreport todir="${junit.report.dir}">
-        <fileset dir="${junit.report.dir}"/>
-        <report todir="${junit.report.dir}/html"/>
+      <junitreport todir="@{outputbase}/reports">
+        <fileset dir="@{outputbase}/reports"/>
+        <report todir="@{outputbase}/reports/html"/>
       </junitreport>
 
-      <fail if="junit.failure" message="Tests failed. See reports in ${gin.testrun.dir}"/>
+      <fail if="junit.failure" message="Tests failed. See reports in @{outputbase}/reports"/>
     </sequential>
   </macrodef>
 
