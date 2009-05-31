@@ -20,6 +20,7 @@ import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.inject.Inject;
@@ -40,8 +41,8 @@ public class RemoteServiceProxyBinding extends CallGwtDotCreateBinding {
   @Inject
   public RemoteServiceProxyBinding(@Injectable MemberCollector memberCollector,
       SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, GeneratorContext ctx,
-      BindingIndex bindingIndex) {
-    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex);
+      BindingIndex bindingIndex, NameGenerator nameGenerator) {
+    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex, nameGenerator);
     this.ctx = ctx;
   }
 

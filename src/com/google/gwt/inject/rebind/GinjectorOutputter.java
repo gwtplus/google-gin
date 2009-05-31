@@ -20,7 +20,6 @@ import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
@@ -44,9 +43,8 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.lang.reflect.ParameterizedType;
-import java.util.Collection;
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -218,9 +216,9 @@ class GinjectorOutputter {
 
   /**
    * Alternate toString method for TypeLiterals that fixes a JDK bug that was
-   * replicated in Guice.
-   *
-   * @see http://code.google.com/p/google-guice/issues/detail?id=293
+   * replicated in Guice. See
+   * <a href="http://code.google.com/p/google-guice/issues/detail?id=293">the related Guice bug</a>
+   * for details.
    */
   private String toString(TypeLiteral<?> typeLiteral) {
     Type type = typeLiteral.getType();
@@ -237,7 +235,7 @@ class GinjectorOutputter {
       if (arguments.length == 0) {
         return stringBuilder.toString();
       }
-      
+
       stringBuilder.append("<").append(toString(arguments[0]));
       for (int i = 1; i < arguments.length; i++) {
         stringBuilder.append(", ").append(toString(arguments[i]));
@@ -263,9 +261,13 @@ class GinjectorOutputter {
 
     // Implements methods of the form "void foo(BarType bar)"
     for (JMethod method : memberInjectCollector.getMethods(ginjectorInterface)) {
+      JParameter injectee = method.getParameters()[0];
+      String body = nameGenerator.getMemberInjectMethodName(keyUtil.getKey(injectee))
+          + "(" + injectee.getName() + ");";
+
       sourceWriteUtil.writeMethod(writer,
           method.getReadableDeclaration(false, false, false, false, true),
-          generateMethodBodyForMemberInjection(method));
+          body);
     }
   }
 
@@ -305,17 +307,4 @@ class GinjectorOutputter {
         constructorBody.toString());
   }
 
-  private String generateMethodBodyForMemberInjection(JMethod ginjectorMethod) {
-    StringBuilder body = new StringBuilder();
-    JParameter injectee = ginjectorMethod.getParameters()[0];
-    JClassType targetType = injectee.getType().isClassOrInterface();
-
-    Collection<JMethod> methods = injectableCollector.getMethods(targetType);
-    body.append(sourceWriteUtil.createMethodInjection(writer, methods, injectee.getName()));
-
-    Collection<JField> fields = injectableCollector.getFields(targetType);
-    body.append(sourceWriteUtil.appendFieldInjection(writer, fields, injectee.getName()));
-
-    return body.toString();
-  }
 }

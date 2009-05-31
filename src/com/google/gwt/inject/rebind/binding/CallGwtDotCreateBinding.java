@@ -17,6 +17,7 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -29,8 +30,9 @@ import com.google.inject.Inject;
 public class CallGwtDotCreateBinding extends CreatorBinding {
   @Inject
   public CallGwtDotCreateBinding(@Injectable MemberCollector memberCollector,
-      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, BindingIndex bindingIndex) {
-    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex);
+      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, BindingIndex bindingIndex,
+      NameGenerator nameGenerator) {
+    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex, nameGenerator);
   }
 
   @Override protected final void appendCreationStatement(SourceWriter sourceWriter,

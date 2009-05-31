@@ -18,9 +18,11 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
+import com.google.inject.Key;
 
 /**
  * A binding that calls a single constructor directly. Values for constructor
@@ -34,14 +36,15 @@ public class CallConstructorBinding extends CreatorBinding {
 
   @Inject
   public CallConstructorBinding(@Injectable MemberCollector memberCollector,
-      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, BindingIndex bindingIndex) {
-    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex);
+      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, BindingIndex bindingIndex,
+      NameGenerator nameGenerator) {
+    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex, nameGenerator);
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
-  public void setConstructor(JConstructor constructor) {
+  public void setConstructor(JConstructor constructor, Key<?> key) {
     this.constructor = constructor;
-    setClassType(constructor.getEnclosingType());
+    setClassType(constructor.getEnclosingType(), key);
     addParamTypes(constructor);
   }
 

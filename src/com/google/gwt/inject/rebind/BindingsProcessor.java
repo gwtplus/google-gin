@@ -459,7 +459,7 @@ class BindingsProcessor implements BindingIndex {
     // 11. Use a single @Inject or public no-arguments constructor.
     JClassType classType = keyUtil.getRawClassType(key);
     if (classType != null) {
-      return createImplicitBindingForClass(classType, optional);
+      return createImplicitBindingForClass(classType, optional, key);
     } else if (!optional) {
       logError("Class not found: " + key);
     }
@@ -467,24 +467,24 @@ class BindingsProcessor implements BindingIndex {
     return null;
   }
 
-  private Binding createImplicitBindingForClass(JClassType classType, boolean optional) {
+  private Binding createImplicitBindingForClass(JClassType classType, boolean optional, Key<?> key) {
     // Either call the @Inject constructor or use GWT.create
     JConstructor injectConstructor = getInjectConstructor(classType);
 
     if (injectConstructor != null) {
       CallConstructorBinding binding = callConstructorBinding.get();
-      binding.setConstructor(injectConstructor);
+      binding.setConstructor(injectConstructor, key);
       return binding;
     }
 
     if (hasAccessibleZeroArgConstructor(classType)) {
       if (RemoteServiceProxyBinding.isRemoteServiceProxy(classType)) {
         RemoteServiceProxyBinding binding = remoteServiceProxyBindingProvider.get();
-        binding.setClassType(classType);
+        binding.setClassType(classType, key);
         return binding;
       } else {
         CallGwtDotCreateBinding binding = callGwtDotCreateBindingProvider.get();
-        binding.setClassType(classType);
+        binding.setClassType(classType, key);
         return binding;
       }
     }

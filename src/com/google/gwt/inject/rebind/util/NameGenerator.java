@@ -81,6 +81,16 @@ public class NameGenerator {
   }
 
   /**
+   * Returns the key's member inject method name.  The method with that name
+   * can be called with a single parameter to inject members of that parameter.
+   *
+   * @return member inject method name
+   */
+  public String getMemberInjectMethodName(Key<?> key) {
+    return "memberInject_" + mangle(key);
+  }
+
+  /**
    * Returns the key's singleton field name.
    *
    * @return singleton field name
