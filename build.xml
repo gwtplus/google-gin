@@ -33,7 +33,7 @@
   <!-- Project Libraries -->
 
   <path id="library.guice.classpath">
-    <pathelement location="${basedir}/lib/guice-snapshot.jar"/>
+    <pathelement location="${basedir}/lib/guice-2.0.jar"/>
   </path>
 
   <path id="library.gwt-user.classpath">
