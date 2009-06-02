@@ -647,7 +647,7 @@ class BindingsProcessor implements BindingIndex {
     private final List<Message> messages = new ArrayList<Message>();
 
     @Override
-    public <T> Void visitBinding(com.google.inject.Binding<T> command) {
+    public <T> Void visit(com.google.inject.Binding<T> command) {
       GuiceBindingVisitor<T> bindingVisitor = new GuiceBindingVisitor<T>(command.getKey(),
           messages);
       command.acceptTargetVisitor(bindingVisitor);
@@ -656,13 +656,13 @@ class BindingsProcessor implements BindingIndex {
     }
 
     @Override
-    public Void visitMessage(Message message) {
+    public Void visit(Message message) {
       messages.add(message);
       return null;
     }
 
     @Override
-    public <T> Void visitProviderLookup(ProviderLookup<T> providerLookup) {
+    public <T> Void visit(ProviderLookup<T> providerLookup) {
       // Ignore provider lookups for now
       // TODO(bstoler): I guess we should error if you try to lookup a provider
       // that is not bound?
@@ -670,14 +670,14 @@ class BindingsProcessor implements BindingIndex {
     }
 
     @Override
-    protected Void visitElement(Element element) {
-      visitMessage(new Message(element.getSource(),
+    protected Void visitOther(Element element) {
+      visit(new Message(element.getSource(),
           "Ignoring unsupported Module element: " + element));
       return null;
     }
 
     @Override
-    public Void visitStaticInjectionRequest(StaticInjectionRequest staticInjectionRequest) {
+    public Void visit(StaticInjectionRequest staticInjectionRequest) {
       staticInjectionRequests.add(staticInjectionRequest.getType());
       return null;
     }
@@ -698,7 +698,7 @@ class BindingsProcessor implements BindingIndex {
     }
 
     @Override
-    public Void visitProviderKey(ProviderKeyBinding<? extends T> providerKeyBinding) {
+    public Void visit(ProviderKeyBinding<? extends T> providerKeyBinding) {
       BindProviderBinding binding = bindProviderBindingProvider.get();
       binding.setProviderKey(providerKeyBinding.getProviderKey());
       addBinding(targetKey, binding);
@@ -706,8 +706,7 @@ class BindingsProcessor implements BindingIndex {
     }
 
     @Override
-    public Void visitProviderInstance(
-        ProviderInstanceBinding<? extends T> providerInstanceBinding) {
+    public Void visit(ProviderInstanceBinding<? extends T> providerInstanceBinding) {
       // Detect provider methods and handle them
       // TODO(bstoler): Update this when the SPI explicitly has a case for provider methods
       Provider<? extends T> provider = providerInstanceBinding.getProviderInstance();
@@ -729,11 +728,11 @@ class BindingsProcessor implements BindingIndex {
       }
 
       // OTt, use the normal default handler (and error)
-      return super.visitProviderInstance(providerInstanceBinding);
+      return super.visit(providerInstanceBinding);
     }
 
     @Override
-    public Void visitLinkedKey(LinkedKeyBinding<? extends T> linkedKeyBinding) {
+    public Void visit(LinkedKeyBinding<? extends T> linkedKeyBinding) {
       BindClassBinding binding = bindClassBindingProvider.get();
       binding.setBoundClassKey(linkedKeyBinding.getLinkedKey());
       addBinding(targetKey, binding);
@@ -741,7 +740,7 @@ class BindingsProcessor implements BindingIndex {
     }
 
     @Override
-    public Void visitInstance(InstanceBinding<? extends T> instanceBinding) {
+    public Void visit(InstanceBinding<? extends T> instanceBinding) {
       T instance = instanceBinding.getInstance();
       if (BindConstantBinding.isConstantKey(targetKey)) {
         BindConstantBinding binding = bindConstantBindingProvider.get();
@@ -756,7 +755,7 @@ class BindingsProcessor implements BindingIndex {
     }
 
     @Override
-    public Void visitUntargetted(UntargettedBinding<? extends T> untargettedBinding) {
+    public Void visit(UntargettedBinding<? extends T> untargettedBinding) {
       addImplicitBinding();
 
       return null;
