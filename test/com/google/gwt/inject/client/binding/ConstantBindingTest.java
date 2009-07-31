@@ -69,6 +69,10 @@ public class ConstantBindingTest extends GWTTestCase {
     assertEquals(FruitGinModule.COLOR, injector.getColor());
   }
 
+  public void testInnerEnum() {
+    assertEquals(FruitGinModule.FAMILY, injector.getFamily());
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }

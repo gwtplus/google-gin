@@ -33,6 +33,8 @@ public class FruitGinModule extends AbstractGinModule {
   public static final short LEAVES = 2;
   public static final String NAME = "Apple";
   public static final Color COLOR = Color.Red;
+  public static final Color ALTERNATIVE_COLOR = Color.Yellow;
+  public static final Fruit.Family FAMILY = Fruit.Family.Rosaceae;
 
   protected void configure() {
     bindConstant().annotatedWith(Names.named("eaten")).to(EATEN);
@@ -45,5 +47,9 @@ public class FruitGinModule extends AbstractGinModule {
     bindConstant().annotatedWith(Names.named("leaves")).to(LEAVES);
     bindConstant().annotatedWith(Names.named("name")).to(NAME);
     bindConstant().annotatedWith(Names.named("color")).to(COLOR);
+
+    // Bind enum with custom implementation.
+    bindConstant().annotatedWith(Names.named("alternativeColor")).to(ALTERNATIVE_COLOR);
+    bindConstant().annotatedWith(Names.named("family")).to(FAMILY);
   }
 }

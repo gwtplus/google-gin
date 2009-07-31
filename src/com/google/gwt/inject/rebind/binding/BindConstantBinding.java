@@ -17,6 +17,7 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
+import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -28,6 +29,8 @@ import java.util.Collections;
  * Binding for a constant value.
  */
 public class BindConstantBinding implements Binding {
+
+  private final NameGenerator nameGenerator;
   private String valueToOutput;
 
   /**
@@ -53,8 +56,9 @@ public class BindConstantBinding implements Binding {
   private final SourceWriteUtil sourceWriteUtil;
 
   @Inject
-  public BindConstantBinding(SourceWriteUtil sourceWriteUtil) {
+  public BindConstantBinding(SourceWriteUtil sourceWriteUtil, NameGenerator nameGenerator) {
     this.sourceWriteUtil = sourceWriteUtil;
+    this.nameGenerator = nameGenerator;
   }
 
   /**
@@ -80,7 +84,19 @@ public class BindConstantBinding implements Binding {
     } else if (instance instanceof Number || instance instanceof Boolean) {
       valueToOutput = instance.toString(); // Includes int & short.
     } else if (instance instanceof Enum) {
-      valueToOutput = instance.getClass().getName() + "." + ((Enum) instance).name();
+      String className = instance.getClass().getName();
+
+      // Enums become anonymous inner classes if they have a custom
+      // implementation. Their classname is then of the form "com.foo.Bar$1".
+      // We need to be careful here to not clobber inner enums (which also
+      // have a $ in their classname). The regex below matches any classname
+      // that terminates in a $ followed by a number, i.e. an anonymous class.
+      if (className.matches(".+\\$\\d+\\z")) {
+        className = instance.getClass().getEnclosingClass().getName();
+      }
+      className = nameGenerator.binaryNameToSourceName(className);
+
+      valueToOutput = className + "." + ((Enum) instance).name();
     } else {
       throw new IllegalArgumentException("Attempted to create a constant binding with a "
           + "non-constant type: " + type);

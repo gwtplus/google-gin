@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
@@ -39,10 +40,46 @@ public class BindConstantBindingTest extends TestCase {
         "return com.google.gwt.inject.rebind.binding.Color.Green;");
     replay(utilMock);
 
-    BindConstantBinding binding = new BindConstantBinding(utilMock);
+    BindConstantBinding binding = new BindConstantBinding(utilMock, new NameGenerator());
     binding.setKeyAndInstance(colorKey, Color.Green);
 
     assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
+
+    binding.writeCreatorMethods(writerMock, signature);
+
+    verify(utilMock);
+  }
+
+  public void testInnerEnum() {
+    Key<Font> fontKey = Key.get(Font.class);
+    SourceWriteUtil utilMock = createMock(SourceWriteUtil.class);
+    SourceWriter writerMock = createMock(SourceWriter.class);
+
+    String signature = "";
+    utilMock.writeMethod(writerMock, signature,
+        "return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Verdana;");
+    replay(utilMock);
+
+    BindConstantBinding binding = new BindConstantBinding(utilMock, new NameGenerator());
+    binding.setKeyAndInstance(fontKey, Font.Verdana);
+
+    binding.writeCreatorMethods(writerMock, signature);
+
+    verify(utilMock);
+  }
+
+  public void testInnerEnumWithCustomImplementation() {
+    Key<Font> fontKey = Key.get(Font.class);
+    SourceWriteUtil utilMock = createMock(SourceWriteUtil.class);
+    SourceWriter writerMock = createMock(SourceWriter.class);
+
+    String signature = "";
+    utilMock.writeMethod(writerMock, signature,
+        "return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Arial;");
+    replay(utilMock);
+
+    BindConstantBinding binding = new BindConstantBinding(utilMock, new NameGenerator());
+    binding.setKeyAndInstance(fontKey, Font.Arial);
 
     binding.writeCreatorMethods(writerMock, signature);
 
@@ -60,7 +97,7 @@ public class BindConstantBindingTest extends TestCase {
     utilMock.writeMethod(writerMock, signature, "return '" + value + "';");
     replay(utilMock);
 
-    BindConstantBinding binding = new BindConstantBinding(utilMock);
+    BindConstantBinding binding = new BindConstantBinding(utilMock, new NameGenerator());
     binding.setKeyAndInstance(charKey, value);
 
     assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
@@ -81,7 +118,7 @@ public class BindConstantBindingTest extends TestCase {
     utilMock.writeMethod(writerMock, signature, "return '\\'';");
     replay(utilMock);
 
-    BindConstantBinding binding = new BindConstantBinding(utilMock);
+    BindConstantBinding binding = new BindConstantBinding(utilMock, new NameGenerator());
     binding.setKeyAndInstance(charKey, value);
 
     assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
@@ -89,5 +126,19 @@ public class BindConstantBindingTest extends TestCase {
     binding.writeCreatorMethods(writerMock, signature);
 
     verify(utilMock);
+  }
+
+  public enum Font {
+    Arial {
+
+      @Override public Font getAlternative() {
+        return Verdana;
+      }},
+    Verdana,
+    TimesNewRoman;
+
+    public Font getAlternative() {
+      return this;
+    }
   }
 }
