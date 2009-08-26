@@ -30,4 +30,8 @@ class ScopedBindingBuilderAdapter implements GinScopedBindingBuilder {
   public void in(Class<? extends Annotation> scopeAnnotation) {
     scopedBindingBuilder.in(scopeAnnotation);
   }
+
+  public void asEagerSingleton() {
+    scopedBindingBuilder.asEagerSingleton();
+  }
 }

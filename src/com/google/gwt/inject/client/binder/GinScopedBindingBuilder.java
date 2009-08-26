@@ -20,4 +20,6 @@ import java.lang.annotation.Annotation;
 public interface GinScopedBindingBuilder {
 
   void in(Class<? extends Annotation> scopeAnnotation);
+
+  void asEagerSingleton();
 }
