@@ -163,7 +163,7 @@ class GinjectorOutputter {
       Key<?> key = entry.getKey();
 
       // toString on TypeLiteral outputs the binary name, not the source name
-      String typeName = nameGenerator.binaryNameToSourceName(toString(key.getTypeLiteral()));
+      String typeName = toString(key.getTypeLiteral());
       Binding binding = entry.getValue();
 
       String getter = nameGenerator.getGetterMethodName(key);
@@ -217,14 +217,22 @@ class GinjectorOutputter {
   /**
    * Alternate toString method for TypeLiterals that fixes a JDK bug that was
    * replicated in Guice. See
-   * <a href="http://code.google.com/p/google-guice/issues/detail?id=293">the related Guice bug</a>
-   * for details.
+   * <a href="http://code.google.com/p/google-guice/issues/detail?id=293">
+   * the related Guice bug</a> for details.
+   *
+   * Also replaces all binary with source names in the types involved (base
+   * type and type parameters).
    */
   private String toString(TypeLiteral<?> typeLiteral) {
     Type type = typeLiteral.getType();
     return toString(type);
   }
 
+  /**
+   * Returns a string representation of the passed type's name while ensuring
+   * that all type names (base and parameters) are converted to source type
+   * names.
+   */
   private String toString(Type type) {
     if (type instanceof ParameterizedType && ((ParameterizedType) type).getOwnerType() != null) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
@@ -242,7 +250,7 @@ class GinjectorOutputter {
       }
       return stringBuilder.append(">").toString();
     } else {
-      return MoreTypes.toString(type);
+      return nameGenerator.binaryNameToSourceName(MoreTypes.toString(type));
     }
   }
 

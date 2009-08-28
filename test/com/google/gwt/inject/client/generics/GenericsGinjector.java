@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2009 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -20,10 +20,17 @@ import com.google.gwt.inject.client.Ginjector;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @GinModules(GenericsGinModule.class)
 public interface GenericsGinjector extends Ginjector {
   List<String> getListOfString();
   List<Integer> getListOfInteger();
   LinkedList<Integer> getLinkedListOfInteger();
+
+  Parameterized<String> getParameterized();
+  Parameterized.InnerParameterized<Integer> getInnerParameterized();
+  Parameterized.ComplicatedParameterized<String, Parameterized.StringComparator,
+      Map<String, Parameterized.StringComparator>> getComplicatedParameterized();
+  Map<String, Parameterized.StringComparator> getStringComparatorMap();
 }

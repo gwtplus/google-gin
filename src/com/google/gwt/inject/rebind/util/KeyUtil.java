@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2009 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,10 +16,12 @@
 
 package com.google.gwt.inject.rebind.util;
 
+import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
 import com.google.gwt.core.ext.typeinfo.JArrayType;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
+import com.google.gwt.core.ext.typeinfo.JGenericType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JParameterizedType;
@@ -28,7 +30,6 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.JWildcardType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -37,11 +38,11 @@ import com.google.inject.Singleton;
 import com.google.inject.util.Types;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -91,7 +92,38 @@ public class KeyUtil {
   }
 
   public JClassType getRawClassType(Key<?> key) {
-    return typeOracle.findType(nameGenerator.binaryNameToSourceName(getRawType(key).getName()));
+    return getClassType(getRawType(key));
+  }
+
+  public JClassType getClassType(Key<?> key) {
+    return getClassType(key.getTypeLiteral().getType());
+  }
+
+  public JClassType getClassType(Type type) {
+    if (type instanceof Class) {
+      return typeOracle.findType(nameGenerator.binaryNameToSourceName(((Class) type).getName()));
+    } else if (type instanceof ParameterizedType) {
+      ParameterizedType parameterized = (ParameterizedType) type;
+
+      JClassType[] parameters = new JClassType[parameterized.getActualTypeArguments().length];
+      int i = 0;
+      for (Type paramType : parameterized.getActualTypeArguments()) {
+        parameters[i++] = getClassType(paramType);
+      }
+
+      Class rawClass = (Class) parameterized.getRawType();
+      JClassType classType =
+          typeOracle.findType(nameGenerator.binaryNameToSourceName(rawClass.getName()));
+      JGenericType genericType = classType.isGenericType();
+      if (genericType == null) {
+        throw new ProvisionException("Can't get class type for " + type);
+      }
+
+      return typeOracle.getParameterizedType(genericType, genericType.getEnclosingType(),
+          parameters);
+    }
+
+    throw new ProvisionException("Can't get class type for " + type);
   }
 
   /**
@@ -268,8 +300,6 @@ public class KeyUtil {
           javaTypeArgs.add(gwtTypeToJavaType(typeArg));
         }
       }
-
-      javaTypeArgs.toArray(new Type[javaTypeArgs.size()]);
 
       Type rawType = gwtTypeToJavaType(parameterizedType.getRawType());
 

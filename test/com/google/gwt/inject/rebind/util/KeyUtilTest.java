@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2009 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -19,10 +19,12 @@ package com.google.gwt.inject.rebind.util;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.client.MyBindingAnnotation;
 import com.google.gwt.inject.rebind.util.types.MethodsClass;
+import com.google.gwt.inject.rebind.util.types.Parameterized;
 import com.google.gwt.inject.rebind.util.types.SuperInterface;
 import com.google.gwt.inject.rebind.util.types.WildcardFieldClass;
 import com.google.inject.Key;
@@ -32,6 +34,7 @@ import com.google.inject.name.Names;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
@@ -101,8 +104,7 @@ public class KeyUtilTest extends AbstractUtilTester {
 
   public void testTooManyBindingAnnotations() throws Exception {
     try {
-      Key<?> key =
-          keyUtil.getKey(getClassType(String.class), myBindingAnnotation, namedAnn);
+      Key<?> key = keyUtil.getKey(getClassType(String.class), myBindingAnnotation, namedAnn);
       fail("Expected exception, but got: " + key);
     } catch (ProvisionException e) {
       // good, expected
@@ -136,6 +138,14 @@ public class KeyUtilTest extends AbstractUtilTester {
 
     assertEquals("foo", gwtFoo2.getName());
     assertEquals(1, gwtFoo2.getParameters().length);
+  }
+
+  public void testGetParameterizedClassType() {
+    Type type = new TypeLiteral<Parameterized<String>>(){}.getType();
+    JClassType classType = keyUtil.getClassType(type);
+    assertTrue(classType instanceof JParameterizedType);
+    JParameterizedType parameterizedType = (JParameterizedType) classType;
+    assertEquals(getClassType(String.class), parameterizedType.getTypeArgs()[0]);
   }
 
   private void checkClass(JClassType type, Key<?> key) {

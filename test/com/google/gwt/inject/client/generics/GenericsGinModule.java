@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2009 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -20,13 +20,14 @@ import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.name.Names;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
-/**
- */
 public class GenericsGinModule extends AbstractGinModule {
   protected void configure() {
     // Example of TypeLiteral --> TypeLiteral
@@ -37,6 +38,9 @@ public class GenericsGinModule extends AbstractGinModule {
     // Note that this will make it resolve to what we bound LinkedList to below
     bind(new TypeLiteral<List<Integer>>() {})
         .to(Key.get(new TypeLiteral<LinkedList<Integer>>() {}));
+
+    bindConstant().annotatedWith(Names.named("foo")).to("foo");
+    bindConstant().annotatedWith(Names.named("bar")).to(3);
   }
 
   @Provides
@@ -46,5 +50,11 @@ public class GenericsGinModule extends AbstractGinModule {
     list.add(10);
     list.add(20);
     return list;
+  }
+
+  @Provides
+  @Singleton
+  Map<String, Parameterized.StringComparator> provideStringComparatorMap() {
+    return new HashMap<String, Parameterized.StringComparator>();
   }
 }
