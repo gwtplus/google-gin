@@ -155,7 +155,7 @@ class GinjectorOutputter {
     writeConstructor(implClassName);
 
     writer.commit(logger);
-}
+  }
 
   private void outputBindings() throws UnableToCompleteException {
     // Write out each binding
@@ -177,6 +177,9 @@ class GinjectorOutputter {
 
       GinScope scope = bindingsProcessor.determineScope(key);
       switch (scope) {
+        case EAGER_SINGLETON:
+          constructorBody.append(getter).append("();\n");
+          // Intentionally fall through.
         case SINGLETON:
           writer.println("private " + typeName + " " + field + " = null;");
           writer.println();
@@ -190,14 +193,6 @@ class GinjectorOutputter {
           writer.println("return " + field + ";");
           writer.outdent();
           writer.println("}");
-          break;
-
-        case EAGER_SINGLETON:
-          // Just call the creator on field init
-          writer.println("private final " + typeName + " " + field + " = " + creator + "();");
-
-          sourceWriteUtil.writeMethod(writer, "private " + typeName + " " + getter + "()",
-              "return " + field + ";");
           break;
 
         case NO_SCOPE:
