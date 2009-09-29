@@ -43,9 +43,11 @@ import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.inject.Guice;
+import com.google.inject.ImplementedBy;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.ProvidedBy;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.Singleton;
@@ -392,11 +394,13 @@ class BindingsProcessor implements BindingIndex {
     // All steps per:
     // http://code.google.com/p/google-guice/wiki/BindingResolution
 
+    JClassType rawClassType = keyUtil.getRawClassType(key);
+
     // 1. Explicit binding - already finished at this point.
 
     // This is really an explicit binding, we add it here.
     // TODO(schmitt): Can we just add a binding to the module?
-    if (keyUtil.getRawClassType(key).equals(ginjectorInterface)) {
+    if (rawClassType.equals(ginjectorInterface)) {
       return ginjectorBindingProvider.get();
     }
 
@@ -408,16 +412,16 @@ class BindingsProcessor implements BindingIndex {
 
     // 4. Provider injections.
     if (isProviderKey(key)) {
+      ImplicitProviderBinding binding = implicitProviderBindingProvider.get();
+      binding.setProviderKey(key);
+      
       if (optional) {
-
         // We have to take special measures for optional implicit providers
         // since they are only created/injected if their provided type can be
         // bound.
-        return optionallyCreateImplicitProviderBinding(key);
+        return checkOptionalBindingAvailability(binding);
       }
-
-      ImplicitProviderBinding binding = implicitProviderBindingProvider.get();
-      binding.setProviderKey(key);
+      
       return binding;
 
       // TODO(bstoler): Scope the provider binding like the thing being provided?
@@ -450,7 +454,15 @@ class BindingsProcessor implements BindingIndex {
     // TODO(schmitt): Implement TypeLiteral injections.
 
     // 9. Use resolution annotations (@ImplementedBy, @ProvidedBy)
-    // TODO(schmitt): Should be covered by Guice, test.
+    ImplementedBy implementedBy = rawClassType.getAnnotation(ImplementedBy.class);
+    if (implementedBy != null) {
+      return createImplementedByBinding(key, implementedBy, optional);
+    }
+
+    ProvidedBy providedBy = rawClassType.getAnnotation(ProvidedBy.class);
+    if (providedBy != null) {
+      return createProvidedByBinding(key, providedBy, optional);
+    }
 
     // 10. If the dependency is abstract or a non-static inner class, give up.
     // Abstract classes are handled by GWT.create.
@@ -563,17 +575,8 @@ class BindingsProcessor implements BindingIndex {
     logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
   }
 
-  /**
-   * Attempts to create an implicit provider by checking whether it's provided
-   * type can be bound.
-   *
-   * @return provider binding if all provider dependencies can be satisfied,
-   *     {@code null} otherwise
-   */
-  private ImplicitProviderBinding optionallyCreateImplicitProviderBinding(Key<?> providerKey) {
-    ImplicitProviderBinding providerBinding = implicitProviderBindingProvider.get();
-    providerBinding.setProviderKey(providerKey);
-    RequiredKeys requiredKeys = providerBinding.getRequiredKeys();
+  private <T extends Binding> T checkOptionalBindingAvailability(T binding) {
+    RequiredKeys requiredKeys = binding.getRequiredKeys();
 
     assert(requiredKeys.getOptionalKeys().isEmpty());
 
@@ -585,12 +588,58 @@ class BindingsProcessor implements BindingIndex {
       // Note: This call doesn't cause a binding to be registered.
       if (createImplicitBinding(requiredKey, true) == null) {
 
-        // A dependency cannot be constructed, this provider is not available.
+        // A dependency cannot be constructed, this binding is not available.
         return null;
       }
     }
 
-    return providerBinding;
+    return binding;
+  }
+
+  private BindClassBinding createImplementedByBinding(Key<?> key, ImplementedBy implementedBy,
+      boolean optional) {
+    Class<?> rawType = key.getTypeLiteral().getRawType();
+    Class<?> implementationType = implementedBy.value();
+
+    if (implementationType == rawType) {
+      logError("@ImplementedBy points to the same class it annotates: " + rawType);
+      return null;
+    }
+
+    if (!rawType.isAssignableFrom(implementationType)) {
+      logError(implementationType + " doesn't extend " + rawType
+          + " (while resolving @ImplementedBy)");
+      return null;
+    }
+
+    BindClassBinding implementedByBinding = bindClassBindingProvider.get();
+    implementedByBinding.setBoundClassKey(Key.get(implementationType));
+
+    if (optional) {
+      return checkOptionalBindingAvailability(implementedByBinding);
+    }
+
+    return implementedByBinding;
+  }
+
+  private BindProviderBinding createProvidedByBinding(Key<?> key, ProvidedBy providedBy,
+      boolean optional) {
+    Class<?> rawType = key.getTypeLiteral().getRawType();
+    Class<? extends Provider<?>> providerType = providedBy.value();
+
+    if (providerType == rawType) {
+      logError("@ProvidedBy points to the same class it annotates: " + rawType);
+      return null;
+    }
+
+    BindProviderBinding implementedByBinding = bindProviderBindingProvider.get();
+    implementedByBinding.setProviderKey(Key.get(providerType));
+
+    if (optional) {
+      return checkOptionalBindingAvailability(implementedByBinding);
+    }
+
+    return implementedByBinding;
   }
 
   private boolean isProviderKey(Key<?> key) {
