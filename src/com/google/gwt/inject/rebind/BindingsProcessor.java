@@ -479,7 +479,8 @@ class BindingsProcessor implements BindingIndex {
     return null;
   }
 
-  private Binding createImplicitBindingForClass(JClassType classType, boolean optional, Key<?> key) {
+  private Binding createImplicitBindingForClass(JClassType classType, boolean optional,
+      Key<?> key) {
     // Either call the @Inject constructor or use GWT.create
     JConstructor injectConstructor = getInjectConstructor(classType);
 

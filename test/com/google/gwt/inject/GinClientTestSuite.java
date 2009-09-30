@@ -17,10 +17,10 @@ package com.google.gwt.inject;
 
 import com.google.gwt.inject.client.InjectTest;
 import com.google.gwt.inject.client.InnerGinjectorTest;
-import com.google.gwt.inject.client.eager.EagerSingletonTest;
 import com.google.gwt.inject.client.binding.ConstantBindingTest;
 import com.google.gwt.inject.client.binding.EagerBindingTest;
 import com.google.gwt.inject.client.binding.GinjectorBindingTest;
+import com.google.gwt.inject.client.eager.EagerSingletonTest;
 import com.google.gwt.inject.client.field.FieldInjectTest;
 import com.google.gwt.inject.client.generics.GenericsTest;
 import com.google.gwt.inject.client.gwtdotcreate.GwtDotCreateInjectTest;
@@ -31,6 +31,7 @@ import com.google.gwt.inject.client.misc.StaticInjectTest;
 import com.google.gwt.inject.client.nomodules.NoModulesTest;
 import com.google.gwt.inject.client.nonpublic.NonPublicTest;
 import com.google.gwt.inject.client.optional.OptionalInjectionTest;
+import com.google.gwt.inject.client.provider.ProviderTest;
 import com.google.gwt.inject.client.providermethods.ProviderMethodsTest;
 import com.google.gwt.inject.client.scopedimplicit.ScopedImplicitTest;
 import com.google.gwt.junit.tools.GWTTestSuite;
@@ -64,6 +65,7 @@ public class GinClientTestSuite {
     suite.addTestSuite(EagerBindingTest.class);
     suite.addTestSuite(EagerSingletonTest.class);
     suite.addTestSuite(ImplicitBindingTest.class);
+    suite.addTestSuite(ProviderTest.class);
 
     return suite;
   }

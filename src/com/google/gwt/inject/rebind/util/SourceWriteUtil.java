@@ -26,10 +26,14 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import com.google.inject.internal.MoreTypes;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.lang.reflect.Type;
+import java.lang.reflect.ParameterizedType;
 
 /**
  * Simple helper object for source writing.
@@ -302,6 +306,52 @@ public class SourceWriteUtil {
     writer.outdent();
     writer.println("}-*/;");
     writer.println();
+  }
+
+  /**
+   * Alternate toString method for TypeLiterals that fixes a JDK bug that was
+   * replicated in Guice. See
+   * <a href="http://code.google.com/p/google-guice/issues/detail?id=293">
+   * the related Guice bug</a> for details.
+   *
+   * Also replaces all binary with source names in the types involved (base
+   * type and type parameters).
+   *
+   * @param typeLiteral type for which string will be returned
+   * @return String representation of type
+   */
+  public String getSourceName(TypeLiteral<?> typeLiteral) {
+    Type type = typeLiteral.getType();
+    return getSourceName(type);
+  }
+
+  /**
+   * Returns a string representation of the passed type's name while ensuring
+   * that all type names (base and parameters) are converted to source type
+   * names.
+   *
+   * @param type type for which string will be returned
+   * @return String representation of type
+   */
+  public String getSourceName(Type type) {
+    if (type instanceof ParameterizedType && ((ParameterizedType) type).getOwnerType() != null) {
+      ParameterizedType parameterizedType = (ParameterizedType) type;
+      Type[] arguments = parameterizedType.getActualTypeArguments();
+      StringBuilder stringBuilder = new StringBuilder();
+      stringBuilder.append(getSourceName(parameterizedType.getRawType()));
+
+      if (arguments.length == 0) {
+        return stringBuilder.toString();
+      }
+
+      stringBuilder.append("<").append(getSourceName(arguments[0]));
+      for (int i = 1; i < arguments.length; i++) {
+        stringBuilder.append(", ").append(getSourceName(arguments[i]));
+      }
+      return stringBuilder.append(">").toString();
+    } else {
+      return nameGenerator.binaryNameToSourceName(MoreTypes.toString(type));
+    }
   }
 
   private String getJsniSignature(JAbstractMethod method) {

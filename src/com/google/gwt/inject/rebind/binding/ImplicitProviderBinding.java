@@ -55,9 +55,11 @@ public class ImplicitProviderBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
     assert (providerType != null);
+    String providerTypeName = sourceWriteUtil.getSourceName(providerType);
+    String targetKeyName = sourceWriteUtil.getSourceName(targetKey.getTypeLiteral());
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
-        "return new " + providerType + "() { \n"
-        + "  public " + targetKey.getTypeLiteral() + " get() { \n"
+        "return new " + providerTypeName + "() { \n"
+        + "  public " + targetKeyName + " get() { \n"
         + "    return " + nameGenerator.getGetterMethodName(targetKey) + "();\n"
         + "  }\n"
         + "};");

@@ -35,16 +35,12 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
-import com.google.inject.internal.MoreTypes;
 import com.google.inject.spi.InjectionPoint;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -163,7 +159,7 @@ class GinjectorOutputter {
       Key<?> key = entry.getKey();
 
       // toString on TypeLiteral outputs the binary name, not the source name
-      String typeName = toString(key.getTypeLiteral());
+      String typeName = sourceWriteUtil.getSourceName(key.getTypeLiteral());
       Binding binding = entry.getValue();
 
       String getter = nameGenerator.getGetterMethodName(key);
@@ -206,46 +202,6 @@ class GinjectorOutputter {
       }
 
       writer.println();
-    }
-  }
-
-  /**
-   * Alternate toString method for TypeLiterals that fixes a JDK bug that was
-   * replicated in Guice. See
-   * <a href="http://code.google.com/p/google-guice/issues/detail?id=293">
-   * the related Guice bug</a> for details.
-   *
-   * Also replaces all binary with source names in the types involved (base
-   * type and type parameters).
-   */
-  private String toString(TypeLiteral<?> typeLiteral) {
-    Type type = typeLiteral.getType();
-    return toString(type);
-  }
-
-  /**
-   * Returns a string representation of the passed type's name while ensuring
-   * that all type names (base and parameters) are converted to source type
-   * names.
-   */
-  private String toString(Type type) {
-    if (type instanceof ParameterizedType && ((ParameterizedType) type).getOwnerType() != null) {
-      ParameterizedType parameterizedType = (ParameterizedType) type;
-      Type[] arguments = parameterizedType.getActualTypeArguments();
-      StringBuilder stringBuilder = new StringBuilder();
-      stringBuilder.append(toString(parameterizedType.getRawType()));
-
-      if (arguments.length == 0) {
-        return stringBuilder.toString();
-      }
-
-      stringBuilder.append("<").append(toString(arguments[0]));
-      for (int i = 1; i < arguments.length; i++) {
-        stringBuilder.append(", ").append(toString(arguments[i]));
-      }
-      return stringBuilder.append(">").toString();
-    } else {
-      return nameGenerator.binaryNameToSourceName(MoreTypes.toString(type));
     }
   }
 
