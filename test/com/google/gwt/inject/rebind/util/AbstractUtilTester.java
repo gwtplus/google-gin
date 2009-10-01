@@ -41,6 +41,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
@@ -153,8 +155,13 @@ public abstract class AbstractUtilTester extends TestCase {
       this.shortName = shortName;
 
       String fileName = getLocation().replaceAll("\\.", "/") + ".java";
-      String filePath = getClass().getClassLoader().getResource(fileName).getPath();
-      file = new File(filePath);
+      URI fileUri;
+      try {
+        fileUri = getClass().getClassLoader().getResource(fileName).toURI();
+      } catch (URISyntaxException e) {
+        throw new RuntimeException(e); 
+      }
+      file = new File(fileUri);
     }
 
     public String getLocation() {

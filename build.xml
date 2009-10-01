@@ -159,13 +159,13 @@
       <mkdir dir="@{outputbase}/reports"/>
 
       <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
-          haltonerror="true" failureproperty="junit.failure">
+          haltonerror="true" failureproperty="junit.failure" dir="@{outputbase}">
         <jvmarg line="${macJvmArgs}"/>
         <formatter type="brief" />
         <formatter type="xml"/>
 
         <!-- Add -logLevel TRACE to get more debug output -->
-        <jvmarg value="-Dgwt.args=@{extragwtargs} -gen @{outputbase}/gen -out @{outputbase}/out"/>
+        <sysproperty key="gwt.args" value="@{extragwtargs} -gen gen -out out" />
 
         <classpath refid="gin.test.classpath"/>
         <batchtest todir="@{outputbase}/reports">
@@ -194,7 +194,7 @@
     <test-macro outputbase="${gin.testrun.base}/hosted" />
   </target>
 
-  <target name="dist" depends="compile">
+  <target name="dist" depends="compile.production">
     <mkdir dir="${gin.dist.dir}"/>
     <jar destfile="${gin.dist.dir}/gin.jar">
       <fileset dir="${gin.output.dir}" />
