@@ -124,6 +124,14 @@ class BindingsProcessor implements BindingIndex {
   private final Set<Key<?>> unresolvedOptional = new HashSet<Key<?>>();
 
   /**
+   * Collection of keys for which the ginjector interface provides member
+   * inject methods. If a regular binding is defined for the same key, no
+   * special member inject handling is required - a member inject method will
+   * be created as part of a regular binding.
+   */
+  private final Set<Key<?>> memberInjectRequests = new HashSet<Key<?>>();
+
+  /**
    * All types for which static injection has been requested.
    */
   private final Set<Class<?>> staticInjectionRequests = new HashSet<Class<?>>();
@@ -255,6 +263,10 @@ class BindingsProcessor implements BindingIndex {
     return staticInjectionRequests;
   }
 
+  public Set<Key<?>> getMemberInjectRequests() {
+    return memberInjectRequests;
+  }
+
   public GinScope determineScope(Key<?> key) {
     GinScope scope = getScopes().get(key);
     if (scope == null) {
@@ -307,12 +319,22 @@ class BindingsProcessor implements BindingIndex {
 
   private void addUnresolvedEntriesForInjectorInterface() {
     for (JMethod method : completeCollector.getMethods(ginjectorInterface)) {
+      nameGenerator.markAsUsed(method.getName());
       Key<?> key = keyUtil.getKey(method);
       logger.log(TreeLogger.TRACE, "Add unresolved key from injector interface: " + key);
 
-      nameGenerator.markAsUsed(method.getName());
-
-      unresolved.add(key);
+      // Member inject types do not need to be gin-creatable themselves but we
+      // need to provide all dependencies.
+      if (keyUtil.isMemberInject(method)) {
+        if (!unresolved.contains(key)) {
+          memberInjectRequests.add(key);
+          RequiredKeys requiredKeys = keyUtil.getRequiredKeys(keyUtil.getClassType(key));
+          unresolved.addAll(requiredKeys.getRequiredKeys());
+          unresolvedOptional.addAll(requiredKeys.getOptionalKeys());
+        }
+      } else {
+        unresolved.add(key);
+      }
     }
   }
 
@@ -414,14 +436,14 @@ class BindingsProcessor implements BindingIndex {
     if (isProviderKey(key)) {
       ImplicitProviderBinding binding = implicitProviderBindingProvider.get();
       binding.setProviderKey(key);
-      
+
       if (optional) {
         // We have to take special measures for optional implicit providers
         // since they are only created/injected if their provided type can be
         // bound.
         return checkOptionalBindingAvailability(binding);
       }
-      
+
       return binding;
 
       // TODO(bstoler): Scope the provider binding like the thing being provided?
@@ -550,6 +572,7 @@ class BindingsProcessor implements BindingIndex {
     bindings.put(key, binding);
     unresolved.remove(key);
     unresolvedOptional.remove(key);
+    memberInjectRequests.remove(key);
 
     RequiredKeys requiredKeys = binding.getRequiredKeys();
 

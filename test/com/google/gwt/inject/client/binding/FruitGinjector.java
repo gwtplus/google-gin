@@ -17,6 +17,7 @@ package com.google.gwt.inject.client.binding;
 
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.SimpleObject;
 import com.google.inject.name.Named;
 
 @GinModules(FruitGinModule.class)
@@ -49,4 +50,10 @@ public interface FruitGinjector extends Ginjector {
   FruitGinjector getGinjector();
 
   Plant getPlant();
+
+  void injectMembers(Bee bee);
+
+  // Random method causing this ginjector compilation to fail if not all
+  // injectMembers methods are processed.
+  void injectMembers(SimpleObject foo);
 }

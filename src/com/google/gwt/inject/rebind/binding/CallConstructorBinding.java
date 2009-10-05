@@ -17,8 +17,6 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.inject.rebind.util.KeyUtil;
-import com.google.gwt.inject.rebind.util.MemberCollector;
-import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -35,10 +33,8 @@ public class CallConstructorBinding extends CreatorBinding {
   private JConstructor constructor;
 
   @Inject
-  public CallConstructorBinding(@Injectable MemberCollector memberCollector,
-      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, BindingIndex bindingIndex,
-      NameGenerator nameGenerator) {
-    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex, nameGenerator);
+  public CallConstructorBinding(SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
+    super(sourceWriteUtil, keyUtil);
     this.sourceWriteUtil = sourceWriteUtil;
   }
 

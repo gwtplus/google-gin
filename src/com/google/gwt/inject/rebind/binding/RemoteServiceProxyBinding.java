@@ -19,8 +19,6 @@ import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.rebind.util.KeyUtil;
-import com.google.gwt.inject.rebind.util.MemberCollector;
-import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.inject.Inject;
@@ -39,15 +37,17 @@ public class RemoteServiceProxyBinding extends CallGwtDotCreateBinding {
   private final GeneratorContext ctx;
 
   @Inject
-  public RemoteServiceProxyBinding(@Injectable MemberCollector memberCollector,
-      SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil, GeneratorContext ctx,
-      BindingIndex bindingIndex, NameGenerator nameGenerator) {
-    super(memberCollector, sourceWriteUtil, keyUtil, bindingIndex, nameGenerator);
+  public RemoteServiceProxyBinding(SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil,
+      GeneratorContext ctx) {
+    super(sourceWriteUtil, keyUtil);
     this.ctx = ctx;
   }
 
   @Override
   protected String getTypeNameToCreate() {
+
+    // TODO(schmitt): I don't think we need to use the type oracle here - we
+    // can just check class objects for inheritance.
     String name = super.getTypeNameToCreate();
     String serviceInterfaceName =
         name.substring(0, name.length() - ASYNC_SERVICE_PROXY_SUFFIX.length());

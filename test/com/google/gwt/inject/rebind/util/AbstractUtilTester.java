@@ -25,6 +25,8 @@ import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.dev.cfg.ModuleDef;
 import com.google.gwt.dev.cfg.ModuleDefLoader;
 import com.google.gwt.dev.javac.CompilationState;
@@ -33,6 +35,7 @@ import com.google.gwt.dev.javac.JavaSourceFile;
 import com.google.gwt.dev.javac.impl.SourceFileCompilationUnit;
 import com.google.gwt.dev.util.Util;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
+import com.google.inject.Inject;
 
 import junit.framework.TestCase;
 
@@ -137,6 +140,25 @@ public abstract class AbstractUtilTester extends TestCase {
     units.add(
         new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE + ".secret", "SecretSubClass")));
     return units;
+  }
+
+  protected MemberCollector createInjectableCollector() {
+    MemberCollector collector = new MemberCollector(TreeLogger.NULL);
+    collector.setMethodFilter(
+        new MemberCollector.MethodFilter() {
+          public boolean accept(JMethod method) {
+            // TODO(schmitt): Do injectable methods require at least one parameter?
+            return method.isAnnotationPresent(Inject.class) && !method.isStatic();
+          }
+        });
+
+    collector.setFieldFilter(
+        new MemberCollector.FieldFilter() {
+          public boolean accept(JField field) {
+            return field.isAnnotationPresent(Inject.class) && !field.isStatic();
+          }
+        });
+    return collector;
   }
 
   /**

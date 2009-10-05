@@ -18,18 +18,13 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
 import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JField;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.inject.rebind.util.KeyUtil;
-import com.google.gwt.inject.rebind.util.MemberCollector;
-import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Abstract binder that takes a type and performs the required key analysis and
@@ -39,48 +34,30 @@ import java.util.Set;
  */
 abstract class CreatorBinding implements Binding {
 
-  private final MemberCollector memberCollector;
   private final SourceWriteUtil sourceWriteUtil;
   private final KeyUtil keyUtil;
-  private final BindingIndex bindingIndex;
-  private final Set<Key<?>> requiredKeys;
-  private final Set<Key<?>> optionalKeys;
-  private final NameGenerator nameGenerator;
+  private final Set<Key<?>> requiredKeys = new HashSet<Key<?>>();
+  private final Set<Key<?>> optionalKeys = new HashSet<Key<?>>();
   private JClassType classType;
   private Key<?> classKey;
 
-  protected CreatorBinding(MemberCollector memberCollector, SourceWriteUtil sourceWriteUtil,
-      KeyUtil keyUtil, BindingIndex bindingIndex, NameGenerator nameGenerator) {
-    this.memberCollector = memberCollector;
+  protected CreatorBinding(SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
     this.keyUtil = keyUtil;
-    this.bindingIndex = bindingIndex;
-    this.nameGenerator = nameGenerator;
-    this.requiredKeys = new HashSet<Key<?>>();
-    this.optionalKeys = new HashSet<Key<?>>();
   }
 
   public void setClassType(JClassType classType, Key<?> classKey) {
     this.classType = classType;
     this.classKey = classKey;
-    for (JMethod method : memberCollector.getMethods(classType)) {
-      addParamTypes(method);
-    }
-
-    for (JField field : memberCollector.getFields(classType)) {
-      Key<?> key = keyUtil.getKey(field);
-      if (keyUtil.isOptional(field)) {
-        optionalKeys.add(key);
-      } else {
-        requiredKeys.add(key);
-      }
-    }
+    RequiredKeys classRequiredKeys = keyUtil.getRequiredKeys(classType);
+    requiredKeys.addAll(classRequiredKeys.getRequiredKeys());
+    optionalKeys.addAll(classRequiredKeys.getOptionalKeys());
   }
 
   public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
     assert (classType != null);
 
-    String memberInjectMethodName = appendMemberInjection(writer);
+    String memberInjectMethodName = sourceWriteUtil.appendMemberInjection(writer, classKey);
 
     StringBuilder sb = new StringBuilder();
     sb.append(getTypeName()).append(" result = ");
@@ -110,65 +87,8 @@ abstract class CreatorBinding implements Binding {
   }
 
   protected void addParamTypes(JAbstractMethod method) {
-    for (JParameter param : method.getParameters()) {
-      Key<?> key = keyUtil.getKey(param);
-      if (keyUtil.isOptional(method)) {
-        optionalKeys.add(key);
-      } else {
-        requiredKeys.add(key);
-      }
-    }
-  }
-
-  private String appendMemberInjection(SourceWriter writer) {
-    String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(classKey);
-
-    StringBuilder sb = new StringBuilder();
-
-    sb.append(sourceWriteUtil.createMethodInjection(writer, getMethodsToInject(classType),
-        "injectee"));
-    sb.append(sourceWriteUtil.appendFieldInjection(writer, getFieldsToInject(classType),
-        "injectee"));
-
-    sourceWriteUtil.writeMethod(writer,
-        "private void " + memberInjectMethodName +
-            "(" + classType.getQualifiedSourceName() + " injectee)",
-        sb.toString());
-
-    return memberInjectMethodName;
-  }
-
-  private Set<JField> getFieldsToInject(JClassType classType) {
-    // Only inject fields that are non optional or where the key is bound.
-    Set<JField> fields = new HashSet<JField>();
-    for (JField field : memberCollector.getFields(classType)) {
-      if (!keyUtil.isOptional(field) || bindingIndex.isBound(keyUtil.getKey(field))) {
-        fields.add(field);
-      }
-    }
-    return fields;
-  }
-
-  private Set<JMethod> getMethodsToInject(JClassType classType) {
-    Set<JMethod> methods = new HashSet<JMethod>();
-    for (JMethod method : memberCollector.getMethods(classType)) {
-      if (shouldInject(method)) {
-        methods.add(method);
-      }
-    }
-    return methods;
-  }
-
-  private boolean shouldInject(JMethod method) {
-    // Only inject methods that are non optional or where all keys are bound.
-    if (keyUtil.isOptional(method)) {
-      for (JParameter param : method.getParameters()) {
-        if(!bindingIndex.isBound(keyUtil.getKey(param))) {
-          return false;
-        }
-      }
-    }
-
-    return true;
+    RequiredKeys methodRequiredKeys = keyUtil.getRequiredKeys(method);
+    requiredKeys.addAll(methodRequiredKeys.getRequiredKeys());
+    optionalKeys.addAll(methodRequiredKeys.getOptionalKeys());
   }
 }

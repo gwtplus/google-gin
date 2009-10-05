@@ -29,8 +29,8 @@ public class RequiredKeys {
   private final Set<Key<?>> optionalKeys;
 
   public RequiredKeys(Set<Key<?>> requiredKeys, Set<Key<?>> optionalKeys) {
-    this.requiredKeys = requiredKeys;
-    this.optionalKeys = optionalKeys;
+    this.requiredKeys = Collections.unmodifiableSet(requiredKeys);
+    this.optionalKeys = Collections.unmodifiableSet(optionalKeys);
   }
 
   public RequiredKeys(Set<Key<?>> requiredKeys) {

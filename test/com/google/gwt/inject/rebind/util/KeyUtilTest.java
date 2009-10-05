@@ -22,11 +22,13 @@ import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.client.MyBindingAnnotation;
 import com.google.gwt.inject.rebind.util.types.MethodsClass;
 import com.google.gwt.inject.rebind.util.types.Parameterized;
 import com.google.gwt.inject.rebind.util.types.SuperInterface;
 import com.google.gwt.inject.rebind.util.types.WildcardFieldClass;
+import com.google.gwt.inject.rebind.binding.RequiredKeys;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.TypeLiteral;
@@ -148,6 +150,31 @@ public class KeyUtilTest extends AbstractUtilTester {
     assertEquals(getClassType(String.class), parameterizedType.getTypeArgs()[0]);
   }
 
+  public void testGetRequiredMethodKeys() throws NotFoundException {
+    JClassType classType = getClassType(MethodsClass.class);
+    JClassType stringType = getClassType(String.class);
+    JMethod method = classType.getMethod("foo", new JType[] {stringType});
+    RequiredKeys requiredKeys = keyUtil.getRequiredKeys(method);
+    assertTrue(requiredKeys.getOptionalKeys().isEmpty());
+    assertTrue(requiredKeys.getRequiredKeys().contains(Key.get(String.class)));
+    assertEquals(1, requiredKeys.getRequiredKeys().size());
+  }
+
+  public void testGetRequiredClassTypeKeys() {
+    MemberCollector collector = new MemberCollector(TreeLogger.NULL);
+    collector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
+    KeyUtil keyUtil = new KeyUtil(getTypeOracle(), new NameGenerator(), collector);
+    JClassType classType = getClassType(MethodsClass.class);
+    RequiredKeys requiredKeys = keyUtil.getRequiredKeys(classType);
+    assertTrue(requiredKeys.getOptionalKeys().isEmpty());
+    assertTrue(requiredKeys.getRequiredKeys().contains(Key.get(String.class)));
+
+    // Required since MethodClass extends Object, which has methods with Object
+    // parameters.
+    assertTrue(requiredKeys.getRequiredKeys().contains(Key.get(Object.class)));
+    assertEquals(2, requiredKeys.getRequiredKeys().size());
+  }
+
   private void checkClass(JClassType type, Key<?> key) {
     checkType(type, key);
     assertEquals(type, keyUtil.getRawClassType(key));
@@ -160,7 +187,7 @@ public class KeyUtilTest extends AbstractUtilTester {
 
   protected void setUp() throws Exception {
     super.setUp();
-    keyUtil = new KeyUtil(getTypeOracle(), new NameGenerator());
+    keyUtil = new KeyUtil(getTypeOracle(), new NameGenerator(), createInjectableCollector());
 
     namedAnn = Names.named("brian");
     myBindingAnnotation = getClass().getAnnotation(MyBindingAnnotation.class);

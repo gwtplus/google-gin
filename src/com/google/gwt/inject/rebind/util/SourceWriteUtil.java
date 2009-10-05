@@ -17,23 +17,29 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
+import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.inject.rebind.binding.BindingIndex;
+import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
+import com.google.inject.Key;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.MoreTypes;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.lang.reflect.Type;
-import java.lang.reflect.ParameterizedType;
+import java.util.Set;
 
 /**
  * Simple helper object for source writing.
@@ -43,11 +49,16 @@ public class SourceWriteUtil {
 
   private final KeyUtil keyUtil;
   private final NameGenerator nameGenerator;
+  private final MemberCollector memberCollector;
+  private final BindingIndex bindingIndex;
 
   @Inject
-  protected SourceWriteUtil(KeyUtil keyUtil, NameGenerator nameGenerator) {
+  protected SourceWriteUtil(KeyUtil keyUtil, NameGenerator nameGenerator,
+      @Injectable MemberCollector memberCollector, BindingIndex bindingIndex) {
     this.keyUtil = keyUtil;
     this.nameGenerator = nameGenerator;
+    this.memberCollector = memberCollector;
+    this.bindingIndex = bindingIndex;
   }
 
   /**
@@ -309,6 +320,31 @@ public class SourceWriteUtil {
   }
 
   /**
+   * Appends a full member injection (methods and fields) to the provided
+   * writer.
+   *
+   * @param writer source writer to write to
+   * @param key key for which the injection is performed
+   * @return name of the method created
+   */
+  public String appendMemberInjection(SourceWriter writer, Key<?> key) {
+    JClassType classType = keyUtil.getClassType(key);
+    String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(key);
+
+    StringBuilder sb = new StringBuilder();
+
+    sb.append(createMethodInjection(writer, getMethodsToInject(classType), "injectee"));
+    sb.append(appendFieldInjection(writer, getFieldsToInject(classType), "injectee"));
+
+    writeMethod(writer,
+        "private void " + memberInjectMethodName +
+            "(" + classType.getQualifiedSourceName() + " injectee)",
+        sb.toString());
+
+    return memberInjectMethodName;
+  }
+
+  /**
    * Alternate toString method for TypeLiterals that fixes a JDK bug that was
    * replicated in Guice. See
    * <a href="http://code.google.com/p/google-guice/issues/detail?id=293">
@@ -400,5 +436,39 @@ public class SourceWriteUtil {
       return sb.toString();
     }
     return "";
+  }
+
+  private Set<JField> getFieldsToInject(JClassType classType) {
+    // Only inject fields that are non optional or where the key is bound.
+    Set<JField> fields = new HashSet<JField>();
+    for (JField field : memberCollector.getFields(classType)) {
+      if (!keyUtil.isOptional(field) || bindingIndex.isBound(keyUtil.getKey(field))) {
+        fields.add(field);
+      }
+    }
+    return fields;
+  }
+
+  private Set<JMethod> getMethodsToInject(JClassType classType) {
+    Set<JMethod> methods = new HashSet<JMethod>();
+    for (JMethod method : memberCollector.getMethods(classType)) {
+      if (shouldInject(method)) {
+        methods.add(method);
+      }
+    }
+    return methods;
+  }
+
+  private boolean shouldInject(JMethod method) {
+    // Only inject methods that are non optional or where all keys are bound.
+    if (keyUtil.isOptional(method)) {
+      for (JParameter param : method.getParameters()) {
+        if (!bindingIndex.isBound(keyUtil.getKey(param))) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 }

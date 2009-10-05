@@ -147,6 +147,7 @@ class GinjectorOutputter {
     outputInterfaceMethods();
     outputBindings();
     outputStaticInjections();
+    outputMemberInjections();
 
     writeConstructor(implClassName);
 
@@ -258,6 +259,12 @@ class GinjectorOutputter {
 
     if (foundError) {
       throw new UnableToCompleteException();
+    }
+  }
+
+  private void outputMemberInjections() {
+    for (Key<?> key : bindingsProcessor.getMemberInjectRequests()) {
+      sourceWriteUtil.appendMemberInjection(writer, key);
     }
   }
 

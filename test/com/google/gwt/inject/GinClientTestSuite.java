@@ -20,6 +20,7 @@ import com.google.gwt.inject.client.InnerGinjectorTest;
 import com.google.gwt.inject.client.binding.ConstantBindingTest;
 import com.google.gwt.inject.client.binding.EagerBindingTest;
 import com.google.gwt.inject.client.binding.GinjectorBindingTest;
+import com.google.gwt.inject.client.binding.InjectMembersTest;
 import com.google.gwt.inject.client.eager.EagerSingletonTest;
 import com.google.gwt.inject.client.field.FieldInjectTest;
 import com.google.gwt.inject.client.generics.GenericsTest;
@@ -66,6 +67,7 @@ public class GinClientTestSuite {
     suite.addTestSuite(EagerSingletonTest.class);
     suite.addTestSuite(ImplicitBindingTest.class);
     suite.addTestSuite(ProviderTest.class);
+    suite.addTestSuite(InjectMembersTest.class);
 
     return suite;
   }

@@ -30,6 +30,8 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.JWildcardType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.inject.rebind.binding.Injectable;
+import com.google.gwt.inject.rebind.binding.RequiredKeys;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -45,6 +47,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Util object that offers {@link Key} retrieval and manipulation methods.
@@ -53,11 +57,14 @@ import java.util.List;
 public class KeyUtil {
   private final TypeOracle typeOracle;
   private final NameGenerator nameGenerator;
+  private final MemberCollector memberCollector;
 
   @Inject
-  public KeyUtil(TypeOracle typeOracle, NameGenerator nameGenerator) {
+  public KeyUtil(TypeOracle typeOracle, NameGenerator nameGenerator,
+      @Injectable MemberCollector memberCollector) {
     this.typeOracle = typeOracle;
     this.nameGenerator = nameGenerator;
+    this.memberCollector = memberCollector;
   }
 
   public Key<?> getKey(JMethod method) {
@@ -235,6 +242,52 @@ public class KeyUtil {
   public boolean isOptional(HasAnnotations member) {
     Inject annot = member.getAnnotation(Inject.class);
     return annot != null && annot.optional();
+  }
+
+  /**
+   * Collects and returns all keys required to inject the given class.
+   *
+   * @param classType class for which required keys are calculated
+   * @return keys required to inject given class
+   */
+  public RequiredKeys getRequiredKeys(JClassType classType) {
+    Set<Key<?>> required = new HashSet<Key<?>>();
+    Set<Key<?>> optional = new HashSet<Key<?>>();
+    for (JMethod method : memberCollector.getMethods(classType)) {
+      RequiredKeys requiredKeys = getRequiredKeys(method);
+      required.addAll(requiredKeys.getRequiredKeys());
+      optional.addAll(requiredKeys.getOptionalKeys());
+    }
+
+    for (JField field : memberCollector.getFields(classType)) {
+      Key<?> key = getKey(field);
+      if (isOptional(field)) {
+        optional.add(key);
+      } else {
+        required.add(key);
+      }
+    }
+    return new RequiredKeys(required, optional);
+  }
+
+  /**
+   * Collects and returns all keys required to inject the given method.
+   *
+   * @param method method for which required keys are calculated
+   * @return required keys
+   */
+  public RequiredKeys getRequiredKeys(JAbstractMethod method) {
+    Set<Key<?>> required = new HashSet<Key<?>>();
+    Set<Key<?>> optional = new HashSet<Key<?>>();
+    for (JParameter param : method.getParameters()) {
+      Key<?> key = getKey(param);
+      if (isOptional(method)) {
+        optional.add(key);
+      } else {
+        required.add(key);
+      }
+    }
+    return new RequiredKeys(required, optional);
   }
 
   private Annotation getBindingAnnotation(Annotation[] annotations) {
