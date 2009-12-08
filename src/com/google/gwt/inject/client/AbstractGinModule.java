@@ -52,4 +52,8 @@ public abstract class AbstractGinModule implements GinModule {
   protected void requestStaticInjection(Class<?>... types) {
     binder.requestStaticInjection(types);
   }
+
+  protected GinBinder binder() {
+    return binder;
+  }
 }
