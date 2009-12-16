@@ -81,7 +81,7 @@ public class ProviderMethodBinding implements Binding {
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
-    String moduleSourceName = nameGenerator.binaryNameToSourceName(moduleClass.getName());
+    String moduleSourceName = moduleClass.getCanonicalName();
     String createModule = "new " + moduleSourceName + "()";
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + sourceWriteUtil.createMethodCallWithInjection(writer, gwtProviderMethod,

@@ -84,17 +84,17 @@ public class BindConstantBinding implements Binding {
     } else if (instance instanceof Number || instance instanceof Boolean) {
       valueToOutput = instance.toString(); // Includes int & short.
     } else if (instance instanceof Enum) {
-      String className = instance.getClass().getName();
+      Class<?> clazz = instance.getClass();
 
       // Enums become anonymous inner classes if they have a custom
       // implementation. Their classname is then of the form "com.foo.Bar$1".
       // We need to be careful here to not clobber inner enums (which also
       // have a $ in their classname). The regex below matches any classname
       // that terminates in a $ followed by a number, i.e. an anonymous class.
-      if (className.matches(".+\\$\\d+\\z")) {
-        className = instance.getClass().getEnclosingClass().getName();
+      if (clazz.getName().matches(".+\\$\\d+\\z")) {
+        clazz = instance.getClass().getEnclosingClass();
       }
-      className = nameGenerator.binaryNameToSourceName(className);
+      String className = clazz.getCanonicalName();
 
       valueToOutput = className + "." + ((Enum) instance).name();
     } else {

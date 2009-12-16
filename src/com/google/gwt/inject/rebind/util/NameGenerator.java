@@ -41,25 +41,6 @@ public class NameGenerator {
   private final Set<String> methodNames = new HashSet<String>();
 
   /**
-   * Returns the provided type's binary class name.
-   *
-   * @return binary class name
-   */
-  public String sourceNameToBinaryName(ClassType type, String fullyQualifiedClassName) {
-    return type.getBinaryClassName(fullyQualifiedClassName);
-  }
-
-  /**
-   * Returns the source name for the given binary name.
-   *
-   * @param fullyQualifiedClassName source name
-   * @return binary name
-   */
-  public String binaryNameToSourceName(String fullyQualifiedClassName) {
-    return replaceLast(fullyQualifiedClassName, '$', '.');
-  }
-
-  /**
    * Returns the key's getter method name.  The method with that name can be
    * called to retrieve an instance of the type described by the key.
    *

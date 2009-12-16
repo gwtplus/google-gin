@@ -108,7 +108,7 @@ public class KeyUtil {
 
   public JClassType getClassType(Type type) {
     if (type instanceof Class) {
-      return typeOracle.findType(nameGenerator.binaryNameToSourceName(((Class) type).getName()));
+      return typeOracle.findType(((Class) type).getCanonicalName());
     } else if (type instanceof ParameterizedType) {
       ParameterizedType parameterized = (ParameterizedType) type;
 
@@ -120,7 +120,7 @@ public class KeyUtil {
 
       Class rawClass = (Class) parameterized.getRawType();
       JClassType classType =
-          typeOracle.findType(nameGenerator.binaryNameToSourceName(rawClass.getName()));
+          typeOracle.findType(rawClass.getCanonicalName());
       JGenericType genericType = classType.isGenericType();
       if (genericType == null) {
         throw new ProvisionException("Can't get class type for " + type);
@@ -185,8 +185,8 @@ public class KeyUtil {
    * @throws NotFoundException if method cannot be found in source
    */
   public JMethod javaToGwtMethod(Method javaMethod) throws NotFoundException {
-    JClassType gwtEnclosingType = typeOracle.findType(
-        nameGenerator.binaryNameToSourceName(javaMethod.getDeclaringClass().getName()));
+    JClassType gwtEnclosingType =
+        typeOracle.findType(javaMethod.getDeclaringClass().getCanonicalName());
 
     JMethod resultingMethod = null;
     for (JMethod gwtMethod : gwtEnclosingType.getMethods()) {
@@ -201,7 +201,7 @@ public class KeyUtil {
         boolean found = true;
         for (int i = 0; i < gwtParameters.length; i++) {
           found = found && gwtParameters[i].getType().getQualifiedSourceName().equals(
-              nameGenerator.binaryNameToSourceName(javaParameters[i].getName()));
+              javaParameters[i].getCanonicalName());
         }
         if (found) {
           resultingMethod = gwtMethod;
@@ -225,8 +225,8 @@ public class KeyUtil {
    * @return field as used by the GWT compiler
    */
   public JField javaToGwtField(Field javaField) {
-    JClassType gwtEnclosingType = typeOracle.findType(
-        nameGenerator.binaryNameToSourceName(javaField.getDeclaringClass().getName()));
+    JClassType gwtEnclosingType =
+        typeOracle.findType(javaField.getDeclaringClass().getCanonicalName());
 
     return gwtEnclosingType.getField(javaField.getName());
   }
@@ -316,9 +316,7 @@ public class KeyUtil {
       throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
     JPrimitiveType primitiveType = gwtType.isPrimitive();
     if (primitiveType != null) {
-      String boxClassName = primitiveType.getQualifiedBoxedSourceName();
-      Class<?> boxClass = loadClass(boxClassName, ClassType.REGULAR);
-      return (Class) boxClass.getField("TYPE").get(null);
+      return loadClass(primitiveType);
     }
 
     JArrayType arrayType = gwtType.isArray();
@@ -368,7 +366,7 @@ public class KeyUtil {
 
     JClassType jClassType = gwtType.isClassOrInterface();
     if (gwtType.isClassOrInterface() != null) {
-      return loadClass(jClassType.getQualifiedSourceName(), ClassType.getType(jClassType));
+      return loadClass(jClassType);
     }
 
     throw new ProvisionException("Unknown GWT type: " + gwtType);
@@ -377,10 +375,32 @@ public class KeyUtil {
   // Wrapper around Class.forName that passes initialize=false. This is critical
   // because GWT client code (whose class names we may be referencing here)
   // can not necessarily have its static initializers run at rebind time.
-  private static Class<?> loadClass(String className, ClassType classType)
-      throws ClassNotFoundException {
-    String resultingClassName = classType.getBinaryClassName(className);
-    return Class.forName(resultingClassName, false, Thread.currentThread().getContextClassLoader());
+  private static Class<?> loadClass(JType type) throws ClassNotFoundException,
+      NoSuchFieldException, IllegalAccessException {
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+    // Handle primitive types.
+    JPrimitiveType primitiveType = type.isPrimitive();
+    if (primitiveType != null) {
+      String boxClassName = primitiveType.getQualifiedBoxedSourceName();
+      Class<?> boxClass = Class.forName(boxClassName, false, classLoader);
+      return (Class) boxClass.getField("TYPE").get(null);
+    }
+
+    JClassType classType = type.isClassOrInterface();
+    if (classType == null) {
+      throw new UnsupportedOperationException("Cannot load " + type + ".");
+    }
+
+    return Class.forName(getBinaryName((JClassType) type), false, classLoader);
+  }
+
+  private static String getBinaryName(JClassType type) {
+    JClassType enclosingType = type.getEnclosingType();
+    if (enclosingType != null) {
+     return getBinaryName(enclosingType) + "$" + type.getSimpleSourceName();
+    }
+    return type.getQualifiedSourceName();
   }
 
   // Reflective hack until getAnnotations is exposed from GWT

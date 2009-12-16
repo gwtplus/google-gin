@@ -100,10 +100,8 @@ public class SourceWriteUtil {
     boolean isPublic = field.isPublic() && field.getEnclosingType().isPublic();
 
     // Determine method signature parts.
-    String injecteeTypeName
-        = nameGenerator.binaryNameToSourceName(field.getEnclosingType().getQualifiedSourceName());
-    String fieldTypeName
-        = nameGenerator.binaryNameToSourceName(field.getType().getQualifiedSourceName());
+    String injecteeTypeName = field.getEnclosingType().getQualifiedSourceName();
+    String fieldTypeName = field.getType().getQualifiedSourceName();
     String methodBaseName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
         + field.getName() + "_fieldInjection");
     String methodName = nameGenerator.createMethodName(methodBaseName);
@@ -205,8 +203,7 @@ public class SourceWriteUtil {
     boolean isPublic = method.isPublic() && method.getEnclosingType().isPublic();
 
     // Determine method signature parts.
-    String injecteeTypeName
-        = nameGenerator.binaryNameToSourceName(method.getEnclosingType().getQualifiedSourceName());
+    String injecteeTypeName = method.getEnclosingType().getQualifiedSourceName();
     String methodBaseName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
         + method.getName() + "_methodInjection");
     String methodName = nameGenerator.createMethodName(methodBaseName);
@@ -217,8 +214,7 @@ public class SourceWriteUtil {
     } else {
       JType returnType = ((JMethod) method).getReturnType();
       if (returnType != JPrimitiveType.VOID) {
-        returnTypeString
-            = nameGenerator.binaryNameToSourceName(returnType.getQualifiedSourceName());
+        returnTypeString = returnType.getQualifiedSourceName();
         returning = true;
       }
     }
@@ -238,8 +234,7 @@ public class SourceWriteUtil {
     for (JParameter param : method.getParameters()) {
       String paramName = "_" + paramCount;
       invokerCallParams.add(nameGenerator.getGetterMethodName(keyUtil.getKey(param)) + "()");
-      invokerSignatureParams.add(
-          nameGenerator.binaryNameToSourceName(param.getType().getQualifiedSourceName()) + " "
+      invokerSignatureParams.add(param.getType().getQualifiedSourceName() + " "
               + paramName);
       invokeeCallParams.add(paramName);
       paramCount++;
@@ -370,7 +365,13 @@ public class SourceWriteUtil {
    * @return String representation of type
    */
   public String getSourceName(Type type) {
-    if (type instanceof ParameterizedType && ((ParameterizedType) type).getOwnerType() != null) {
+    if (type instanceof Class<?>) {
+      return ((Class<?>) type).getCanonicalName();
+    }
+
+    if (type instanceof ParameterizedType) {
+      // TODO(schmitt): Handle owner type.
+
       ParameterizedType parameterizedType = (ParameterizedType) type;
       Type[] arguments = parameterizedType.getActualTypeArguments();
       StringBuilder stringBuilder = new StringBuilder();
@@ -386,7 +387,7 @@ public class SourceWriteUtil {
       }
       return stringBuilder.append(">").toString();
     } else {
-      return nameGenerator.binaryNameToSourceName(MoreTypes.toString(type));
+      return MoreTypes.toString(type);
     }
   }
 
@@ -396,8 +397,7 @@ public class SourceWriteUtil {
 
     signature.append("@");
 
-    signature.append(nameGenerator.binaryNameToSourceName(
-        method.getEnclosingType().getQualifiedSourceName()));
+    signature.append(method.getEnclosingType().getQualifiedSourceName());
 
     String name = method instanceof JConstructor ? "new" : method.getName();
     signature.append("::").append(name).append("(");
@@ -417,8 +417,7 @@ public class SourceWriteUtil {
 
     signature.append("@");
 
-    signature.append(nameGenerator.binaryNameToSourceName(
-        field.getEnclosingType().getQualifiedSourceName()));
+    signature.append(field.getEnclosingType().getQualifiedSourceName());
 
     signature.append("::").append(field.getName());
 
