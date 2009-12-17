@@ -86,6 +86,13 @@ public class MethodInjectTest extends GWTTestCase {
     assertEquals(ShapeGinModule.OTHER_HEIGHT, square.getOtherHeight());
   }
 
+  public void testNoArgsInject() {
+    ShapeGinjector injector = GWT.create(ShapeGinjector.class);
+    Triangle triangle = injector.getTriangle();
+    assertEquals(ShapeGinModule.WIDTH, triangle.getWidth());
+    assertTrue(triangle.isMethodInitialized());
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }

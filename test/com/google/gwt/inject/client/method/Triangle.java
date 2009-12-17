@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2009 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,29 +13,33 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.google.gwt.inject.client.method;
 
-import com.google.gwt.inject.client.GinModules;
-import com.google.gwt.inject.client.Ginjector;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
-@GinModules(ShapeGinModule.class)
-public interface ShapeGinjector extends Ginjector {
+public class Triangle {
 
-  Circle getCircle();
+  private boolean methodInitialized = false;
+  private final int width;
 
-  Rectangle getRectangle();
+  @Inject
+  public Triangle(@Named("width") int width) {
+    this.width = width;
+  }
 
-  ThinRectangle getThinRectangle();
 
-  Square getSquare();
+  public boolean isMethodInitialized() {
+    return methodInitialized;
+  }
 
-  Rectangle.Border getBorder();
+  @Inject
+  public void initialize() {
+    this.methodInitialized = true;
+  }
 
-  Jigsaw getJigsaw();
-
-  void injectMembers(Rectangle rectObj);
-
-  void injectSquare(Square square);
-
-  Triangle getTriangle();
+  public int getWidth() {
+    return width;
+  }
 }
