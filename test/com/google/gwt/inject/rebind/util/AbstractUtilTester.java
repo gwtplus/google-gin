@@ -19,21 +19,18 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JArrayType;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JGenericType;
+import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.dev.cfg.ModuleDef;
 import com.google.gwt.dev.cfg.ModuleDefLoader;
 import com.google.gwt.dev.javac.CompilationState;
-import com.google.gwt.dev.javac.CompilationUnit;
-import com.google.gwt.dev.javac.JavaSourceFile;
-import com.google.gwt.dev.javac.impl.SourceFileCompilationUnit;
-import com.google.gwt.dev.util.Util;
+import com.google.gwt.dev.javac.GeneratedUnit;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
 import com.google.inject.Inject;
 
@@ -42,11 +39,9 @@ import junit.framework.TestCase;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -127,18 +122,17 @@ public abstract class AbstractUtilTester extends TestCase {
     }
   }
 
-  private Set<CompilationUnit> getTestUnits() {
-    Set<CompilationUnit> units = new HashSet<CompilationUnit>();
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SuperInterface")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SimpleInterface")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SubInterface")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SuperClass")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "SubClass")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "WildcardFieldClass")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "MethodsClass")));
-    units.add(new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE, "Parameterized")));
-    units.add(
-        new SourceFileCompilationUnit(new MyJavaSourceFile(PACKAGE + ".secret", "SecretSubClass")));
+  private Set<GeneratedUnit> getTestUnits() {
+    Set<GeneratedUnit> units = new HashSet<GeneratedUnit>();
+    units.add(new TestGeneratedUnit(PACKAGE, "SuperInterface"));
+    units.add(new TestGeneratedUnit(PACKAGE, "SimpleInterface"));
+    units.add(new TestGeneratedUnit(PACKAGE, "SubInterface"));
+    units.add(new TestGeneratedUnit(PACKAGE, "SuperClass"));
+    units.add(new TestGeneratedUnit(PACKAGE, "SubClass"));
+    units.add(new TestGeneratedUnit(PACKAGE, "WildcardFieldClass"));
+    units.add(new TestGeneratedUnit(PACKAGE, "MethodsClass"));
+    units.add(new TestGeneratedUnit(PACKAGE, "Parameterized"));
+    units.add(new TestGeneratedUnit(PACKAGE + ".secret", "SecretSubClass"));
     return units;
   }
 
@@ -161,81 +155,52 @@ public abstract class AbstractUtilTester extends TestCase {
     return collector;
   }
 
-  /**
-   * Please note: Some of the methods here are redundant and/or superfluous but
-   * are included in anticipation of the next GWT release, where Resource will
-   * replace JavaSourceFile.
-   */
-  private static class MyJavaSourceFile extends JavaSourceFile {
+  private static class TestGeneratedUnit implements GeneratedUnit {
 
-    private final String packageName;
-    private final String shortName;
-    private File file;
+    private final File file;
+    private final String location;
 
-    public MyJavaSourceFile(String packageName, String shortName) {
-      this.packageName = packageName;
-      this.shortName = shortName;
+    public TestGeneratedUnit(String packageName, String shortName) {
+      location = packageName + "." + shortName;
 
-      String fileName = getLocation().replaceAll("\\.", "/") + ".java";
+      String fileName = location.replaceAll("\\.", "/") + ".java";
       URI fileUri;
       try {
         fileUri = getClass().getClassLoader().getResource(fileName).toURI();
       } catch (URISyntaxException e) {
-        throw new RuntimeException(e); 
+        throw new RuntimeException(e);
       }
       file = new File(fileUri);
     }
 
-    public String getLocation() {
-      return packageName + "." + shortName;
+    public long creationTime() {
+      return 0;
     }
 
-    public String getPackageName() {
-      return packageName;
+    public String getSource() {
+      FileInputStream inputStream;
+      try {
+        inputStream = new FileInputStream(file);
+        byte[] buffer = new byte[(int) file.length()];
+        inputStream.read(buffer);
+        return new String(buffer);
+      } catch (FileNotFoundException e) {
+        throw new RuntimeException(e);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
 
-    public String getShortName() {
-      return shortName;
+    public String getStrongHash() {
+      return location;
     }
 
     public String getTypeName() {
-      return getLocation();
+      return location;
     }
 
-    public boolean isSuperSource() {
-      return false;
-    }
-
-    public String readSource() {
-      return Util.readStreamAsString(openContents());
-    }
-
-    public String getPath() {
-      return getLocation() + ".java";
-    }
-
-    public URL getURL() {
-      try {
-        return file.toURL();
-      } catch (MalformedURLException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    public InputStream openContents() {
-      try {
-        return new FileInputStream(file);
-      } catch (FileNotFoundException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    public boolean wasRerooted() {
-      return false;
-    }
-
-    public long getLastModified() {
-      return 0;
+    public String optionalFileLocation() {
+      return null;
     }
   }
 }

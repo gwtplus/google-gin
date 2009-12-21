@@ -27,6 +27,7 @@
 
   <patternset id="compiler.resources">
     <include name="**/?*.xml"/>
+    <include name="**/?*.java"/>
   </patternset>
 
 
@@ -41,7 +42,7 @@
   </path>
 
   <path id="library.gwt-dev.classpath">
-    <fileset dir="${gwt.home}" includes="gwt-dev-*.jar"/>
+    <fileset dir="${gwt.home}" includes="gwt-dev*.jar"/>
   </path>
 
   <path id="library.junit.classpath">
@@ -186,7 +187,7 @@
   </macrodef>
 
   <target name="test.web" depends="compile">
-    <test-macro extragwtargs="-web -style PRETTY"
+    <test-macro extragwtargs="-prod -style PRETTY"
       outputbase="${gin.testrun.base}/web" />
   </target>
 

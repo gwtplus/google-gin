@@ -123,8 +123,7 @@ public class MemberCollectorTest extends AbstractUtilTester {
     Collection<JMethod> methods = collector.getMethods(type);
     Collection<JField> fields = collector.getFields(type);
 
-    // Two fields are collected from java.lang.Object, 6 from the test types
-    assertEquals(8, fields.size());
+    assertEquals(6, fields.size());
 
     int a = 0;
     int b = 0;
@@ -142,8 +141,7 @@ public class MemberCollectorTest extends AbstractUtilTester {
     assertEquals(3, a);
     assertEquals(3, b);
 
-    // 5 from Object, others from test classes
-    assertEquals(15, methods.size());
+    assertEquals(10, methods.size());
   }
 
   public void testMethodFilter() {
@@ -151,7 +149,7 @@ public class MemberCollectorTest extends AbstractUtilTester {
 
     collector.setMethodFilter(new MemberCollector.MethodFilter() {
       public boolean accept(JMethod method) {
-        return method.getParameters().length == 0;
+        return isObject(method) && method.getParameters().length == 0;
       }
     });
 
@@ -166,12 +164,22 @@ public class MemberCollectorTest extends AbstractUtilTester {
     }
   }
 
+  // Collect everything but "java.lang.Object" members (they can throw our
+  // counts off and should not matter for Guice injection in production code).
+  private static boolean isObject(JMethod method) {
+    return !method.getEnclosingType().getSimpleSourceName().equals("Object");
+  }
+
+  private static boolean isObject(JField field) {
+    return !field.getEnclosingType().getSimpleSourceName().equals("Object");
+  }
+
   private static MemberCollector createMethodCollector() {
     MemberCollector collector = new MemberCollector(TreeLogger.NULL);
 
     collector.setMethodFilter(new MemberCollector.MethodFilter() {
       public boolean accept(JMethod method) {
-        return true;
+        return isObject(method);
       }
     });
     return collector;
@@ -182,13 +190,13 @@ public class MemberCollectorTest extends AbstractUtilTester {
 
     collector.setMethodFilter(new MemberCollector.MethodFilter() {
       public boolean accept(JMethod method) {
-        return true;
+        return isObject(method);
       }
     });
 
     collector.setFieldFilter(new MemberCollector.FieldFilter() {
       public boolean accept(JField field) {
-        return true;
+        return isObject(field);
       }
     });
 
