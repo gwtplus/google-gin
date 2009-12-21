@@ -76,6 +76,13 @@ public class GenericsTest extends GWTTestCase {
     assertSame(ginjector.getStringComparatorMap(), complicatedParameterized.getValue());
   }
 
+  public void testSuperWildcards() {
+    GenericsGinjector ginjector = GWT.create(GenericsGinjector.class);
+
+    List<? super String> list = ginjector.getSuperStringList();
+    assertTrue(list.contains("Hello"));
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }

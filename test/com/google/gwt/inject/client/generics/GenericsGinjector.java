@@ -33,4 +33,6 @@ public interface GenericsGinjector extends Ginjector {
   Parameterized.ComplicatedParameterized<String, Parameterized.StringComparator,
       Map<String, Parameterized.StringComparator>> getComplicatedParameterized();
   Map<String, Parameterized.StringComparator> getStringComparatorMap();
+
+  List<? super String> getSuperStringList();
 }

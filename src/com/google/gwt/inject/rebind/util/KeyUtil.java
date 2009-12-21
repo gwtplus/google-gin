@@ -333,7 +333,7 @@ public class KeyUtil {
         case EXTENDS:
           return Types.subtypeOf(baseType);
         case SUPER:
-          return Types.subtypeOf(baseType);
+          return Types.supertypeOf(baseType);
         case UNBOUND:
 
       }

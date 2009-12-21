@@ -41,6 +41,8 @@ public class GenericsGinModule extends AbstractGinModule {
 
     bindConstant().annotatedWith(Names.named("foo")).to("foo");
     bindConstant().annotatedWith(Names.named("bar")).to(3);
+
+    bind(new TypeLiteral<List<? super String>>(){}).to(CharSequenceList.class);
   }
 
   @Provides
@@ -53,8 +55,18 @@ public class GenericsGinModule extends AbstractGinModule {
   }
 
   @Provides
+  CharSequenceList provideCharSequenceList() {
+    CharSequenceList list = new CharSequenceList();
+    list.add("Hello");
+    list.add("World");
+    return list;
+  }
+
+  @Provides
   @Singleton
   Map<String, Parameterized.StringComparator> provideStringComparatorMap() {
     return new HashMap<String, Parameterized.StringComparator>();
   }
+
+  public static class CharSequenceList extends ArrayList<CharSequence> {}
 }
