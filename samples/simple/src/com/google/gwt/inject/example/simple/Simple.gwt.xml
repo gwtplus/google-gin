@@ -1,0 +1,16 @@
+<module>
+    <!-- Inherit the core Web Toolkit stuff. -->
+    <inherits name='com.google.gwt.user.User'/>
+
+    <!-- Inherit the default GWT style sheet. -->
+    <inherits name='com.google.gwt.user.theme.standard.Standard'/>
+
+    <!-- Inherit the i18n module for the messages used in this example. -->
+    <inherits name="com.google.gwt.i18n.I18N"/>
+
+    <!-- Inherit GIN. -->
+    <inherits name='com.google.gwt.inject.Inject'/>
+
+    <entry-point class='com.google.gwt.inject.example.simple.client.SimpleEntryPoint'/>
+    <stylesheet src='simple.css'/>
+</module>

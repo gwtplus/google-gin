@@ -1,0 +1,21 @@
+.message {
+  text-align:center;
+  font-family:Verdana,sans-serif;
+  margin:10px;
+}
+
+.error {
+  background-color: #ff9999;
+}
+
+.simple {
+  width:100%;
+}
+
+.simple table {
+  margin:0 auto 0 auto;
+}
+
+.simple button {
+  margin: 3px;
+}
