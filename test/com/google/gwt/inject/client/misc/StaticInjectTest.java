@@ -51,6 +51,12 @@ public class StaticInjectTest extends GWTTestCase {
     assertNull(DynamicClass.getName2());
   }
 
+  public void testStaticGinjectorInjection() {
+    GWT.create(StaticInjectGinjector.class);
+
+    assertNotNull(StaticClass.getInjector());
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }

@@ -28,6 +28,8 @@ public class StaticClass {
 
   private static String name4 = null;
 
+  private static @Inject StaticInjectGinjector injector;
+
   public static String getName1() {
     return name1;
   }
@@ -47,6 +49,10 @@ public class StaticClass {
 
   public static String getName4() {
     return name4;
+  }
+
+  public static StaticInjectGinjector getInjector() {
+    return injector;
   }
 
   @Inject

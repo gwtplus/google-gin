@@ -242,7 +242,7 @@ class GinjectorOutputter {
         if (member instanceof Method) {
           try {
             body.append(sourceWriteUtil.createMethodCallWithInjection(writer,
-              keyUtil.javaToGwtMethod((Method) member), null));
+                keyUtil.javaToGwtMethod((Method) member), null));
           } catch (NotFoundException e) {
             foundError = true;
             logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);

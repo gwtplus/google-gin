@@ -19,10 +19,12 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JConstructor;
+import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
@@ -58,6 +60,7 @@ import com.google.inject.spi.DefaultBindingTargetVisitor;
 import com.google.inject.spi.DefaultElementVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
+import com.google.inject.spi.InjectionPoint;
 import com.google.inject.spi.InstanceBinding;
 import com.google.inject.spi.LinkedKeyBinding;
 import com.google.inject.spi.Message;
@@ -69,7 +72,10 @@ import com.google.inject.spi.UntargettedBinding;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -232,9 +238,9 @@ class BindingsProcessor implements BindingIndex {
 
     if (binding != null) {
       logger.log(TreeLogger.TRACE, "Implicit binding for " + key + ": " + binding);
-      if (binding instanceof CallGwtDotCreateBinding) {
-        // Need to lie to Guice about any implicit GWT.create bindings
-        // we install that Guice would otherwise not see.
+      if (binding instanceof CallGwtDotCreateBinding || binding instanceof GinjectorBinding){
+        // Need to lie to Guice about any implicit GWT.create bindings and
+        // ginjector bindings we install that Guice would otherwise not see.
         // http://code.google.com/p/google-gin/issues/detail?id=13
         lieToGuiceModule.registerImplicitBinding(key);
       }
@@ -353,6 +359,8 @@ class BindingsProcessor implements BindingIndex {
         }
       }
     }
+
+    checkForError();
   }
 
   private List<Module> createModules() {
@@ -574,8 +582,12 @@ class BindingsProcessor implements BindingIndex {
     unresolvedOptional.remove(key);
     memberInjectRequests.remove(key);
 
-    RequiredKeys requiredKeys = binding.getRequiredKeys();
+    addRequiredKeys(key, binding.getRequiredKeys());
 
+    logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
+  }
+
+  private void addRequiredKeys(Key<?> key, RequiredKeys requiredKeys) {
     // Resolve optional keys.
     // Clone the returned set so we can safely mutate it
     Set<Key<?>> optionalKeys = new HashSet<Key<?>>(requiredKeys.getOptionalKeys());
@@ -595,8 +607,6 @@ class BindingsProcessor implements BindingIndex {
           + key + ": " + nowUnresolved);
       unresolved.addAll(nowUnresolved);
     }
-
-    logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
   }
 
   private <T extends Binding> T checkOptionalBindingAvailability(T binding) {
@@ -751,12 +761,46 @@ class BindingsProcessor implements BindingIndex {
 
     @Override
     public Void visit(StaticInjectionRequest staticInjectionRequest) {
-      staticInjectionRequests.add(staticInjectionRequest.getType());
+      addStaticInjectionRequest(staticInjectionRequest);
       return null;
     }
 
     public List<Message> getMessages() {
       return messages;
+    }
+
+    private void addStaticInjectionRequest(StaticInjectionRequest staticInjectionRequest) {
+      Class<?> type = staticInjectionRequest.getType();
+      staticInjectionRequests.add(type);
+
+      // Calculate required bindings and add to unresolved.
+      Set<Key<?>> unresolved = new HashSet<Key<?>>();
+      Set<Key<?>> unresolvedOptional = new HashSet<Key<?>>();
+      for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(type)) {
+        Member member = injectionPoint.getMember();
+        if (member instanceof Method) {
+          JMethod method = null;
+          try {
+            method = keyUtil.javaToGwtMethod((Method) member);
+          } catch (NotFoundException e) {
+            messages.add(
+                new Message(new ArrayList<Object>(), "Could not resolve GWT method: " + member, e));
+            return;
+          }
+          RequiredKeys keys = keyUtil.getRequiredKeys(method);
+          unresolved.addAll(keys.getRequiredKeys());
+          unresolvedOptional.addAll(keys.getOptionalKeys());
+        } else if (member instanceof Field) {
+          JField field = keyUtil.javaToGwtField((Field) member);
+          Key<?> key = keyUtil.getKey(field);
+          if (keyUtil.isOptional(field)) {
+            unresolvedOptional.add(key);
+          } else {
+            unresolved.add(key);
+          }
+        }
+      }
+      addRequiredKeys(keyUtil.getKey(type), new RequiredKeys(unresolved, unresolvedOptional));
     }
   }
 
