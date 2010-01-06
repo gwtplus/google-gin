@@ -1,5 +1,1 @@
 This directory holds dependencies needed for Gin.
-
-Gin currently requires a pre-release snapshot of Guice 2.0.
-guice-snapshot.jar is currently built from r803. Gin will
-not operate with an older Guice.

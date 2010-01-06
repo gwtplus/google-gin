@@ -4,6 +4,9 @@
 
   <property environment="env"/>
 
+  <!-- Used for distribution naming. -->
+  <property name="gin.version" value="1.0" />
+
   <!-- Mac GWT requires -XstartOnFirstThread -->
   <condition property="mac">
     <os name="Mac OS X"/>
@@ -27,7 +30,6 @@
 
   <patternset id="compiler.resources">
     <include name="**/?*.xml"/>
-    <include name="**/?*.java"/>
   </patternset>
 
 
@@ -83,27 +85,44 @@
     <path refid="library.aopalliance.classpath"/>
   </path>
 
-  <path id="gin.test.classpath">
-    <pathelement location="${gin.output.dir}"/>
-    <pathelement location="${gin.testoutput.dir}"/>
+  <path id="gin.test.libs.classpath">
     <path refid="gin.classpath"/>
     <path refid="library.junit.classpath"/>
     <path refid="library.easymock.classpath"/>
     <path refid="library.easymockclassextension.classpath"/>
     <path refid="library.cglib.classpath"/>
+  </path>
+
+  <path id="gin.test.classpath">
+    <pathelement location="${gin.output.dir}"/>
+    <pathelement location="${gin.testoutput.dir}"/>
+    <path refid="gin.test.libs.classpath" />
+
+    <!-- Put test sources on test classpath so GWT compiler can see them -->
+    <path refid="gin.test.sourcepath"/>
+  </path>
+
+  <path id="gin.test.jars.classpath">
+    <pathelement location="${gin.testoutput.dir}"/>
+    <pathelement location="${gin.dist.dir}/gin-${gin.version}.jar" />
+    <path refid="gin.test.libs.classpath" />
 
     <!-- Put test sources on test classpath so GWT compiler can see them -->
     <path refid="gin.test.sourcepath"/>
   </path>
 
   <path id="gin.sourcepath" path="${gin.basedir}/src"/>
-  <path id="gin.test.sourcepath" path="${gin.basedir}/test"/>
+  <path id="gin.test.sourcepath" location="${gin.basedir}/test"/>
 
-  <target name="compile" depends="compile.production,compile.tests"/>
+
+  <!-- Compilation -->
+
+  <target name="compile" depends="compile.production, compile.tests.client, compile.tests.rebind"/>
 
   <target name="compile.production" description="Compile module gin; production classes">
     <mkdir dir="${gin.output.dir}"/>
-    <javac destdir="${gin.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
+    <javac destdir="${gin.output.dir}" debug="${compiler.debug}" fork="true"
+           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}">
       <compilerarg line="${compiler.args}"/>
       <classpath refid="gin.classpath"/>
       <src refid="gin.sourcepath"/>
@@ -131,13 +150,34 @@
     </copy>
   </target>
 
-  <target name="compile.tests" depends="compile.production" description="compile module gin; test classes" unless="skip.tests">
+  <target name="compile.tests.rebind" depends="compile.production"
+          description="Compile rebind tests.">
     <mkdir dir="${gin.testoutput.dir}"/>
-    <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
+    <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" fork="true"
+           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}">
       <compilerarg line="${compiler.args}"/>
       <classpath refid="gin.test.classpath"/>
       <classpath location="${gin.output.dir}"/>
       <src refid="gin.test.sourcepath"/>
+      <exclude name="com/google/gwt/inject/client/" />
+    </javac>
+
+    <!-- Required to run the tests in IntelliJ under GWT 2.0. -->
+    <copy todir="${gin.testoutput.dir}">
+      <fileset dir="${gin.basedir}/test" includes="**/?*.java"/>
+    </copy>
+  </target>
+
+  <target name="compile.tests.client" depends="compile.production"
+          description="Compile client tests.">
+    <mkdir dir="${gin.testoutput.dir}"/>
+    <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" fork="true"
+           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}">
+      <compilerarg line="${compiler.args}"/>
+      <classpath refid="gin.test.classpath"/>
+      <classpath location="${gin.output.dir}"/>
+      <src refid="gin.test.sourcepath"/>
+      <exclude name="com/google/gwt/inject/rebind/" />
     </javac>
 
     <copy todir="${gin.testoutput.dir}">
@@ -148,11 +188,17 @@
     </copy>
   </target>
 
-  <target name="test" depends="test.web, test.hosted" />
+
+  <!-- Testing -->
+
+  <target name="test" depends="test.client, test.rebind" description="Run all tests."/>
+
+  <target name="test.client" depends="test.web, test.hosted" description="Run client tests." />
 
   <macrodef name="test-macro">
     <attribute name="extragwtargs" default="" />
     <attribute name="outputbase" />
+    <attribute name="classpath" default="gin.test.classpath" />
 
     <sequential>
       <mkdir dir="@{outputbase}/out"/>
@@ -160,7 +206,7 @@
       <mkdir dir="@{outputbase}/reports"/>
 
       <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
-          haltonerror="true" failureproperty="junit.failure" dir="@{outputbase}">
+             haltonerror="true" failureproperty="junit.failure" dir="@{outputbase}">
         <jvmarg line="${macJvmArgs}"/>
         <formatter type="brief" />
         <formatter type="xml"/>
@@ -168,12 +214,9 @@
         <!-- Add -logLevel TRACE to get more debug output -->
         <sysproperty key="gwt.args" value="@{extragwtargs} -gen gen -out out" />
 
-        <classpath refid="gin.test.classpath"/>
+        <classpath refid="@{classpath}"/>
         <batchtest todir="@{outputbase}/reports">
-          <fileset dir="${gin.testoutput.dir}">
-            <include name="com/google/gwt/inject/rebind/**/*Test.class"/>
-            <include name="com/google/gwt/inject/*TestSuite.class"/>
-          </fileset>
+          <fileset dir="${gin.testoutput.dir}" includes="com/google/gwt/inject/*TestSuite.class"/>
         </batchtest>
       </junit>
 
@@ -186,35 +229,106 @@
     </sequential>
   </macrodef>
 
-  <target name="test.web" depends="compile">
-    <test-macro extragwtargs="-prod -style PRETTY"
-      outputbase="${gin.testrun.base}/web" />
+  <target name="test.web" depends="compile.tests.client">
+
+    <!-- Use -prod with GWT 2.0+, otherwise run -web. -->
+    <test-macro extragwtargs="-prod -style PRETTY" outputbase="${gin.testrun.base}/web" />
   </target>
 
-  <target name="test.hosted" depends="compile">
+  <target name="test.hosted" depends="compile.tests.client">
     <test-macro outputbase="${gin.testrun.base}/hosted" />
   </target>
 
-  <target name="dist" depends="compile.production">
+  <target name="test.rebind" depends="compile.tests.rebind" description="Run rebind tests.">
+    <sequential>
+      <mkdir dir="${gin.testrun.base}/rebind/reports"/>
+
+      <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
+             haltonerror="true" failureproperty="junit.failure" dir="${gin.testrun.base}/rebind">
+        <formatter type="brief" />
+        <formatter type="xml"/>
+
+        <classpath refid="gin.test.classpath"/>
+        <batchtest todir="${gin.testrun.base}/rebind/reports">
+          <fileset dir="${gin.testoutput.dir}">
+            <include name="com/google/gwt/inject/rebind/**/*Test.class"/>
+          </fileset>
+        </batchtest>
+      </junit>
+
+      <junitreport todir="${gin.testrun.base}/rebind/reports">
+        <fileset dir="${gin.testrun.base}/rebind/reports"/>
+        <report todir="${gin.testrun.base}/rebind/reports/html"/>
+      </junitreport>
+
+      <fail if="junit.failure"
+            message="Tests failed. See reports in ${gin.testrun.base}/rebind/reports"/>
+    </sequential>
+  </target>
+
+
+  <!-- Distribution -->
+
+  <target name="jars" depends="compile.production" description="Creates distribution jars.">
     <mkdir dir="${gin.dist.dir}"/>
-    <jar destfile="${gin.dist.dir}/gin.jar">
+    <jar destfile="${gin.dist.dir}/gin-${gin.version}.jar">
       <fileset dir="${gin.output.dir}" />
     </jar>
 
-    <zip destfile="${gin.dist.dir}/gin-src.jar">
+    <zip destfile="${gin.dist.dir}/gin-${gin.version}-src.jar">
       <fileset dir="${gin.source.dir}"/>
-      <fileset file="LICENSE"/>
+      <fileset file="${gin.basedir}/LICENSE"/>
     </zip>
   </target>
 
-  <target name="clean" description="cleanup module">
+  <target name="test.jars" depends="jars, compile.tests.client, compile.tests.rebind">
+    <mkdir dir="${gin.testrun.base}/rebind"/>
+
+    <test-macro extragwtargs="-prod -style PRETTY" outputbase="${gin.testrun.base}/web"
+                classpath="gin.test.jars.classpath" />
+
+    <test-macro outputbase="${gin.testrun.base}/hosted" classpath="gin.test.jars.classpath" />
+
+    <junit printsummary="yes" fork="yes" showoutput="true" maxmemory="${test.max.memory}"
+           haltonerror="true" dir="${gin.testrun.base}/rebind">
+      <classpath refid="gin.test.classpath"/>
+      <batchtest>
+        <fileset dir="${gin.testoutput.dir}">
+          <include name="com/google/gwt/inject/rebind/**/*Test.class"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <!-- Output contains:
+         * bare gin-x.x.jar (all you should need to run)
+         * gin-x.x-src.jar (sources for easier importing in IDEs)
+         * gin-x.x.zip (sources/classes, javadoc, license, guice dependencies)
+         * gin-x.x-src.zip (all project contents) -->
+  <target name="dist" depends="jars, javadoc" description="Creates distributable archives.">
+    <mkdir dir="${gin.dist.dir}"/>
+    <zip destfile="${gin.dist.dir}/gin-${gin.version}.zip">
+      <fileset dir="${gin.basedir}/lib" includes="*.jar" />
+      <fileset file="${gin.basedir}/LICENSE"/>
+      <fileset file="${gin.dist.dir}/gin-${gin.version}.jar"/>
+      <fileset dir="${gin.basedir}" includes="javadoc/**/*" />
+    </zip>
+
+    <zip destfile="${gin.dist.dir}/gin-${gin.version}-src.zip">
+      <fileset dir="${gin.basedir}"
+               excludes="out/**/*,out,.svn,.svn/**/*,**/.svn,tomcat,tomcat/**/*,build.properties" />
+    </zip>
+  </target>
+
+  <target name="clean" description="Cleanup module.">
     <delete dir="${gin.output.base}"/>
   </target>
 
   <target name="init" description="Build initialization" />
 
   <target name="javadoc" description="Creates javadoc">
-    <javadoc sourcepath="${gin.source.dir}" destdir="${gin.javadoc.dir}" classpathref="gin.classpath">
+    <javadoc sourcepath="${gin.source.dir}" destdir="${gin.javadoc.dir}"
+             classpathref="gin.classpath">
       <link href="http://google-guice.googlecode.com/svn/trunk/javadoc" />
     </javadoc>
   </target>
