@@ -22,7 +22,7 @@ import com.google.gwt.i18n.client.Constants;
  * Interface that can be used to read constants from a properties file.
  *
  * Instances of this interface can be requested/injected by Gin without an
- * explicit binding: Gin will internallt call GWT.create on the requested type.
+ * explicit binding: Gin will internally call GWT.create on the requested type.
  */
 public interface SimpleConstants extends Constants {
 
@@ -33,4 +33,6 @@ public interface SimpleConstants extends Constants {
   String showMessage();
 
   String showError();
+  
+  String showMessageForAsync();
 }

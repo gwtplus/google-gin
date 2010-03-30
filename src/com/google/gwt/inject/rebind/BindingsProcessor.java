@@ -25,10 +25,12 @@ import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.inject.client.AsyncProvider;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
 import com.google.gwt.inject.rebind.adapter.GwtDotCreateProvider;
+import com.google.gwt.inject.rebind.binding.AsyncProviderBinding;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
@@ -153,6 +155,7 @@ class BindingsProcessor implements BindingIndex {
   private final Provider<BindClassBinding> bindClassBindingProvider;
   private final Provider<BindProviderBinding> bindProviderBindingProvider;
   private final Provider<ImplicitProviderBinding> implicitProviderBindingProvider;
+  private final Provider<AsyncProviderBinding> asyncProviderBindingProvider;
   private final Provider<ProviderMethodBinding> providerMethodBindingProvider;
   private final Provider<BindConstantBinding> bindConstantBindingProvider;
   private final Provider<GinjectorBinding> ginjectorBindingProvider;
@@ -182,6 +185,7 @@ class BindingsProcessor implements BindingIndex {
       Provider<BindClassBinding> bindClassBindingProvider,
       Provider<BindProviderBinding> bindProviderBindingProvider,
       Provider<ImplicitProviderBinding> implicitProviderBindingProvider,
+      Provider<AsyncProviderBinding> asyncProviderBindingProvider,
       @GinjectorInterfaceType JClassType ginjectorInterface,
       LieToGuiceModule lieToGuiceModule,
       Provider<BindConstantBinding> bindConstantBindingProvider,
@@ -194,6 +198,7 @@ class BindingsProcessor implements BindingIndex {
     this.callConstructorBinding = callConstructorBinding;
     this.bindClassBindingProvider = bindClassBindingProvider;
     this.implicitProviderBindingProvider = implicitProviderBindingProvider;
+    this.asyncProviderBindingProvider = asyncProviderBindingProvider;
     this.bindProviderBindingProvider = bindProviderBindingProvider;
     this.keyUtil = keyUtil;
     this.ginjectorInterface = ginjectorInterface;
@@ -238,7 +243,8 @@ class BindingsProcessor implements BindingIndex {
 
     if (binding != null) {
       logger.log(TreeLogger.TRACE, "Implicit binding for " + key + ": " + binding);
-      if (binding instanceof CallGwtDotCreateBinding || binding instanceof GinjectorBinding){
+      if (binding instanceof CallGwtDotCreateBinding || binding instanceof GinjectorBinding
+          || binding instanceof AsyncProviderBinding){
         // Need to lie to Guice about any implicit GWT.create bindings and
         // ginjector bindings we install that Guice would otherwise not see.
         // http://code.google.com/p/google-gin/issues/detail?id=13
@@ -455,6 +461,21 @@ class BindingsProcessor implements BindingIndex {
       return binding;
 
       // TODO(bstoler): Scope the provider binding like the thing being provided?
+    }
+    
+    // 4b. AsyncProvider injections.
+    if (isAsyncProviderKey(key)) {
+      AsyncProviderBinding binding = asyncProviderBindingProvider.get();
+      binding.setProviderKey(key);
+      
+      if (optional) {
+        // We have to take special measures for optional implicit providers
+        // since they are only created/injected if their provided type can be
+        // bound.
+        return checkOptionalBindingAvailability(binding);
+      }
+      
+      return binding;
     }
 
     // 5. Convert constants.
@@ -682,6 +703,12 @@ class BindingsProcessor implements BindingIndex {
         ((ParameterizedType) keyType).getRawType() == Provider.class;
   }
 
+  private boolean isAsyncProviderKey(Key<?> key) {
+      Type keyType = key.getTypeLiteral().getType();
+      return keyType instanceof ParameterizedType &&
+          ((ParameterizedType) keyType).getRawType() == AsyncProvider.class;
+  }
+  
   private boolean isClassAccessibleFromGinjector(JClassType classType) {
     if (classType.isPublic()) {
       return true;

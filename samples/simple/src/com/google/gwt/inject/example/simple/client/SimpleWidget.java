@@ -16,13 +16,16 @@
 
 package com.google.gwt.inject.example.simple.client;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.inject.client.AsyncProvider;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.HorizontalPanel;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.SimplePanel;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.inject.Inject;
 
 /**
@@ -34,7 +37,8 @@ public class SimpleWidget extends Composite {
   private final SimpleMessages messages;
   private final Label text;
   private final SimpleService service;
-
+  private final AsyncProvider<SimpleAsyncWidget> asyncWidgetProvider;
+  
   /**
    * Constructs a new simple widget.
    *
@@ -43,10 +47,12 @@ public class SimpleWidget extends Composite {
    * @param constants constants to label the buttons
    */
   @Inject
-  public SimpleWidget(SimpleMessages messages, SimpleService service, SimpleConstants constants) {
+  public SimpleWidget(SimpleMessages messages, SimpleService service, 
+      SimpleConstants constants, AsyncProvider<SimpleAsyncWidget> asyncWidgetProvider) {
     this.messages = messages;
     this.service = service;
-
+    this.asyncWidgetProvider = asyncWidgetProvider;
+    
     text = new Label();
     text.addStyleName("message");
 
@@ -62,15 +68,22 @@ public class SimpleWidget extends Composite {
       }
     });
 
+    Button showAsync = new Button(constants.showMessageForAsync(), new ClickHandler() {
+      public void onClick(ClickEvent event) {
+        showAsync();
+      }
+    });
+    
     HorizontalPanel buttons = new HorizontalPanel();
     buttons.add(showMessage);
     buttons.add(showError);
-
+    buttons.add(showAsync);
+    
     VerticalPanel root = new VerticalPanel();
     root.add(text);
     root.add(buttons);
     root.addStyleName("simple");
-
+    
     initWidget(root);
   }
 
@@ -88,5 +101,19 @@ public class SimpleWidget extends Composite {
   public void showError() {
     text.setText(messages.errorTemplate(service.getRandomError()));
     text.addStyleName("error");
+  }
+  
+  public void showAsync() {
+    asyncWidgetProvider.get(new AsyncCallback<SimpleAsyncWidget>() {
+      @Override
+      public void onSuccess(SimpleAsyncWidget widget) {
+        widget.showMessage();
+      }
+      
+      @Override
+      public void onFailure(Throwable caught) {
+        text.setText(messages.errorTemplate(caught.toString()));
+      }
+    });
   }
 }

@@ -16,6 +16,7 @@
 
 package com.google.gwt.inject.example.simple.client;
 
+import com.google.gwt.inject.client.AsyncProvider;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
 
@@ -29,4 +30,6 @@ import com.google.gwt.inject.client.Ginjector;
 public interface SimpleGinjector extends Ginjector {
 
   SimpleWidget getSimpleWidget();
+  
+  AsyncProvider<SimpleAsyncWidget> getAsyncWidget();
 }
