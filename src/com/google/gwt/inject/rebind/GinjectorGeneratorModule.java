@@ -17,6 +17,7 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
@@ -66,17 +67,22 @@ class GinjectorGeneratorModule extends AbstractModule {
         new MemberCollector.MethodFilter() {
           public boolean accept(JMethod method) {
             // TODO(schmitt): Do injectable methods require at least one parameter?
-            return method.isAnnotationPresent(Inject.class) && !method.isStatic();
+            return hasInject(method) && !method.isStatic();
           }
         });
 
     collector.setFieldFilter(
         new MemberCollector.FieldFilter() {
           public boolean accept(JField field) {
-            return field.isAnnotationPresent(Inject.class) && !field.isStatic();
+            return (hasInject(field)) && !field.isStatic();
           }
         });
 
     return collector;
+  }
+
+  private boolean hasInject(HasAnnotations method) {
+    return method.isAnnotationPresent(Inject.class)
+        || method.isAnnotationPresent(javax.inject.Inject.class);
   }
 }

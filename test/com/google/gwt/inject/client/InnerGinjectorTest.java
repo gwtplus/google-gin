@@ -20,8 +20,8 @@ import com.google.gwt.inject.client.binder.GinBinder;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.google.inject.TypeLiteral;
 import com.google.inject.Provides;
+import com.google.inject.TypeLiteral;
 
 import java.util.Arrays;
 import java.util.List;

@@ -15,8 +15,8 @@
  */
 package com.google.gwt.inject.client;
 
-import com.google.inject.Inject;
 import com.google.gwt.core.client.GWT;
+import com.google.inject.Inject;
 
 /**
  * A more complex object that we create from {@link MyAppGinjector}.

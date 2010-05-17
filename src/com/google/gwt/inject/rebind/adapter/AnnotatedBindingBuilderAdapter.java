@@ -19,11 +19,12 @@ import com.google.gwt.inject.client.binder.GinAnnotatedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinLinkedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinScopedBindingBuilder;
 import com.google.inject.Key;
-import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 
 import java.lang.annotation.Annotation;
+
+import javax.inject.Provider;
 
 class AnnotatedBindingBuilderAdapter<T> implements GinAnnotatedBindingBuilder<T> {
   private final AnnotatedBindingBuilder<T> annotatedBindingBuilder;

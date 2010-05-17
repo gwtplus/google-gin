@@ -21,7 +21,6 @@ import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -43,7 +42,6 @@ public class ProviderMethodBinding implements Binding {
   private final KeyUtil keyUtil;
   private final SourceWriteUtil sourceWriteUtil;
   private final TreeLogger logger;
-  private final NameGenerator nameGenerator;
 
   private Class<?> moduleClass;
   private Set<Key<?>> parameterKeys;
@@ -51,11 +49,10 @@ public class ProviderMethodBinding implements Binding {
 
   @Inject
   public ProviderMethodBinding(KeyUtil keyUtil, SourceWriteUtil sourceWriteUtil,
-      TreeLogger logger, NameGenerator nameGenerator) {
+      TreeLogger logger) {
     this.keyUtil = keyUtil;
     this.sourceWriteUtil = sourceWriteUtil;
     this.logger = logger;
-    this.nameGenerator = nameGenerator;
   }
 
   public void setProviderMethod(ProviderMethod providerMethod) throws UnableToCompleteException {

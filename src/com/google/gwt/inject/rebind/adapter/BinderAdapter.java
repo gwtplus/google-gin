@@ -16,11 +16,11 @@
 package com.google.gwt.inject.rebind.adapter;
 
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
-import com.google.gwt.inject.client.binder.GinBinder;
+import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.binder.GinAnnotatedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinAnnotatedConstantBindingBuilder;
-import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.binder.GinLinkedBindingBuilder;
+import com.google.gwt.inject.client.binder.GinBinder;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Google Inc.
+ * Copyright 2010 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -55,7 +55,6 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.ProvidedBy;
-import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.Singleton;
 import com.google.inject.Stage;
@@ -90,6 +89,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.inject.Provider;
+
 /**
  * Builds up the bindings and scopes for this {@code Ginjector}.
  */
@@ -97,7 +98,7 @@ import java.util.Set;
 class BindingsProcessor implements BindingIndex {
 
   /**
-   * Type array representing zero arguments for a metohod.
+   * Type array representing zero arguments for a method.
    */
   private static final JType[] ZERO_ARGS = new JType[0];
 
@@ -326,7 +327,8 @@ class BindingsProcessor implements BindingIndex {
     GinScope scope = getScopes().get(key);
     if (scope == null) {
       Class<?> raw = keyUtil.getRawType(key);
-      if (raw.getAnnotation(Singleton.class) != null) {
+      if (raw.getAnnotation(Singleton.class) != null
+          || raw.getAnnotation(javax.inject.Singleton.class) != null) {
         // Look for scope annotation as a fallback
         scope = GinScope.SINGLETON;
       } else if (RemoteServiceProxyBinding.isRemoteServiceProxy(keyUtil.getRawClassType(key))) {
@@ -743,7 +745,8 @@ class BindingsProcessor implements BindingIndex {
   private boolean isProviderKey(Key<?> key) {
     Type keyType = key.getTypeLiteral().getType();
     return keyType instanceof ParameterizedType &&
-        ((ParameterizedType) keyType).getRawType() == Provider.class;
+        (((ParameterizedType) keyType).getRawType() == Provider.class
+            || ((ParameterizedType) keyType).getRawType() == com.google.inject.Provider.class);
   }
 
   private boolean isAsyncProviderKey(Key<?> key) {
@@ -782,7 +785,8 @@ class BindingsProcessor implements BindingIndex {
 
     JConstructor injectConstructor = null;
     for (JConstructor constructor : constructors) {
-      if (constructor.getAnnotation(Inject.class) != null) {
+      if (constructor.getAnnotation(Inject.class) != null
+          || constructor.getAnnotation(javax.inject.Inject.class) != null) {
         if (injectConstructor == null) {
           injectConstructor = constructor;
         } else {
@@ -972,6 +976,8 @@ class BindingsProcessor implements BindingIndex {
       return null;
     }
 
+    // TODO(schmitt): We don't support this right now in any case, but it's
+    // strange to be using the Guice Scope instead of javax.inject.Scope
     public Void visitScope(Scope scope) {
       messages.add(new Message("Explicit scope unsupported: key=" + targetKey
           + " scope=" + scope));
@@ -979,7 +985,7 @@ class BindingsProcessor implements BindingIndex {
     }
 
     public Void visitScopeAnnotation(Class<? extends Annotation> scopeAnnotation) {
-      if (scopeAnnotation == Singleton.class) {
+      if (scopeAnnotation == Singleton.class || scopeAnnotation == javax.inject.Singleton.class) {
         scopes.put(targetKey, GinScope.SINGLETON);
       } else {
         messages.add(new Message("Unsupported scope annoation: key=" + targetKey

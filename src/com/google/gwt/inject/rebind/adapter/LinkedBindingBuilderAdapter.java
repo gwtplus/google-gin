@@ -18,11 +18,12 @@ package com.google.gwt.inject.rebind.adapter;
 import com.google.gwt.inject.client.binder.GinLinkedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinScopedBindingBuilder;
 import com.google.inject.Key;
-import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
 import com.google.inject.binder.LinkedBindingBuilder;
 
 import java.lang.annotation.Annotation;
+
+import javax.inject.Provider;
 
 class LinkedBindingBuilderAdapter<T> implements GinLinkedBindingBuilder<T> {
   private final LinkedBindingBuilder<T> linkedBindingBuilder;

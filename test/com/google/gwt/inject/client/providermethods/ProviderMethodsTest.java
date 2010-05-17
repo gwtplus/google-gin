@@ -16,12 +16,13 @@
 package com.google.gwt.inject.client.providermethods;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.junit.client.GWTTestCase;
+
 import static com.google.gwt.inject.client.providermethods.AbModule.A_VALUE;
 import static com.google.gwt.inject.client.providermethods.AbModule.B_VALUE;
 import static com.google.gwt.inject.client.providermethods.CdModule.C_VALUE;
 import static com.google.gwt.inject.client.providermethods.CdModule.D_VALUE;
 import static com.google.gwt.inject.client.providermethods.CdModule.SPACE_VALUE;
-import com.google.gwt.junit.client.GWTTestCase;
 
 /**
  * Integration test showing that provider methods work.

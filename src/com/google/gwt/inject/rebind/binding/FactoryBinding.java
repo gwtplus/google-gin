@@ -20,6 +20,7 @@ import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -123,7 +124,8 @@ public class FactoryBinding implements Binding {
     }
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
+      throws NoSourceNameException {
     assert (factoryType != null);
 
     String factoryTypeName = sourceWriteUtil.getSourceName(factoryType);
@@ -161,7 +163,8 @@ public class FactoryBinding implements Binding {
     return implementations;
   }
 
-  private void appendSignature(StringBuilder sb, AssistData assistData) {
+  private void appendSignature(StringBuilder sb, AssistData assistData)
+      throws NoSourceNameException {
     String returnName = sourceWriteUtil.getSourceName(assistData.implementation);
     sb.append("public ").append(returnName).append(" ").append(assistData.method.getName())
         .append("(");

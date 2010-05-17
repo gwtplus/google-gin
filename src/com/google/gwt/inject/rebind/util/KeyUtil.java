@@ -48,9 +48,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
+
+import javax.inject.Named;
 
 /**
  * Util object that offers {@link Key} retrieval and manipulation methods.
@@ -279,6 +281,9 @@ public class KeyUtil {
    * annotation and the injection is marked as optional (
    * {@literal @}{@code Inject(optional=true)}).
    *
+   * Note that {@link javax.inject.Inject} does not have an optional parameter
+   * and therefore cannot be optional.
+   *
    * @param member member to be checked
    * @return true if member is injected optionally
    */
@@ -340,7 +345,8 @@ public class KeyUtil {
 
     Annotation bindingAnnotation = null;
     for (Annotation annotation : annotations) {
-      if (annotation.annotationType().getAnnotation(BindingAnnotation.class) != null) {
+      if (annotation.annotationType().getAnnotation(BindingAnnotation.class) != null
+          || annotation.annotationType() == Named.class) {
         if (bindingAnnotation != null) {
           throw new ProvisionException(">1 binding annotation found: "
               + annotation + ", " + bindingAnnotation);

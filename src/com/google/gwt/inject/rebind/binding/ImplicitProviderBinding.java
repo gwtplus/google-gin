@@ -16,6 +16,7 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -53,7 +54,8 @@ public class ImplicitProviderBinding implements Binding {
     targetKey = getKeyWithSameAnnotation(targetType, providerKey);
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
+      throws NoSourceNameException {
     assert (providerType != null);
     String providerTypeName = sourceWriteUtil.getSourceName(providerType);
     String targetKeyName = sourceWriteUtil.getSourceName(targetKey.getTypeLiteral());

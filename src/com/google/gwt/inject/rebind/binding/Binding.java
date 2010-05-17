@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.inject.rebind.util.NoSourceNameException;
 import com.google.gwt.user.rebind.SourceWriter;
 
 /**
@@ -30,8 +31,10 @@ public interface Binding {
    *
    * @param writer writer that methods are written to
    * @param creatorMethodSignature signature of method that needs to be created
+   * @throws NoSourceNameException if source name is not available for type
    */
-  void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature);
+  void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
+      throws NoSourceNameException;
 
   /**
    * @return A tuple of two sets:  One set of keys that this binding requires.

@@ -16,8 +16,9 @@
 package com.google.gwt.inject.client.binder;
 
 import com.google.inject.Key;
-import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
+
+import javax.inject.Provider;
 
 public interface GinLinkedBindingBuilder<T> extends GinScopedBindingBuilder {
 

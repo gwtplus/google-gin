@@ -16,8 +16,8 @@
 
 package com.google.gwt.inject.client.eager;
 
-import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.Ginjector;
 
 @GinModules(EagerGinModule.class)
 public interface EagerGinjector extends Ginjector {

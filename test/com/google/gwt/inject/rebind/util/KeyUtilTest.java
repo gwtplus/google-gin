@@ -16,19 +16,19 @@
 
 package com.google.gwt.inject.rebind.util;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameterizedType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
-import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.client.MyBindingAnnotation;
+import com.google.gwt.inject.rebind.binding.RequiredKeys;
 import com.google.gwt.inject.rebind.util.types.MethodsClass;
 import com.google.gwt.inject.rebind.util.types.Parameterized;
 import com.google.gwt.inject.rebind.util.types.SuperInterface;
 import com.google.gwt.inject.rebind.util.types.WildcardFieldClass;
-import com.google.gwt.inject.rebind.binding.RequiredKeys;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.TypeLiteral;

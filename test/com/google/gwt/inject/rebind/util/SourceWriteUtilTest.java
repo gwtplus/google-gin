@@ -16,15 +16,13 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.user.rebind.SourceWriter;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
+import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
 
 public class SourceWriteUtilTest extends AbstractUtilTester {
 
-  private NameGenerator nameGenerator;
   private SourceWriteUtil sourceWriteUtil;
-  private BindingIndex bindingIndex;
 
   // TODO(schmitt):  Add unit tests for method and field inject generation.
 
@@ -52,13 +50,13 @@ public class SourceWriteUtilTest extends AbstractUtilTester {
 
   protected void setUp() throws Exception {
     super.setUp();
-    nameGenerator = new NameGenerator();
-    bindingIndex = new BindingIndex() {
+    BindingIndex bindingIndex = new BindingIndex() {
       public boolean isBound(Key<?> key) {
         return false;
       }
     };
 
+    NameGenerator nameGenerator = new NameGenerator();
     KeyUtil keyUtil = new KeyUtil(getTypeOracle(), createInjectableCollector());
     sourceWriteUtil = new SourceWriteUtil(keyUtil, nameGenerator, createInjectableCollector(),
         bindingIndex);

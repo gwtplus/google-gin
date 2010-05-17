@@ -31,10 +31,11 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
-import com.google.inject.internal.MoreTypes;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -380,8 +381,9 @@ public class SourceWriteUtil {
    *
    * @param typeLiteral type for which string will be returned
    * @return String representation of type
+   * @throws NoSourceNameException if source name is not available for type
    */
-  public String getSourceName(TypeLiteral<?> typeLiteral) {
+  public String getSourceName(TypeLiteral<?> typeLiteral) throws NoSourceNameException {
     Type type = typeLiteral.getType();
     return getSourceName(type);
   }
@@ -393,15 +395,22 @@ public class SourceWriteUtil {
    *
    * @param type type for which string will be returned
    * @return String representation of type
+   * @throws NoSourceNameException if source name is not available for type
    */
-  public String getSourceName(Type type) {
+  public String getSourceName(Type type) throws NoSourceNameException {
     if (type instanceof Class<?>) {
-      return ((Class<?>) type).getCanonicalName();
+      String name = ((Class<?>) type).getCanonicalName();
+
+      // We get a null for anonymous inner classes or other types that don't
+      // have source names.
+      if (name == null) {
+        throw new NoSourceNameException(type);
+      }
+
+      return name;
     }
 
     if (type instanceof ParameterizedType) {
-      // TODO(schmitt): Handle owner type.
-
       ParameterizedType parameterizedType = (ParameterizedType) type;
       Type[] arguments = parameterizedType.getActualTypeArguments();
       StringBuilder stringBuilder = new StringBuilder();
@@ -416,13 +425,30 @@ public class SourceWriteUtil {
         stringBuilder.append(", ").append(getSourceName(arguments[i]));
       }
       return stringBuilder.append(">").toString();
-    } else {
-
-      // TODO(schmitt): This is incorrect for several types, waiting for
-      // http://code.google.com/p/google-guice/issues/detail?id=474 to be
-      // resolved.
-      return type.toString();
     }
+
+    if (type instanceof GenericArrayType) {
+      return getSourceName(((GenericArrayType) type).getGenericComponentType()) + "[]";
+    }
+    
+    if (type instanceof WildcardType) {
+      Type[] lowerBounds = ((WildcardType) type).getLowerBounds();
+      Type[] upperBounds = ((WildcardType) type).getUpperBounds();
+
+      if (lowerBounds.length > 1 || upperBounds.length != 1) {
+        throw new NoSourceNameException(type);
+      }
+
+      if (lowerBounds.length == 1) {
+        return "? super " + getSourceName(lowerBounds[0]);
+      } else if (upperBounds[0] == Object.class) {
+        return "?";
+      } else {
+        return "? extends " + getSourceName(upperBounds[0]);
+      }
+    }
+
+    throw new NoSourceNameException(type);
   }
 
   private String getJsniSignature(JAbstractMethod method) {

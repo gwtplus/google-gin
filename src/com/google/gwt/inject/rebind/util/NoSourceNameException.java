@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Google Inc.
+ * Copyright (C) 2010 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package com.google.inject.name;
+package com.google.gwt.inject.rebind.util;
 
-import com.google.inject.BindingAnnotation;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.reflect.Type;
 
 /**
- * Annotates named things.
+ * Thrown if a source name is requested but cannot be provided.
  *
- * @author crazybob@google.com (Bob Lee)
+ * @author schmitt@google.com (Peter Schmitt)
  */
-@Retention(RUNTIME)
-@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD })
-@BindingAnnotation
-public @interface Named {
-  String value();
+public class NoSourceNameException extends Exception {
+
+  public NoSourceNameException(Type type) {
+    super("Failed to find source name for " + type + ".");
+  }
 }

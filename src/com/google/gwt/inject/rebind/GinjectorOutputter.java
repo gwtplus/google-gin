@@ -28,12 +28,12 @@ import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.spi.InjectionPoint;
 
@@ -42,6 +42,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Map;
+
+import javax.inject.Provider;
 
 /**
  * Outputs the generated {@code Ginjector} implementation's Java code.
@@ -144,21 +146,32 @@ class GinjectorOutputter {
   }
 
   private void outputBindings() throws UnableToCompleteException {
+    boolean errors = false;
+
     // Write out each binding
     for (Map.Entry<Key<?>, Binding> entry : bindingsProcessor.getBindings().entrySet()) {
       Key<?> key = entry.getKey();
-
-      // toString on TypeLiteral outputs the binary name, not the source name
-      String typeName = sourceWriteUtil.getSourceName(key.getTypeLiteral());
       Binding binding = entry.getValue();
 
       String getter = nameGenerator.getGetterMethodName(key);
       String creator = nameGenerator.getCreatorMethodName(key);
 
-      // Regardless of the scope, we have a creator method
-      binding.writeCreatorMethods(writer, "private " + typeName + " " + creator + "()");
+      String typeName;
+      try {
 
-      // Name of the field that we might need
+        // toString on TypeLiteral outputs the binary name, not the source name.
+        typeName = sourceWriteUtil.getSourceName(key.getTypeLiteral());
+
+        // Regardless of the scope, we have a creator method.
+        binding.writeCreatorMethods(writer, "private " + typeName + " " + creator + "()");
+      } catch (NoSourceNameException e) {
+        logger.log(TreeLogger.Type.ERROR, "Error trying to write source for [" + key + "] -> ["
+            + binding + "].", e);
+        errors = true;
+        continue;
+      }
+
+      // Name of the field that we might need.
       String field = nameGenerator.getSingletonFieldName(key);
 
       GinScope scope = bindingsProcessor.determineScope(key);
@@ -192,6 +205,10 @@ class GinjectorOutputter {
       }
 
       writer.println();
+    }
+
+    if (errors) {
+      throw new UnableToCompleteException();      
     }
   }
 

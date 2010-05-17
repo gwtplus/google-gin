@@ -17,7 +17,6 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -30,7 +29,6 @@ import java.util.Collections;
  */
 public class BindConstantBinding implements Binding {
 
-  private final NameGenerator nameGenerator;
   private String valueToOutput;
 
   /**
@@ -56,9 +54,8 @@ public class BindConstantBinding implements Binding {
   private final SourceWriteUtil sourceWriteUtil;
 
   @Inject
-  public BindConstantBinding(SourceWriteUtil sourceWriteUtil, NameGenerator nameGenerator) {
+  public BindConstantBinding(SourceWriteUtil sourceWriteUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
-    this.nameGenerator = nameGenerator;
   }
 
   /**

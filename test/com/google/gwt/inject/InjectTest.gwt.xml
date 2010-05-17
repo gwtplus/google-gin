@@ -17,10 +17,4 @@
   <inherits name='com.google.gwt.user.User'/>
   <inherits name='com.google.gwt.inject.Inject'/>
   <inherits name="com.google.gwt.junit.JUnit"/>
-
-  <!-- Temporary fix for GWT spurious warning issue:
-   http://code.google.com/p/google-web-toolkit/issues/detail?id=2862
-   TODO(schmitt): Remove for GWT 1.6
-  -->
-  <set-property name="gwt.suppressNonStaticFinalFieldWarnings" value="true" />
 </module>
