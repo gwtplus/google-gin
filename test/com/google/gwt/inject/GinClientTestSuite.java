@@ -17,6 +17,7 @@ package com.google.gwt.inject;
 
 import com.google.gwt.inject.client.InjectTest;
 import com.google.gwt.inject.client.InnerGinjectorTest;
+import com.google.gwt.inject.client.assistedinject.CarFactoryTest;
 import com.google.gwt.inject.client.binding.ConstantBindingTest;
 import com.google.gwt.inject.client.binding.EagerBindingTest;
 import com.google.gwt.inject.client.binding.GinjectorBindingTest;
@@ -70,6 +71,7 @@ public class GinClientTestSuite {
     suite.addTestSuite(AsyncProviderTest.class);
     suite.addTestSuite(ProviderTest.class);
     suite.addTestSuite(InjectMembersTest.class);
+    suite.addTestSuite(CarFactoryTest.class);
 
     return suite;
   }

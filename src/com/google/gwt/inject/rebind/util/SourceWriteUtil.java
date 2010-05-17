@@ -36,6 +36,7 @@ import com.google.inject.internal.MoreTypes;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -198,6 +199,32 @@ public class SourceWriteUtil {
    */
   public String createMethodCallWithInjection(SourceWriter sourceWriter, JAbstractMethod method,
       String injecteeName) {
+    String[] params = new String[method.getParameters().length];
+    return createMethodCallWithInjection(sourceWriter, method, injecteeName, params);
+  }
+
+  /**
+   * Appends a new method to the {@code sourceWriter} that calls the passed
+   * method and returns a string that invokes the written method.  The written
+   * method returns the passed method's return value, if any.
+   * <p/>
+   * If a method without parameters is provided, that method will be called and
+   * no parameters will be passed.
+   *
+   * @param sourceWriter writer to which the injecting method is written
+   * @param method method to call (can be constructor)
+   * @param injecteeName variable that references the object into which values
+   *          are injected, in the context of the returned call string. If null
+   *          all passed methods are called as static/constructors.
+   * @param parameterNames array with parameter names that can replace getter
+   *          methods (usually used to fetch injected values) in the returned
+   *          string. The array length must match the number of method
+   *          parameters. A {@code null} value denotes that the getter method
+   *          should be used.
+   * @return string calling the generated method
+   */
+  public String createMethodCallWithInjection(SourceWriter sourceWriter, JAbstractMethod method,
+      String injecteeName, String[] parameterNames) {
     boolean returning = false;
     boolean hasInjectee = injecteeName != null;
     boolean isPublic = method.isPublic() && method.getEnclosingType().isPublic();
@@ -233,9 +260,12 @@ public class SourceWriteUtil {
     int paramCount = 0;
     for (JParameter param : method.getParameters()) {
       String paramName = "_" + paramCount;
-      invokerCallParams.add(nameGenerator.getGetterMethodName(keyUtil.getKey(param)) + "()");
-      invokerSignatureParams.add(param.getType().getQualifiedSourceName() + " "
-              + paramName);
+      if (parameterNames[paramCount] != null) {
+        invokerCallParams.add(parameterNames[paramCount]);
+      } else {
+        invokerCallParams.add(nameGenerator.getGetterMethodName(keyUtil.getKey(param)) + "()");
+      }
+      invokerSignatureParams.add(param.getType().getQualifiedSourceName() + " " + paramName);
       invokeeCallParams.add(paramName);
       paramCount++;
     }
@@ -387,7 +417,11 @@ public class SourceWriteUtil {
       }
       return stringBuilder.append(">").toString();
     } else {
-      return MoreTypes.toString(type);
+
+      // TODO(schmitt): This is incorrect for several types, waiting for
+      // http://code.google.com/p/google-guice/issues/detail?id=474 to be
+      // resolved.
+      return type.toString();
     }
   }
 

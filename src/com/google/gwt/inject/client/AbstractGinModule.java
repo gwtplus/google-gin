@@ -18,6 +18,8 @@ package com.google.gwt.inject.client;
 import com.google.gwt.inject.client.binder.GinBinder;
 import com.google.gwt.inject.client.binder.GinAnnotatedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinAnnotatedConstantBindingBuilder;
+import com.google.gwt.inject.client.binder.GinLinkedBindingBuilder;
+import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
 /**
@@ -39,6 +41,10 @@ public abstract class AbstractGinModule implements GinModule {
 
   protected final <T> GinAnnotatedBindingBuilder<T> bind(TypeLiteral<T> type) {
     return binder.bind(type);
+  }
+
+  protected final <T> GinLinkedBindingBuilder<T> bind(Key<T> key) {
+    return binder.bind(key);
   }
 
   protected final GinAnnotatedConstantBindingBuilder bindConstant() {

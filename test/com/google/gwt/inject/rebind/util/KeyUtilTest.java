@@ -163,7 +163,7 @@ public class KeyUtilTest extends AbstractUtilTester {
   public void testGetRequiredClassTypeKeys() {
     MemberCollector collector = new MemberCollector(TreeLogger.NULL);
     collector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
-    KeyUtil keyUtil = new KeyUtil(getTypeOracle(), new NameGenerator(), collector);
+    KeyUtil keyUtil = new KeyUtil(getTypeOracle(), collector);
     JClassType classType = getClassType(MethodsClass.class);
     RequiredKeys requiredKeys = keyUtil.getRequiredKeys(classType);
     assertTrue(requiredKeys.getOptionalKeys().isEmpty());
@@ -187,7 +187,7 @@ public class KeyUtilTest extends AbstractUtilTester {
 
   protected void setUp() throws Exception {
     super.setUp();
-    keyUtil = new KeyUtil(getTypeOracle(), new NameGenerator(), createInjectableCollector());
+    keyUtil = new KeyUtil(getTypeOracle(), createInjectableCollector());
 
     namedAnn = Names.named("brian");
     myBindingAnnotation = getClass().getAnnotation(MyBindingAnnotation.class);

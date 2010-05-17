@@ -17,19 +17,23 @@ package com.google.gwt.inject.rebind.adapter;
 
 import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.gwt.inject.client.GinModule;
+import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.google.inject.Singleton;
 import com.google.inject.internal.ProviderMethodsModule;
+
+import java.util.Set;
 
 /**
  * Makes a {@link GinModule} available as a {@link Module}.
  */
 public final class GinModuleAdapter implements Module {
   private final GinModule ginModule;
+  private final Set<FactoryModule<?>> factoryModules;
 
-  public GinModuleAdapter(GinModule ginModule) {
+  public GinModuleAdapter(GinModule ginModule, Set<FactoryModule<?>> factoryModules) {
     this.ginModule = ginModule;
+    this.factoryModules = factoryModules;
   }
 
   public void configure(Binder binder) {
@@ -37,11 +41,8 @@ public final class GinModuleAdapter implements Module {
     binder = binder.skipSources(GinModuleAdapter.class, BinderAdapter.class,
         AbstractGinModule.class);
 
-    ginModule.configure(new BinderAdapter(binder));
+    ginModule.configure(new BinderAdapter(binder, factoryModules));
 
-    // Bind the module itself in singleton scope, since provider methods instantiate it
-    binder.bind(ginModule.getClass()).in(Singleton.class);
-   
     // Install provider methods from the GinModule
     binder.install(ProviderMethodsModule.forObject(ginModule));
   }

@@ -20,6 +20,7 @@ import com.google.gwt.core.ext.typeinfo.HasAnnotations;
 import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
 import com.google.gwt.core.ext.typeinfo.JArrayType;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JConstructor;
 import com.google.gwt.core.ext.typeinfo.JField;
 import com.google.gwt.core.ext.typeinfo.JGenericType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
@@ -40,6 +41,7 @@ import com.google.inject.Singleton;
 import com.google.inject.util.Types;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -56,14 +58,11 @@ import java.util.HashSet;
 @Singleton
 public class KeyUtil {
   private final TypeOracle typeOracle;
-  private final NameGenerator nameGenerator;
   private final MemberCollector memberCollector;
 
   @Inject
-  public KeyUtil(TypeOracle typeOracle, NameGenerator nameGenerator,
-      @Injectable MemberCollector memberCollector) {
+  public KeyUtil(TypeOracle typeOracle, @Injectable MemberCollector memberCollector) {
     this.typeOracle = typeOracle;
-    this.nameGenerator = nameGenerator;
     this.memberCollector = memberCollector;
   }
 
@@ -110,15 +109,15 @@ public class KeyUtil {
     if (type instanceof Class) {
       return typeOracle.findType(((Class) type).getCanonicalName());
     } else if (type instanceof ParameterizedType) {
-      ParameterizedType parameterized = (ParameterizedType) type;
+      ParameterizedType parametrized = (ParameterizedType) type;
 
-      JClassType[] parameters = new JClassType[parameterized.getActualTypeArguments().length];
+      JClassType[] parameters = new JClassType[parametrized.getActualTypeArguments().length];
       int i = 0;
-      for (Type paramType : parameterized.getActualTypeArguments()) {
+      for (Type paramType : parametrized.getActualTypeArguments()) {
         parameters[i++] = getClassType(paramType);
       }
 
-      Class rawClass = (Class) parameterized.getRawType();
+      Class rawClass = (Class) parametrized.getRawType();
       JClassType classType =
           typeOracle.findType(rawClass.getCanonicalName());
       JGenericType genericType = classType.isGenericType();
@@ -215,6 +214,50 @@ public class KeyUtil {
     }
 
     return resultingMethod;
+  }
+
+  /**
+   * Returns a {@link JConstructor} that represents the same constructor as the
+   * provided {@link Constructor} reflection object.
+   *
+   * Note: This is almost the same method as {@link #javaToGwtMethod(Method)}
+   * but cannot be merged since constructors and methods do not derive from a
+   * common interface in reflection.
+   *
+   * @param javaConstructor method as used by reflection
+   * @return constructor as used by the GWT compiler
+   * @throws NotFoundException if constructor cannot be found in source
+   */
+  public JConstructor javaToGwtConstructor(Constructor javaConstructor) throws NotFoundException {
+    JClassType gwtEnclosingType =
+        typeOracle.findType(javaConstructor.getDeclaringClass().getCanonicalName());
+
+    JConstructor resultingConstructor = null;
+    for (JConstructor gwtConstructor : gwtEnclosingType.getConstructors()) {
+      JParameter[] gwtParameters = gwtConstructor.getParameters();
+      Class<?>[] javaParameters = javaConstructor.getParameterTypes();
+
+      if (gwtParameters.length != javaParameters.length) {
+        continue;
+      }
+
+      boolean found = true;
+      for (int i = 0; i < gwtParameters.length; i++) {
+        found = found && gwtParameters[i].getType().getQualifiedSourceName().equals(
+            javaParameters[i].getCanonicalName());
+      }
+      if (found) {
+        resultingConstructor = gwtConstructor;
+        break;
+      }
+    }
+
+    if (resultingConstructor == null) {
+      throw new NotFoundException("Couldn't locate requested constructor in source: "
+          + javaConstructor);
+    }
+
+    return resultingConstructor;
   }
 
   /**

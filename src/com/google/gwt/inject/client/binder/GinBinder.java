@@ -16,6 +16,7 @@
 package com.google.gwt.inject.client.binder;
 
 import com.google.gwt.inject.client.GinModule;
+import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
 public interface GinBinder {
@@ -23,6 +24,8 @@ public interface GinBinder {
   <T> GinAnnotatedBindingBuilder<T> bind(Class<T> clazz);
 
   <T> GinAnnotatedBindingBuilder<T> bind(TypeLiteral<T> type);
+
+  <T> GinLinkedBindingBuilder<T> bind(Key<T> key);
 
   GinAnnotatedConstantBindingBuilder bindConstant();
 

@@ -75,14 +75,6 @@ class GinjectorOutputter {
    */
   private final MemberCollector memberInjectCollector;
 
-  /**
-   * Collector that gathers methods from a type and its ancestors, recording
-   * only those methods that have an {@code @Inject} annotation.  Used to
-   * determine which methods need to be called during the initialization of an
-   * object.
-   */
-  private final MemberCollector injectableCollector;
-
   private final SourceWriteUtil sourceWriteUtil;
 
   private final KeyUtil keyUtil;
@@ -104,14 +96,11 @@ class GinjectorOutputter {
 
   @Inject
   GinjectorOutputter(NameGenerator nameGenerator, TreeLogger logger,
-      Provider<MemberCollector> collectorProvider,
-      @Injectable MemberCollector injectableCollector, SourceWriteUtil sourceWriteUtil,
-      final KeyUtil keyUtil, GeneratorContext ctx,
-      BindingsProcessor bindingsProcessor,
+      Provider<MemberCollector> collectorProvider, SourceWriteUtil sourceWriteUtil,
+      final KeyUtil keyUtil, GeneratorContext ctx, BindingsProcessor bindingsProcessor,
       @GinjectorInterfaceType JClassType ginjectorInterface) {
     this.nameGenerator = nameGenerator;
     this.logger = logger;
-    this.injectableCollector = injectableCollector;
     this.sourceWriteUtil = sourceWriteUtil;
     this.keyUtil = keyUtil;
     this.ctx = ctx;

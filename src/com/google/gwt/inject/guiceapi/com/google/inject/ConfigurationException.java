@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2010 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,18 +13,22 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.google.inject;
 
+import com.google.inject.spi.Message;
+
+import java.util.Set;
+
 /**
- * Fake equivalent to Guice's TypeLiteral.
+ * Fake copy of Guice's ConfigurationException.
+ *
  * This hackery is required due to the dual nature of {@code GinModule}
  * implementations.
  *
  * @see com.google.gwt.inject.client.GinModule
  */
-public class TypeLiteral<T> {
+public class ConfigurationException extends RuntimeException {
 
-  public static <T> TypeLiteral<T> get(Class<T> type) {
-    throw new UnsupportedOperationException("Should never be called in client code.");
-  }
+  public ConfigurationException(Set<Message> ignored) {}
 }

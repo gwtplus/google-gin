@@ -59,7 +59,7 @@ public class SourceWriteUtilTest extends AbstractUtilTester {
       }
     };
 
-    KeyUtil keyUtil = new KeyUtil(getTypeOracle(), nameGenerator, createInjectableCollector());
+    KeyUtil keyUtil = new KeyUtil(getTypeOracle(), createInjectableCollector());
     sourceWriteUtil = new SourceWriteUtil(keyUtil, nameGenerator, createInjectableCollector(),
         bindingIndex);
   }

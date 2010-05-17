@@ -20,9 +20,10 @@ import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
-import com.google.inject.Provider;
 
 import java.util.Collections;
+
+import javax.inject.Provider;
 
 /**
  * A binding to call the requested {@link com.google.inject.Provider}.

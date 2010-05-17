@@ -36,7 +36,7 @@
   <!-- Project Libraries -->
 
   <path id="library.guice.classpath">
-    <pathelement location="${basedir}/lib/guice-2.0.jar"/>
+    <pathelement location="${basedir}/lib/guice-snapshot.jar"/>
   </path>
 
   <path id="library.gwt-user.classpath">
@@ -67,6 +67,14 @@
     <pathelement location="${basedir}/lib/aopalliance.jar"/>
   </path>
 
+  <path id="library.javax.inject.classpath">
+    <pathelement location="${basedir}/lib/javax.inject.jar"/>
+  </path>
+
+  <path id="library.assistedinject.classpath">
+    <pathelement location="${basedir}/lib/guice-assistedinject-snapshot.jar"/>
+  </path>
+
   <dirname property="gin.basedir" file="${ant.file}"/>
 
   <property name="gin.source.dir" value="${gin.basedir}/src"/>
@@ -83,6 +91,8 @@
     <path refid="library.gwt-user.classpath"/>
     <path refid="library.gwt-dev.classpath"/>
     <path refid="library.aopalliance.classpath"/>
+    <path refid="library.assistedinject.classpath"/>
+    <path refid="library.javax.inject.classpath"/>
   </path>
 
   <path id="gin.test.libs.classpath">
@@ -184,6 +194,13 @@
       <fileset dir="${gin.basedir}/test">
         <patternset refid="compiler.resources"/>
         <type type="file"/>
+      </fileset>
+    </copy>
+
+    <!-- Also include client and guiceapi .java files in the output, for GWT -->
+    <copy todir="${gin.testoutput.dir}">
+      <fileset dir="${gin.basedir}/test">
+        <include name="com/google/gwt/inject/client/**/*.java" />
       </fileset>
     </copy>
   </target>

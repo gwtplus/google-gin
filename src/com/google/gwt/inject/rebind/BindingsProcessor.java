@@ -28,6 +28,7 @@ import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.client.AsyncProvider;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
 import com.google.gwt.inject.rebind.adapter.GwtDotCreateProvider;
 import com.google.gwt.inject.rebind.binding.AsyncProviderBinding;
@@ -38,6 +39,7 @@ import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
+import com.google.gwt.inject.rebind.binding.FactoryBinding;
 import com.google.gwt.inject.rebind.binding.GinjectorBinding;
 import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
 import com.google.gwt.inject.rebind.binding.ProviderMethodBinding;
@@ -46,6 +48,7 @@ import com.google.gwt.inject.rebind.binding.RequiredKeys;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
 import com.google.inject.ImplementedBy;
 import com.google.inject.Inject;
@@ -159,14 +162,24 @@ class BindingsProcessor implements BindingIndex {
   private final Provider<ProviderMethodBinding> providerMethodBindingProvider;
   private final Provider<BindConstantBinding> bindConstantBindingProvider;
   private final Provider<GinjectorBinding> ginjectorBindingProvider;
+  private final Provider<FactoryBinding> factoryBindingProvider;
 
   private final KeyUtil keyUtil;
+
+  /**
+   * Collection of all factory modules configured in gin modules.
+   */
+  private final Set<FactoryModule<?>> factoryModules = new HashSet<FactoryModule<?>>();
 
   /**
    * Interface of the injector that this class is implementing.
    */
   private final JClassType ginjectorInterface;
 
+  /**
+   * Module used to pretend to Guice about the source of all generated binding
+   * targets.
+   */
   private final LieToGuiceModule lieToGuiceModule;
 
   /**
@@ -191,7 +204,8 @@ class BindingsProcessor implements BindingIndex {
       Provider<BindConstantBinding> bindConstantBindingProvider,
       Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider,
       Provider<ProviderMethodBinding> providerMethodBindingProvider,
-      Provider<GinjectorBinding> ginjectorBindingProvider) {
+      Provider<GinjectorBinding> ginjectorBindingProvider,
+      Provider<FactoryBinding> factoryBindingProvider) {
     this.nameGenerator = nameGenerator;
     this.logger = logger;
     this.callGwtDotCreateBindingProvider = callGwtDotCreateBindingProvider;
@@ -207,6 +221,7 @@ class BindingsProcessor implements BindingIndex {
     this.bindConstantBindingProvider = bindConstantBindingProvider;
     this.providerMethodBindingProvider = providerMethodBindingProvider;
     this.ginjectorBindingProvider = ginjectorBindingProvider;
+    this.factoryBindingProvider = factoryBindingProvider;
 
     completeCollector = collectorProvider.get();
     completeCollector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
@@ -219,8 +234,36 @@ class BindingsProcessor implements BindingIndex {
     List<Module> modules = createModules();
 
     createBindingsForModules(modules);
+    createBindingsForFactories();
     createImplicitBindingsForUnresolved();
     validateModulesUsingGuice(modules);
+  }
+
+  private void createBindingsForFactories() throws UnableToCompleteException {
+    for (FactoryModule<?> factoryModule : factoryModules) {
+      lieToGuiceModule.registerImplicitBinding(factoryModule.getFactoryType());
+
+      FactoryBinding binding = factoryBindingProvider.get();
+      try {
+        binding.setKeyAndCollector(factoryModule.getFactoryType(), factoryModule.getBindings());
+      } catch (ConfigurationException e) {
+        logError("Factory " + factoryModule.getFactoryType() + " could not be created: ", e);
+        continue;
+      } catch (NotFoundException e) {
+        logError("Factory " + factoryModule.getFactoryType() + " could not be created.", e);
+        continue;
+      }
+
+      addBinding(factoryModule.getFactoryType(), binding);
+
+      // All implementations that are created by the factory are also member-
+      // injected. To ensure that implementations created by multiple factories
+      // result only in one member inject method they are added to this central
+      // list.
+      memberInjectRequests.addAll(binding.getImplementations());
+    }
+
+    checkForError();
   }
 
   private void createImplicitBindingsForUnresolved() throws UnableToCompleteException {
@@ -356,7 +399,7 @@ class BindingsProcessor implements BindingIndex {
       GuiceElementVisitor visitor = new GuiceElementVisitor();
       element.acceptVisitor(visitor);
 
-      // Capture any binding errors, any of which we treat as fatal
+      // Capture any binding errors, any of which we treat as fatal.
       List<Message> messages = visitor.getMessages();
       if (!messages.isEmpty()) {
         for (Message message : messages) {
@@ -409,7 +452,7 @@ class BindingsProcessor implements BindingIndex {
       Constructor<? extends GinModule> constructor = moduleClassName.getDeclaredConstructor();
       try {
         constructor.setAccessible(true);
-        return new GinModuleAdapter(constructor.newInstance());
+        return new GinModuleAdapter(constructor.newInstance(), factoryModules);
       } finally {
         constructor.setAccessible(false);
       }
