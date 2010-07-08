@@ -66,7 +66,7 @@ class GinjectorGeneratorImpl {
 
     JPackage interfacePackage = ginjectorInterface.getPackage();
     String packageName = interfacePackage == null ? "" : interfacePackage.getName();
-    String implClassName = ginjectorInterface.getSimpleSourceName() + "Impl";
+    String implClassName = ginjectorInterface.getName().replace(".", "_") + "Impl";
     String generatedClassName = packageName + "." + implClassName;
 
     PrintWriter printWriter = ctx.tryCreate(logger, packageName, implClassName);

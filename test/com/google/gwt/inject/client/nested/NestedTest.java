@@ -28,6 +28,14 @@ public class NestedTest extends GWTTestCase {
     assertEquals("w0rld", inner.getWorld());
   }
 
+  // see http://code.google.com/p/google-gin/issues/detail?id=107
+  public void testParallelInnerGinjectors() {
+    A.InnerGinjector ginjector1 = GWT.create(A.InnerGinjector.class);
+    B.InnerGinjector ginjector2 = GWT.create(B.InnerGinjector.class);
+
+    assertNotSame(ginjector1, ginjector2);
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }
