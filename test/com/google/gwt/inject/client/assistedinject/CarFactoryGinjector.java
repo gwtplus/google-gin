@@ -57,4 +57,6 @@ public interface CarFactoryGinjector extends Ginjector {
   HummerFactory getHummerFactory();
 
   ComplicatedMustangFactory getComplicatedMustangFactory();
+
+  ParameterizableFactory<String> getParameterizableFactoryForString();
 }

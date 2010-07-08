@@ -25,6 +25,7 @@ import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import com.google.inject.name.Named;
 
+import java.util.Collection;
 import java.util.Set;
 
 public class CarFactoryTest extends GWTTestCase {
@@ -219,6 +220,15 @@ public class CarFactoryTest extends GWTTestCase {
     assertEquals(5.61, mustang.engineSize);
   }
 
+  public void testParameterizedReturnValue() {
+    CarFactoryGinjector ginjector = GWT.create(CarFactoryGinjector.class);
+
+    ParameterizableFactory<String> factory = ginjector.getParameterizableFactoryForString();
+    VersatileCar<String> car = factory.create(Color.Green);
+    assertEquals(Color.Green, car.color);
+    assertEquals("barFoo", car.versatility.iterator().next());
+  }
+
   // ----------- Types --------------------------------------------------------
 
   public interface Car {}
@@ -271,6 +281,10 @@ public class CarFactoryTest extends GWTTestCase {
     @Named("american") Car getAmericanCar(Color color);
   }
 
+  public interface ParameterizableFactory<T> {
+    VersatileCar<T> create(Color color);
+  }
+  
   public static class Mustang implements Car {
     private final double engineSize;
     private final Color color;
@@ -417,6 +431,17 @@ public class CarFactoryTest extends GWTTestCase {
     public Hummer(@Assisted int size, InsuranceCompany insurance) {
       this.size = size;
       this.insurance = insurance;
+    }
+  }
+
+  public static class VersatileCar<T> {
+    final Color color;
+    final Set<T> versatility;
+
+    @Inject
+    public VersatileCar(@Assisted Color color, Set<T> versatility) {
+      this.color = color;
+      this.versatility = versatility;
     }
   }
 

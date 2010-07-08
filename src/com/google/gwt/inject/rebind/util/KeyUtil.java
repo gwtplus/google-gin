@@ -38,6 +38,7 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.util.Types;
 
 import java.lang.annotation.Annotation;
@@ -227,12 +228,16 @@ public class KeyUtil {
    * common interface in reflection.
    *
    * @param javaConstructor method as used by reflection
+   * @param declaringType type which declares the constructor (with type
+   *    parameters)
    * @return constructor as used by the GWT compiler
    * @throws NotFoundException if constructor cannot be found in source
    */
-  public JConstructor javaToGwtConstructor(Constructor javaConstructor) throws NotFoundException {
-    JClassType gwtEnclosingType =
-        typeOracle.findType(javaConstructor.getDeclaringClass().getCanonicalName());
+  public JConstructor javaToGwtConstructor(Constructor<?> javaConstructor,
+      TypeLiteral<?> declaringType) throws NotFoundException {
+    assert javaConstructor.getDeclaringClass() == declaringType.getRawType();
+
+    JClassType gwtEnclosingType = getClassType(Key.get(declaringType));
 
     JConstructor resultingConstructor = null;
     for (JConstructor gwtConstructor : gwtEnclosingType.getConstructors()) {

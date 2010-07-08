@@ -19,6 +19,7 @@ package com.google.gwt.inject.client.assistedinject;
 import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.google.gwt.inject.client.assistedinject.CarFactoryTest.*;
 
@@ -82,6 +83,9 @@ public class CarFactoryGinModule extends AbstractGinModule {
     install(new GinFactoryModuleBuilder().build(HummerFactory.class));
 
     install(new GinFactoryModuleBuilder().build(ComplicatedMustangFactory.class));
+
+    install(new GinFactoryModuleBuilder()
+        .build(new TypeLiteral<ParameterizableFactory<String>>(){}));
   }
 
   @Provides

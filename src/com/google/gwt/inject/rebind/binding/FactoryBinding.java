@@ -208,7 +208,7 @@ public class FactoryBinding implements Binding {
       if(implementation == null) {
         implementation = returnType.getTypeLiteral();
       }
-      Constructor constructor =
+      Constructor<?> constructor =
           findMatchingConstructor(method, implementation, immutableParamList, errors);
 
       if (constructor == null) {
@@ -220,7 +220,7 @@ public class FactoryBinding implements Binding {
       String[] parameterNames = extractConstructorParameters(implementation, constructor,
           immutableParamList, errors, requiredKeys);
 
-      JConstructor gwtConstructor = keyUtil.javaToGwtConstructor(constructor);
+      JConstructor gwtConstructor = keyUtil.javaToGwtConstructor(constructor, implementation);
       assistData.add(new AssistData(implementation, gwtConstructor, method, parameterNames));
       implementations.add(Key.get(implementation, Assisted.class));
     }
