@@ -416,7 +416,8 @@ class BindingsProcessor implements BindingIndex {
 
   private List<Module> createModules() {
     List<Module> modules = new ArrayList<Module>();
-    populateModulesFromInjectorInterface(ginjectorInterface, modules);
+    populateModulesFromInjectorInterface(ginjectorInterface, modules,
+        new HashSet<Class<? extends GinModule>>());
     return modules;
   }
 
@@ -433,19 +434,25 @@ class BindingsProcessor implements BindingIndex {
     }
   }
 
-  private void populateModulesFromInjectorInterface(JClassType iface, List<Module> modules) {
+  private void populateModulesFromInjectorInterface(JClassType iface, List<Module> modules,
+      Set<Class<? extends GinModule>> added) {
     GinModules gmodules = iface.getAnnotation(GinModules.class);
     if (gmodules != null) {
       for (Class<? extends GinModule> moduleClass : gmodules.value()) {
+        if (added.contains(moduleClass)) {
+          continue;
+        }
+        
         Module module = instantiateGModuleClass(moduleClass);
         if (module != null) {
           modules.add(module);
+          added.add(moduleClass);
         }
       }
     }
 
     for (JClassType superIface : iface.getImplementedInterfaces()) {
-      populateModulesFromInjectorInterface(superIface, modules);
+      populateModulesFromInjectorInterface(superIface, modules, added);
     }
   }
 
