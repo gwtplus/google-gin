@@ -22,6 +22,7 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.internal.ProviderMethodsModule;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -30,6 +31,10 @@ import java.util.Set;
 public final class GinModuleAdapter implements Module {
   private final GinModule ginModule;
   private final Set<FactoryModule<?>> factoryModules;
+
+  public GinModuleAdapter(GinModule ginModule) {
+    this(ginModule, Collections.<FactoryModule<?>>emptySet());
+  }
 
   public GinModuleAdapter(GinModule ginModule, Set<FactoryModule<?>> factoryModules) {
     this.ginModule = ginModule;

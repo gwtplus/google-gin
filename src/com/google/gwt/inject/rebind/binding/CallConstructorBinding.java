@@ -46,6 +46,7 @@ public class CallConstructorBinding extends CreatorBinding {
 
   @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb) {
     assert (constructor != null);
-    sb.append(sourceWriteUtil.createConstructorInjection(sourceWriter, constructor));
+    sb.append(getTypeName()).append(" result = ")
+        .append(sourceWriteUtil.createConstructorInjection(sourceWriter, constructor));
   }
 }

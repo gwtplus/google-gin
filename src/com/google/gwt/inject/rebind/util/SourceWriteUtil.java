@@ -210,7 +210,9 @@ public class SourceWriteUtil {
    * method returns the passed method's return value, if any.
    * <p/>
    * If a method without parameters is provided, that method will be called and
-   * no parameters will be passed.
+   * no parameters will be passed. If the passed method declared any checked
+   * exceptions, the generated method will catch and rethrow those as
+   * {@link com.google.gwt.inject.client.CreationException}.
    *
    * @param sourceWriter writer to which the injecting method is written
    * @param method method to call (can be constructor)
@@ -229,6 +231,7 @@ public class SourceWriteUtil {
     boolean returning = false;
     boolean hasInjectee = injecteeName != null;
     boolean isPublic = method.isPublic() && method.getEnclosingType().isPublic();
+    boolean isThrowing = hasCheckedExceptions(method);
 
     // Determine method signature parts.
     String injecteeTypeName = method.getEnclosingType().getQualifiedSourceName();
@@ -278,6 +281,10 @@ public class SourceWriteUtil {
     String invokerCall = methodName + "(" + join(", ", invokerCallParams) + ");";
 
     StringBuilder invokerBody = new StringBuilder();
+    if (isThrowing) {
+      invokerBody.append("try {\n  ");
+    }
+
     if (returning) {
       invokerBody.append("return ");
     }
@@ -303,6 +310,19 @@ public class SourceWriteUtil {
         .append(join(", ", invokeeCallParams))
         .append(");");
 
+    if (isThrowing) {
+      if (isPublic) {
+        invokerBody.append("\n} catch (Exception e) {\n")
+            .append("  throw new com.google.gwt.inject.client.CreationException(e);\n")
+            .append("}");
+      } else {
+        invokerBody.append("\n} catch (e) {\n")
+            .append("  throw @com.google.gwt.inject.client.CreationException")
+            .append("::new(Ljava/lang/Throwable;)(e);\n")
+            .append("}");
+      }
+    }
+
     if (isPublic) {
       writeMethod(sourceWriter, invokerSignature, invokerBody.toString());
     } else {
@@ -310,6 +330,10 @@ public class SourceWriteUtil {
     }
 
     return invokerCall;
+  }
+
+  private boolean hasCheckedExceptions(JAbstractMethod method) {
+    return method.getThrows().length > 0;
   }
 
   /**

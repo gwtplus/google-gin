@@ -16,7 +16,10 @@
 package com.google.gwt.inject.client.method;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.inject.client.CreationException;
+import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.inject.Inject;
 
 public class MethodInjectTest extends GWTTestCase {
 
@@ -93,6 +96,39 @@ public class MethodInjectTest extends GWTTestCase {
     assertTrue(triangle.isMethodInitialized());
   }
 
+  public void testThrowingConstructor() {
+    DangerousGinjector ginjector = GWT.create(DangerousGinjector.class);
+
+    try {
+      ginjector.getDangerous();
+      fail("Expected CreationException.");
+    } catch (CreationException expected) {
+      // Good.
+    }
+  }
+
+  public void testThrowingMethod() {
+    DangerousGinjector ginjector = GWT.create(DangerousGinjector.class);
+
+    try {
+      ginjector.getVeryDangerous();
+      fail("Expected CreationException.");
+    } catch (CreationException expected) {
+      // Good.
+    }
+  }
+
+  public void testSecretThrowingMethod() {
+    DangerousGinjector ginjector = GWT.create(DangerousGinjector.class);
+
+    try {
+      ginjector.getHiddenDanger();
+      fail("Expected CreationException.");
+    } catch (CreationException expected) {
+      // Good.
+    }
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }
@@ -107,5 +143,35 @@ public class MethodInjectTest extends GWTTestCase {
   private void assertInterfaceInject(Circle circle) {
     assertNotNull(circle.getColor());
     assertEquals(ShapeGinModule.COLOR, circle.getColor());
+  }
+
+  interface DangerousGinjector extends Ginjector {
+    Dangerous getDangerous();
+    VeryDangerous getVeryDangerous();
+    HiddenDanger getHiddenDanger();
+  }
+
+  public static class Dangerous {
+
+    @Inject
+    public Dangerous() throws Exception {
+      throw new Exception("test");
+    }
+  }
+
+  public static class VeryDangerous {
+
+    @Inject
+    public void boom() throws Exception {
+      throw new Exception("test");
+    }
+  }
+
+  public static class HiddenDanger {
+
+    @Inject
+    private HiddenDanger() throws Exception {
+      throw new Exception("test");
+    }
   }
 }

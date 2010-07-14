@@ -60,7 +60,6 @@ abstract class CreatorBinding implements Binding {
     String memberInjectMethodName = sourceWriteUtil.appendMemberInjection(writer, classKey);
 
     StringBuilder sb = new StringBuilder();
-    sb.append(getTypeName()).append(" result = ");
     appendCreationStatement(writer, sb);
     sb.append("\n");
     sb.append(memberInjectMethodName).append("(result);\n");
