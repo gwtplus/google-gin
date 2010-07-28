@@ -170,7 +170,7 @@ public class FactoryBinding implements Binding {
         .append("(");
 
     int i = 0;
-    for (Class<?> param : assistData.method.getParameterTypes()) {
+    for (TypeLiteral<?> param : assistData.params) {
       if (i > 0) {
         sb.append(", ");
       }
@@ -221,7 +221,8 @@ public class FactoryBinding implements Binding {
           immutableParamList, errors, requiredKeys);
 
       JConstructor gwtConstructor = keyUtil.javaToGwtConstructor(constructor, implementation);
-      assistData.add(new AssistData(implementation, gwtConstructor, method, parameterNames));
+      assistData.add(new AssistData(implementation, gwtConstructor, method, parameterNames,
+          params));
       implementations.add(Key.get(implementation, Assisted.class));
     }
 
@@ -399,18 +400,20 @@ public class FactoryBinding implements Binding {
     }
   }
 
-  private class AssistData {
+  private static class AssistData {
     final TypeLiteral<?> implementation;
     final JConstructor constructor;
+    final List<TypeLiteral<?>> params;
     final Method method;
     final String[] parameterNames;
 
     private AssistData(TypeLiteral<?> implementation, JConstructor constructor, Method method,
-        String[] parameterNames) {
+        String[] parameterNames, List<TypeLiteral<?>> params) {
       this.implementation = implementation;
       this.parameterNames = parameterNames;
       this.method = method;
       this.constructor = constructor;
+      this.params = params;
     }
   }
 }

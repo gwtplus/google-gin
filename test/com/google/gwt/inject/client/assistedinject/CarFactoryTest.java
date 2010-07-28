@@ -17,10 +17,14 @@
 package com.google.gwt.inject.client.assistedinject;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.inject.client.AbstractGinModule;
+import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.binding.Color;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import com.google.inject.name.Named;
@@ -228,6 +232,119 @@ public class CarFactoryTest extends GWTTestCase {
     assertEquals(Color.Green, car.color);
     assertEquals("barFoo", car.versatility.iterator().next());
   }
+
+  // ----------- More Parametrization Tests -----------------------------------
+
+  ///////////////////////// Classes
+
+  static class Foo {
+    Bar assistedValue;
+    Baz injectedValue;
+
+    @Inject
+    Foo(@Assisted Bar assistedValue, Baz injectedValue) {
+      this.assistedValue = assistedValue;
+      this.injectedValue = injectedValue;
+    }
+  }
+
+  static class Bar {}
+  static class Baz {}
+
+  ////////////////////// Factory interfaces
+
+  interface GenericFactory<I, O> {
+    O create(I i);
+  }
+
+  interface GenericFooFactory extends GenericFactory<Bar, Foo> {}
+
+  interface NonGenericFooFactory {
+    Foo create(Bar bar);
+  }
+
+  interface ExtendedNonGenericFooFactory extends NonGenericFooFactory {}
+
+  ////////////////////// Modules
+
+  static class GenericFactoryModule extends AbstractGinModule {
+
+    @Override
+    protected void configure() {
+      install(new GinFactoryModuleBuilder().build(new TypeLiteral<GenericFactory<Bar, Foo>>(){}));
+    }
+  }
+
+  static class GenericFooFactoryModule extends AbstractGinModule {
+
+    @Override
+    protected void configure() {
+      install(new GinFactoryModuleBuilder().build(GenericFooFactory.class));
+    }
+  }
+
+  static class NonGenericFooFactoryModule extends AbstractGinModule {
+
+    @Override
+    protected void configure() {
+      install(new GinFactoryModuleBuilder().build(NonGenericFooFactory.class));
+    }
+  }
+
+  static class ExtendedNonGenericFooFactoryModule extends AbstractGinModule {
+
+    @Override
+    protected void configure() {
+      install(new GinFactoryModuleBuilder().build(ExtendedNonGenericFooFactory.class));
+    }
+  }
+
+  ///////////////////////// Injectors
+
+  @GinModules(GenericFactoryModule.class)
+  interface GenericFactoryTestGinjector extends Ginjector {
+    GenericFactory<Bar, Foo> getFactory();
+  }
+
+  @GinModules(GenericFooFactoryModule.class)
+  interface GenericFooFactoryTestGinjector extends Ginjector {
+    GenericFooFactory getFactory();
+  }
+
+  @GinModules(NonGenericFooFactoryModule.class)
+  interface NonGenericFooFactoryTestGinjector extends Ginjector {
+    NonGenericFooFactory getFactory();
+  }
+
+  @GinModules(ExtendedNonGenericFooFactoryModule.class)
+  interface ExtendedNonGenericFooFactoryTestGinjector extends Ginjector {
+    ExtendedNonGenericFooFactory getFactory();
+  }
+
+  /////////////////////////// Tests
+
+  public void testFoo() {
+    GenericFactoryTestGinjector ginjector = GWT.create(GenericFactoryTestGinjector.class);
+    assertNotNull(ginjector.getFactory().create(new Bar()));
+  }
+
+  public void testFoo2() {
+    GenericFooFactoryTestGinjector ginjector = GWT.create(GenericFooFactoryTestGinjector.class);
+    assertNotNull(ginjector.getFactory().create(new Bar()));
+  }
+
+  public void testFoo3() {
+    NonGenericFooFactoryTestGinjector ginjector =
+        GWT.create(NonGenericFooFactoryTestGinjector.class);
+    assertNotNull(ginjector.getFactory().create(new Bar()));
+  }
+
+  public void testFoo4() {
+    ExtendedNonGenericFooFactoryTestGinjector ginjector =
+        GWT.create(ExtendedNonGenericFooFactoryTestGinjector.class);
+    assertNotNull(ginjector.getFactory().create(new Bar()));
+  }
+
 
   // ----------- Types --------------------------------------------------------
 
