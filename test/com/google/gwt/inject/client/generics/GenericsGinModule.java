@@ -68,5 +68,10 @@ public class GenericsGinModule extends AbstractGinModule {
     return new HashMap<String, Parameterized.StringComparator>();
   }
 
+  @Provides
+  List<Parameterized<?>> provideWildcardList() {
+    return new ArrayList<Parameterized<?>>();
+  }
+
   public static class CharSequenceList extends ArrayList<CharSequence> {}
 }

@@ -48,6 +48,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -108,31 +109,57 @@ public class KeyUtil {
     return getClassType(key.getTypeLiteral().getType());
   }
 
+  /**
+   * Returns the GWT equivalent of the passed java type. If the GWT type cannot
+   * be resolved, returns {@code null}.
+   *
+   * @param type java type
+   * @return gwt type or {@code null} if it cannot be resolved
+   */
   public JClassType getClassType(Type type) {
     if (type instanceof Class) {
       return typeOracle.findType(((Class) type).getCanonicalName());
     } else if (type instanceof ParameterizedType) {
-      ParameterizedType parametrized = (ParameterizedType) type;
+      ParameterizedType parameterized = (ParameterizedType) type;
 
-      JClassType[] parameters = new JClassType[parametrized.getActualTypeArguments().length];
+      JClassType[] parameters = new JClassType[parameterized.getActualTypeArguments().length];
       int i = 0;
-      for (Type paramType : parametrized.getActualTypeArguments()) {
-        parameters[i++] = getClassType(paramType);
+      for (Type paramType : parameterized.getActualTypeArguments()) {
+        JClassType gwtParamType = getClassType(paramType);
+        if (gwtParamType == null) {
+          return null;
+        }
+
+        parameters[i++] = gwtParamType;
       }
 
-      Class rawClass = (Class) parametrized.getRawType();
-      JClassType classType =
-          typeOracle.findType(rawClass.getCanonicalName());
-      JGenericType genericType = classType.isGenericType();
-      if (genericType == null) {
-        throw new ProvisionException("Can't get class type for " + type);
+      JClassType classType = getClassType(parameterized.getRawType());
+      if (classType == null || classType.isGenericType() == null) {
+        return null;
       }
 
-      return typeOracle.getParameterizedType(genericType, genericType.getEnclosingType(),
-          parameters);
+      return typeOracle.getParameterizedType(classType.isGenericType(),
+          classType.getEnclosingType(), parameters);
+    } else if (type instanceof WildcardType) {
+      WildcardType wildcard = (WildcardType) type;
+
+      // GWT cannot deal with types that have more than one type parameter.
+      if (wildcard.getLowerBounds().length + wildcard.getUpperBounds().length > 1) {
+        return null;
+      }
+
+      if (wildcard.getLowerBounds().length == 1) {
+        return new JWildcardType(JWildcardType.BoundType.SUPER,
+            getClassType(wildcard.getLowerBounds()[0]));
+      } else if (wildcard.getUpperBounds().length == 1) {
+        return new JWildcardType(JWildcardType.BoundType.EXTENDS,
+            getClassType(wildcard.getUpperBounds()[0]));
+      } else {
+        return new JWildcardType(JWildcardType.BoundType.UNBOUND, getClassType(Object.class));
+      }
     }
 
-    throw new ProvisionException("Can't get class type for " + type);
+    return null;
   }
 
   /**
@@ -389,7 +416,7 @@ public class KeyUtil {
         case SUPER:
           return Types.supertypeOf(baseType);
         case UNBOUND:
-
+          return Types.subtypeOf(Object.class);
       }
     }
 
@@ -399,11 +426,7 @@ public class KeyUtil {
       List<Type> javaTypeArgs = new ArrayList<Type>();
 
       for (JClassType typeArg : typeArgs) {
-        JWildcardType wildcard = typeArg.isWildcard();
-
-        if (wildcard == null || wildcard.getBoundType() != JWildcardType.BoundType.UNBOUND) {
-          javaTypeArgs.add(gwtTypeToJavaType(typeArg));
-        }
+        javaTypeArgs.add(gwtTypeToJavaType(typeArg));
       }
 
       Type rawType = gwtTypeToJavaType(parameterizedType.getRawType());

@@ -27,6 +27,7 @@ import java.util.Map;
  * Some tests for bindings using generics.
  */
 public class GenericsTest extends GWTTestCase {
+
   public void testKeyAndProviderGenerics() {
     GenericsGinjector ginjector = GWT.create(GenericsGinjector.class);
 
@@ -81,6 +82,12 @@ public class GenericsTest extends GWTTestCase {
 
     List<? super String> list = ginjector.getSuperStringList();
     assertTrue(list.contains("Hello"));
+  }
+
+  public void testNestedWildcard() {
+    GenericsGinjector ginjector = GWT.create(GenericsGinjector.class);
+
+    List<Parameterized<?>> list = ginjector.getWildcardList();
   }
 
   public String getModuleName() {
