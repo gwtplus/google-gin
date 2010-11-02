@@ -87,12 +87,20 @@ public class SourceWriteUtilTest extends AbstractUtilTester {
       println(s);
     }
 
+    public void indentln(String s, Object... args) {
+      indentln(String.format(s, args));
+    }
+
     public void outdent() {
       // No indents for unit test.
     }
 
     public void print(String s) {
       sb.append(s);
+    }
+
+    public void print(String s, Object... args) {
+      print(String.format(s, args));
     }
 
     public void println() {
@@ -102,6 +110,10 @@ public class SourceWriteUtilTest extends AbstractUtilTester {
     public void println(String s) {
       print(s);
       println();
+    }
+
+    public void println(String s, Object... args) {
+      println(String.format(s, args));
     }
 
     public String toString() {

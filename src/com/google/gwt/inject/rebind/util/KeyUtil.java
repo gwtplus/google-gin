@@ -149,13 +149,14 @@ public class KeyUtil {
       }
 
       if (wildcard.getLowerBounds().length == 1) {
-        return new JWildcardType(JWildcardType.BoundType.SUPER,
+        return typeOracle.getWildcardType(JWildcardType.BoundType.SUPER,
             getClassType(wildcard.getLowerBounds()[0]));
       } else if (wildcard.getUpperBounds().length == 1) {
-        return new JWildcardType(JWildcardType.BoundType.EXTENDS,
+        return typeOracle.getWildcardType(JWildcardType.BoundType.EXTENDS,
             getClassType(wildcard.getUpperBounds()[0]));
       } else {
-        return new JWildcardType(JWildcardType.BoundType.UNBOUND, getClassType(Object.class));
+        return typeOracle.getWildcardType(JWildcardType.BoundType.UNBOUND,
+            getClassType(Object.class));
       }
     }
 
