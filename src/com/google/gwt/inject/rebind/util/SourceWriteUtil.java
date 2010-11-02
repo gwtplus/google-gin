@@ -24,6 +24,7 @@ import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.user.rebind.SourceWriter;
@@ -334,6 +335,61 @@ public class SourceWriteUtil {
 
   private boolean hasCheckedExceptions(JAbstractMethod method) {
     return method.getThrows().length > 0;
+  }
+
+  /**
+   * Writes out a binding context, followed by a newline.
+   *
+   * <p>Binding contexts may contain newlines; this routine translates those for
+   * the SourceWriter to ensure that indents, Javadoc comments, etc are handled
+   * properly.
+   */
+  public void writeBindingContext(SourceWriter writer, BindingContext context) {
+    // Avoid a trailing \n -- the GWT class source file composer will output an
+    // ugly extra newline if we do that.
+    String text = context.toString();
+    boolean first = true;
+    for (String line : text.split("\n")) {
+      if (first) {
+        first = false;
+      } else {
+        writer.println();
+      }
+      // Indent the line relative to its current location.  writer.indent()
+      // won't work, since it does the wrong thing in Javadoc.
+      writer.print("  ");
+      writer.print(line);
+    }
+  }
+
+  /**
+   * Write a Javadoc comment for a binding, including its context.
+   *
+   * @param description The description of the binding printed before its
+   *     location, such as "Foo bound at: "
+   * @param writer The writer to use in displaying the context.
+   * @param bindingContext The context of the binding.
+   */
+  public void writeBindingContextJavadoc(SourceWriter writer, BindingContext bindingContext,
+      String description) {
+    writer.beginJavaDocComment();
+    writer.println(description);
+    writeBindingContext(writer, bindingContext);
+    writer.endJavaDocComment();
+  }
+
+  /**
+   * Write the Javadoc for the binding of a particular key, showing the context
+   * of the binding.
+   *
+   * @param key The bound key.
+   * @param writer The writer to use to write this comment.
+   * @param bindingContext The context of the binding.
+   */
+  public void writeBindingContextJavadoc(SourceWriter writer, BindingContext bindingContext,
+      Key key) {
+    writeBindingContextJavadoc(writer, bindingContext,
+        "Binding for " + key.getTypeLiteral() + " declared at:");
   }
 
   /**

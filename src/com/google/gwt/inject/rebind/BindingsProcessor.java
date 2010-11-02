@@ -36,6 +36,7 @@ import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
 import com.google.gwt.inject.rebind.binding.Binding;
+import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
@@ -112,7 +113,7 @@ class BindingsProcessor implements BindingIndex {
   /**
    * Map from key to binding for all types we already have a binding for.
    */
-  private final Map<Key<?>, Binding> bindings = new HashMap<Key<?>, Binding>();
+  private final Map<Key<?>, BindingEntry> bindings = new HashMap<Key<?>, BindingEntry>();
 
   /**
    * Map from key to scope for all types we have a binding for.
@@ -241,7 +242,7 @@ class BindingsProcessor implements BindingIndex {
   }
 
   private void createBindingsForFactories() throws UnableToCompleteException {
-    for (FactoryModule<?> factoryModule : factoryModules) {
+    for (final FactoryModule<?> factoryModule : factoryModules) {
       lieToGuiceModule.registerImplicitBinding(factoryModule.getFactoryType());
 
       FactoryBinding binding = factoryBindingProvider.get();
@@ -255,7 +256,10 @@ class BindingsProcessor implements BindingIndex {
         continue;
       }
 
-      addBinding(factoryModule.getFactoryType(), binding);
+      // TODO(dburrows): store appropriate contextual information for the
+      // factory and use it here.
+      addBinding(factoryModule.getFactoryType(), new BindingEntry(binding,
+          BindingContext.forText("Bound using factory " + factoryModule.getFactoryType())));
 
       // All implementations that are created by the factory are also member-
       // injected. To ensure that implementations created by multiple factories
@@ -282,7 +286,7 @@ class BindingsProcessor implements BindingIndex {
     }
   }
 
-  private void createImplicitBindingForUnresolved(Key<?> key, boolean optional) {
+  private void createImplicitBindingForUnresolved(final Key<?> key, boolean optional) {
     Binding binding = createImplicitBinding(key, optional);
 
     if (binding != null) {
@@ -295,7 +299,10 @@ class BindingsProcessor implements BindingIndex {
         lieToGuiceModule.registerImplicitBinding(key);
       }
 
-      addBinding(key, binding);
+      // TODO(dburrows): provide a summary of why the unresolved binding was
+      // created in the first place in its context.
+      addBinding(key, new BindingEntry(binding,
+          BindingContext.forText("Implicit binding for " + key)));
     } else if (optional) {
       unresolvedOptional.remove(key);
     }
@@ -307,7 +314,7 @@ class BindingsProcessor implements BindingIndex {
     }
   }
 
-  public Map<Key<?>, Binding> getBindings() {
+  public Map<Key<?>, BindingEntry> getBindings() {
     return bindings;
   }
 
@@ -638,9 +645,11 @@ class BindingsProcessor implements BindingIndex {
     return constructor != null && (!constructor.isPrivate() || classType.isPrivate());
   }
 
-  private void addBinding(Key<?> key, Binding binding) {
+  private void addBinding(Key<?> key, BindingEntry bindingEntry) {
     if (bindings.containsKey(key)) {
-      logError("Double-bound: " + key + ". " + bindings.get(key) + ", " + binding);
+      BindingEntry keyEntry = bindings.get(key);
+      logError("Double-bound: " + key + ". " + keyEntry.getBindingContext() + ", "
+          + bindingEntry.getBindingContext());
       return;
     }
 
@@ -650,14 +659,14 @@ class BindingsProcessor implements BindingIndex {
       return;
     }
 
-    bindings.put(key, binding);
+    bindings.put(key, bindingEntry);
     unresolved.remove(key);
     unresolvedOptional.remove(key);
     memberInjectRequests.remove(key);
 
-    addRequiredKeys(key, binding.getRequiredKeys());
+    addRequiredKeys(key, bindingEntry.getBinding().getRequiredKeys());
 
-    logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
+    logger.log(TreeLogger.TRACE, "bound " + key + " to " + bindingEntry);
   }
 
   private void addRequiredKeys(Key<?> key, RequiredKeys requiredKeys) {
@@ -899,7 +908,9 @@ class BindingsProcessor implements BindingIndex {
     public Void visit(ProviderKeyBinding<? extends T> providerKeyBinding) {
       BindProviderBinding binding = bindProviderBindingProvider.get();
       binding.setProviderKey(providerKeyBinding.getProviderKey());
-      addBinding(targetKey, binding);
+      addBinding(targetKey,
+          new BindingEntry(binding, BindingContext.forElement(providerKeyBinding)));
+
       return null;
     }
 
@@ -912,7 +923,8 @@ class BindingsProcessor implements BindingIndex {
         ProviderMethodBinding binding = providerMethodBindingProvider.get();
         try {
           binding.setProviderMethod((ProviderMethod) provider);
-          addBinding(targetKey, binding);
+          addBinding(targetKey,
+              new BindingEntry(binding, BindingContext.forElement(providerInstanceBinding)));
         } catch (UnableToCompleteException e) {
           messages.add(new Message(providerInstanceBinding.getSource(),
               "Error processing provider method"));
@@ -921,7 +933,7 @@ class BindingsProcessor implements BindingIndex {
       }
 
       if (provider instanceof GwtDotCreateProvider) {
-        addImplicitBinding();
+        addImplicitBinding(providerInstanceBinding);
         return null;
       }
 
@@ -933,7 +945,8 @@ class BindingsProcessor implements BindingIndex {
     public Void visit(LinkedKeyBinding<? extends T> linkedKeyBinding) {
       BindClassBinding binding = bindClassBindingProvider.get();
       binding.setBoundClassKey(linkedKeyBinding.getLinkedKey());
-      addBinding(targetKey, binding);
+      addBinding(targetKey,
+          new BindingEntry(binding, BindingContext.forElement(linkedKeyBinding)));
       return null;
     }
 
@@ -943,7 +956,8 @@ class BindingsProcessor implements BindingIndex {
       if (BindConstantBinding.isConstantKey(targetKey)) {
         BindConstantBinding binding = bindConstantBindingProvider.get();
         binding.setKeyAndInstance(targetKey, instance);
-        addBinding(targetKey, binding);
+        addBinding(targetKey,
+            new BindingEntry(binding, BindingContext.forElement(instanceBinding)));
       } else {
         messages.add(new Message(instanceBinding.getSource(),
             "Instance binding not supported; key=" + targetKey + " inst=" + instance));
@@ -954,12 +968,12 @@ class BindingsProcessor implements BindingIndex {
 
     @Override
     public Void visit(UntargettedBinding<? extends T> untargettedBinding) {
-      addImplicitBinding();
+      addImplicitBinding(untargettedBinding);
 
       return null;
     }
 
-    private void addImplicitBinding() {
+    private void addImplicitBinding(Element sourceElement) {
       // Register a Gin binding for the default-case binding that
       // Guice saw. We need to register this to avoid later adding
       // this key to the Guice-lies module, which would make it
@@ -967,7 +981,8 @@ class BindingsProcessor implements BindingIndex {
       Binding binding = createImplicitBinding(targetKey, false);
       if (binding != null) {
         logger.log(TreeLogger.TRACE, "Implicit binding for " + targetKey + ": " + binding);
-        addBinding(targetKey, binding);
+        addBinding(targetKey,
+            new BindingEntry(binding, BindingContext.forElement(sourceElement)));
       }
     }
 

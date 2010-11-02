@@ -24,6 +24,7 @@ import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.rebind.binding.Binding;
+import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
@@ -149,9 +150,11 @@ class GinjectorOutputter {
     boolean errors = false;
 
     // Write out each binding
-    for (Map.Entry<Key<?>, Binding> entry : bindingsProcessor.getBindings().entrySet()) {
+    for (Map.Entry<Key<?>, BindingEntry> entry : bindingsProcessor.getBindings().entrySet()) {
       Key<?> key = entry.getKey();
-      Binding binding = entry.getValue();
+      BindingEntry bindingEntry = entry.getValue();
+      Binding binding = bindingEntry.getBinding();
+      BindingContext bindingContext = bindingEntry.getBindingContext();
 
       String getter = nameGenerator.getGetterMethodName(key);
       String creator = nameGenerator.getCreatorMethodName(key);
@@ -162,11 +165,13 @@ class GinjectorOutputter {
         // toString on TypeLiteral outputs the binary name, not the source name.
         typeName = sourceWriteUtil.getSourceName(key.getTypeLiteral());
 
+        sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
+
         // Regardless of the scope, we have a creator method.
         binding.writeCreatorMethods(writer, "private " + typeName + " " + creator + "()");
       } catch (NoSourceNameException e) {
         logger.log(TreeLogger.Type.ERROR, "Error trying to write source for [" + key + "] -> ["
-            + binding + "].", e);
+            + binding + "]; binding declaration: " + bindingContext, e);
         errors = true;
         continue;
       }
@@ -177,11 +182,14 @@ class GinjectorOutputter {
       GinScope scope = bindingsProcessor.determineScope(key);
       switch (scope) {
         case EAGER_SINGLETON:
+          constructorBody.append("// Eager singleton bound at:\n");
+          appendBindingContextCommentToConstructor(bindingContext);
           constructorBody.append(getter).append("();\n");
           // Intentionally fall through.
         case SINGLETON:
           writer.println("private " + typeName + " " + field + " = null;");
           writer.println();
+          sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, "Singleton bound at:");
           writer.println("private " + typeName + " " + getter + "()" + " {");
           writer.indent();
           writer.println("if (" + field + " == null) {");
@@ -196,6 +204,8 @@ class GinjectorOutputter {
 
         case NO_SCOPE:
           // For none, getter just returns creator
+          sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
+
           sourceWriteUtil.writeMethod(writer, "private " + typeName + " " + getter + "()",
               "return " + creator + "();");
           break;
@@ -209,6 +219,12 @@ class GinjectorOutputter {
 
     if (errors) {
       throw new UnableToCompleteException();      
+    }
+  }
+
+  private void appendBindingContextCommentToConstructor(BindingContext bindingContext) {
+    for(String line : bindingContext.toString().split("\n")) {
+      constructorBody.append("//   " + line + "\n");
     }
   }
 
