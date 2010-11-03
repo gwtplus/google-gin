@@ -30,8 +30,6 @@ import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import com.google.inject.internal.Errors;
 import com.google.inject.internal.ErrorsException;
-import com.google.inject.internal.ImmutableList;
-import com.google.inject.internal.Lists;
 import com.google.inject.spi.InjectionPoint;
 
 import java.lang.annotation.Annotation;
@@ -196,12 +194,11 @@ public class FactoryBinding implements Binding {
       List<TypeLiteral<?>> params = factoryType.getParameterTypes(method);
       Annotation[][] paramAnnotations = method.getParameterAnnotations();
       int p = 0;
-      ImmutableList.Builder<Key<?>> builder = new ImmutableList.Builder<Key<?>>();
+      List<Key<?>> paramList = new ArrayList<Key<?>>();
       for (TypeLiteral<?> param : params) {
         Key<?> paramKey = getKey(param, method, paramAnnotations[p++], errors);
-        builder.add(assistKey(method, paramKey, errors));
+        paramList.add(assistKey(method, paramKey, errors));
       }
-      List<Key<?>> immutableParamList = builder.build();
 
       // Try to match up the method to the constructor.
       TypeLiteral<?> implementation = collector.get(returnType);
@@ -209,7 +206,7 @@ public class FactoryBinding implements Binding {
         implementation = returnType.getTypeLiteral();
       }
       Constructor<?> constructor =
-          findMatchingConstructor(method, implementation, immutableParamList, errors);
+          findMatchingConstructor(method, implementation, paramList, errors);
 
       if (constructor == null) {
         continue; // Errors are collected and thrown below.
@@ -218,7 +215,7 @@ public class FactoryBinding implements Binding {
       // Calculate a map from method to constructor parameters and required
       // keys.
       String[] parameterNames = extractConstructorParameters(implementation, constructor,
-          immutableParamList, errors, requiredKeys);
+          paramList, errors, requiredKeys);
 
       JConstructor gwtConstructor = keyUtil.javaToGwtConstructor(constructor, implementation);
       assistData.add(new AssistData(implementation, gwtConstructor, method, parameterNames,
@@ -333,7 +330,7 @@ public class FactoryBinding implements Binding {
     List<TypeLiteral<?>> params = type.getParameterTypes(constructor);
     Annotation[][] paramAnnotations = constructor.getParameterAnnotations();
     int p = 0;
-    List<Key<?>> constructorKeys = Lists.newArrayList();
+    List<Key<?>> constructorKeys = new ArrayList<Key<?>>();
     for (TypeLiteral<?> param : params) {
       constructorKeys.add(getKey(param, constructor, paramAnnotations[p++], errors));
     }
