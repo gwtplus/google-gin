@@ -551,7 +551,8 @@ class BindingsProcessor implements BindingIndex {
     // 6. If the dependency has a binding annotation, give up.
     if (key.getAnnotation() != null || key.getAnnotationType() != null) {
       if (!optional) {
-        logError("No implementation bound for key " + key);
+        logError("No implementation bound for \"" + key
+            + "\" and an implicit binding cannot be created because the type is annotated.");
       }
 
       return null;
