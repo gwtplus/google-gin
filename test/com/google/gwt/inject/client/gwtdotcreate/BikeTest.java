@@ -28,10 +28,11 @@ public class BikeTest extends GWTTestCase {
 
     try {
       ginjector.getCar();
-      fail("Expected CreationException.");
-    } catch (CreationException e) {
-      assertTrue(e.getMessage().contains("Bike"));
-      assertTrue(e.getMessage().contains("Car"));
+      fail("Expected AssertionError (dev mode) or ClassCastException (web mode).");
+    } catch (AssertionError e) {
+      // Expected
+    } catch (ClassCastException e) {
+      // Expected
     }
   }
 

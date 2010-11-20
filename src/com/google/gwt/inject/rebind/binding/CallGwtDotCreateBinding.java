@@ -35,23 +35,14 @@ public class CallGwtDotCreateBinding extends CreatorBinding {
   @Override protected final void appendCreationStatement(SourceWriter sourceWriter,
       StringBuilder sb) {
 
-    String name = getTypeNameToCreate();
-    sb.append("Object created = ");
-    sb.append("GWT.create(")
-        .append(name)
-        .append(".class);\n");
+    sb.append("Object created = GWT.create(").append(getTypeNameToCreate()).append(".class);\n");
 
     // Gin cannot deal with cases where the type returned by GWT.create is not
-    // equal or a subtype of the requested type. Check for this and throw an
-    // exception if necessary:
-    sb.append(getTypeName()).append(" result;\n")
-        .append("if (!(created instanceof ").append(getTypeName()).append(")) {\n")
-        .append("  throw new com.google.gwt.inject.client.CreationException(\"GWT.create returned")
-        .append(" a type incompatible to the one requested: Received \" + created.getClass() + \",")
-        .append(" expected ").append(getTypeName()).append(".\");\n")
-        .append("} else {\n")
-        .append("  result = (").append(getTypeName()).append(") created;\n")
-        .append("}");
+    // equal or a subtype of the requested type. Assert this here, in
+    // production code (without asserts) the line below the assert will throw a
+    // ClassCastException instead.
+    sb.append("assert created instanceof ").append(getTypeName()).append(";\n")
+        .append(getTypeName()).append(" result = (").append(getTypeName()).append(") created;\n");
   }
 
   protected String getTypeNameToCreate() {
