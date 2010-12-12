@@ -75,15 +75,15 @@ public class KeyUtil {
       return getKey(method.getParameters()[0]);
     }
 
-    return getKey(method.getReturnType(), getAnnotations(JAbstractMethod.class, method));
+    return getKey(method.getReturnType(), getAnnotations(com.google.gwt.dev.javac.typemodel.JAbstractMethod.class, method));
   }
 
   public Key<?> getKey(JParameter param) {
-    return getKey(param.getType(), getAnnotations(JParameter.class, param));
+    return getKey(param.getType(), getAnnotations(com.google.gwt.dev.javac.typemodel.JParameter.class, param));
   }
 
   public Key<?> getKey(JField field) {
-    return getKey(field.getType(), getAnnotations(JField.class, field));
+    return getKey(field.getType(), getAnnotations(com.google.gwt.dev.javac.typemodel.JField.class, field));
   }
 
   public boolean isMemberInject(JMethod method) {
@@ -482,7 +482,7 @@ public class KeyUtil {
   }
 
   // Reflective hack until getAnnotations is exposed from GWT
-  private static <T> Annotation[] getAnnotations(Class<T> clazz, T instance) {
+  private static <T> Annotation[] getAnnotations(Class<? extends T> clazz, T instance) {
     try {
       Method method = clazz.getDeclaredMethod("getAnnotations");
       method.setAccessible(true);

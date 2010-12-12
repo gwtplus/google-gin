@@ -83,7 +83,7 @@ public abstract class AbstractUtilTester extends TestCase {
   }
 
   protected JPrimitiveType getPrimitiveType(Class type) {
-    return JPrimitiveType.valueOf(type.getName());
+    return JPrimitiveType.parse(type.getName());
   }
 
   protected JClassType getClassType(Class type) {
