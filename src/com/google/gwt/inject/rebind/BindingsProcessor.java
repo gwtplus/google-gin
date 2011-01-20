@@ -184,12 +184,7 @@ class BindingsProcessor implements BindingIndex {
    */
   private final LieToGuiceModule lieToGuiceModule;
 
-  /**
-   * Keeps track of whether we've found an error so we can eventually throw
-   * an {@link UnableToCompleteException}. We do this instead of throwing
-   * immediately so that we can find more than one error per compilation cycle.
-   */
-  private boolean foundError = false;
+  private final ErrorManager errorManager;
 
   @Inject
   BindingsProcessor(NameGenerator nameGenerator, TreeLogger logger,
@@ -207,7 +202,8 @@ class BindingsProcessor implements BindingIndex {
       Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider,
       Provider<ProviderMethodBinding> providerMethodBindingProvider,
       Provider<GinjectorBinding> ginjectorBindingProvider,
-      Provider<FactoryBinding> factoryBindingProvider) {
+      Provider<FactoryBinding> factoryBindingProvider,
+      ErrorManager errorManager) {
     this.nameGenerator = nameGenerator;
     this.logger = logger;
     this.callGwtDotCreateBindingProvider = callGwtDotCreateBindingProvider;
@@ -224,6 +220,7 @@ class BindingsProcessor implements BindingIndex {
     this.providerMethodBindingProvider = providerMethodBindingProvider;
     this.ginjectorBindingProvider = ginjectorBindingProvider;
     this.factoryBindingProvider = factoryBindingProvider;
+    this.errorManager = errorManager;
 
     completeCollector = collectorProvider.get();
     completeCollector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
@@ -249,10 +246,12 @@ class BindingsProcessor implements BindingIndex {
       try {
         binding.setKeyAndCollector(factoryModule.getFactoryType(), factoryModule.getBindings());
       } catch (ConfigurationException e) {
-        logError("Factory " + factoryModule.getFactoryType() + " could not be created: ", e);
+        errorManager.logError("Factory " + factoryModule.getFactoryType()
+            + " could not be created: ", e);
         continue;
       } catch (NotFoundException e) {
-        logError("Factory " + factoryModule.getFactoryType() + " could not be created.", e);
+        errorManager.logError("Factory " + factoryModule.getFactoryType()
+            + " could not be created.", e);
         continue;
       }
 
@@ -268,7 +267,7 @@ class BindingsProcessor implements BindingIndex {
       memberInjectRequests.addAll(binding.getImplementations());
     }
 
-    checkForError();
+    errorManager.checkForError();
   }
 
   private void createImplicitBindingsForUnresolved() throws UnableToCompleteException {
@@ -282,7 +281,7 @@ class BindingsProcessor implements BindingIndex {
         createImplicitBindingForUnresolved(key, true);
       }
 
-      checkForError();
+      errorManager.checkForError();
     }
   }
 
@@ -305,12 +304,6 @@ class BindingsProcessor implements BindingIndex {
           BindingContext.forText("Implicit binding for " + key)));
     } else if (optional) {
       unresolvedOptional.remove(key);
-    }
-  }
-
-  private void checkForError() throws UnableToCompleteException {
-    if (foundError) {
-      throw new UnableToCompleteException();
     }
   }
 
@@ -357,28 +350,28 @@ class BindingsProcessor implements BindingIndex {
   private void validateMethods() throws UnableToCompleteException {
     for (JMethod method : completeCollector.getMethods(ginjectorInterface)) {
       if (method.getParameters().length > 1) {
-        logError("Injector methods cannot have more than one parameter, "
+        errorManager.logError("Injector methods cannot have more than one parameter, "
             + " found: " + method.getReadableDeclaration());
       }
 
       if (method.getParameters().length == 1) {
         // Member inject method.
         if (method.getParameters()[0].getType().isClassOrInterface() == null) {
-          logError("Injector method parameter types must be a class or "
+          errorManager.logError("Injector method parameter types must be a class or "
               + "interface, found: " + method.getReadableDeclaration());
         }
 
         if (method.getReturnType() != JPrimitiveType.VOID) {
-          logError("Injector methods with a parameter must have a void "
+          errorManager.logError("Injector methods with a parameter must have a void "
               + "return type, found: " + method.getReadableDeclaration());
         }
       } else if (method.getReturnType() == JPrimitiveType.VOID) {
         // Constructor injection.
-        logError("Injector methods with no parameters cannot return void");
+        errorManager.logError("Injector methods with no parameters cannot return void");
       }
     }
 
-    checkForError();
+    errorManager.checkForError();
   }
 
   private void addUnresolvedEntriesForInjectorInterface() {
@@ -413,12 +406,12 @@ class BindingsProcessor implements BindingIndex {
       if (!messages.isEmpty()) {
         for (Message message : messages) {
           // tostring has both source and message so use that
-          logError(message.toString(), message.getCause());
+          errorManager.logError(message.toString(), message.getCause());
         }
       }
     }
 
-    checkForError();
+    errorManager.checkForError();
   }
 
   private List<Module> createModules() {
@@ -436,7 +429,7 @@ class BindingsProcessor implements BindingIndex {
       modulesForGuice.addAll(modules);
       Guice.createInjector(Stage.TOOL, modulesForGuice);
     } catch (Exception e) {
-      logError("Errors from Guice: " + e.getMessage(), e);
+      errorManager.logError("Errors from Guice: " + e.getMessage(), e);
       throw new UnableToCompleteException();
     }
   }
@@ -473,13 +466,13 @@ class BindingsProcessor implements BindingIndex {
         constructor.setAccessible(false);
       }
     } catch (IllegalAccessException e) {
-      logError("Error creating module: " + moduleClassName, e);
+      errorManager.logError("Error creating module: " + moduleClassName, e);
     } catch (InstantiationException e) {
-      logError("Error creating module: " + moduleClassName, e);
+      errorManager.logError("Error creating module: " + moduleClassName, e);
     } catch (NoSuchMethodException e) {
-      logError("Error creating module: " + moduleClassName, e);
+      errorManager.logError("Error creating module: " + moduleClassName, e);
     } catch (InvocationTargetException e) {
-      logError("Error creating module: " + moduleClassName, e);
+      errorManager.logError("Error creating module: " + moduleClassName, e);
     }
 
     return null;
@@ -541,7 +534,7 @@ class BindingsProcessor implements BindingIndex {
     // Already covered by resolving explicit bindings.
     if (BindConstantBinding.isConstantKey(key)) {
       if (!optional) {
-        logError("Binding requested for constant key " + key
+        errorManager.logError("Binding requested for constant key " + key
             + " but no explicit binding was found.");
       }
 
@@ -551,7 +544,7 @@ class BindingsProcessor implements BindingIndex {
     // 6. If the dependency has a binding annotation, give up.
     if (key.getAnnotation() != null || key.getAnnotationType() != null) {
       if (!optional) {
-        logError("No implementation bound for \"" + key
+        errorManager.logError("No implementation bound for \"" + key
             + "\" and an implicit binding cannot be created because the type is annotated.");
       }
 
@@ -584,7 +577,7 @@ class BindingsProcessor implements BindingIndex {
     if (classType != null) {
       return createImplicitBindingForClass(classType, optional, key);
     } else if (!optional) {
-      logError("Class not found: " + key);
+      errorManager.logError("Class not found: " + key);
     }
 
     return null;
@@ -614,7 +607,7 @@ class BindingsProcessor implements BindingIndex {
     }
 
     if (!optional) {
-      logError("No @Inject or default constructor found for " + classType);
+      errorManager.logError("No @Inject or default constructor found for " + classType);
     }
 
     return null;
@@ -649,14 +642,14 @@ class BindingsProcessor implements BindingIndex {
   private void addBinding(Key<?> key, BindingEntry bindingEntry) {
     if (bindings.containsKey(key)) {
       BindingEntry keyEntry = bindings.get(key);
-      logError("Double-bound: " + key + ". " + keyEntry.getBindingContext() + ", "
+      errorManager.logError("Double-bound: " + key + ". " + keyEntry.getBindingContext() + ", "
           + bindingEntry.getBindingContext());
       return;
     }
 
     JClassType classType = keyUtil.getRawClassType(key);
     if (classType != null && !isClassAccessibleFromGinjector(classType)) {
-      logError("Can not inject an instance of an inaccessible class. Key=" + key);
+      errorManager.logError("Can not inject an instance of an inaccessible class. Key=" + key);
       return;
     }
 
@@ -719,12 +712,12 @@ class BindingsProcessor implements BindingIndex {
     Class<?> implementationType = implementedBy.value();
 
     if (implementationType == rawType) {
-      logError("@ImplementedBy points to the same class it annotates: " + rawType);
+      errorManager.logError("@ImplementedBy points to the same class it annotates: " + rawType);
       return null;
     }
 
     if (!rawType.isAssignableFrom(implementationType)) {
-      logError(implementationType + " doesn't extend " + rawType
+      errorManager.logError(implementationType + " doesn't extend " + rawType
           + " (while resolving @ImplementedBy)");
       return null;
     }
@@ -745,7 +738,7 @@ class BindingsProcessor implements BindingIndex {
     Class<? extends Provider<?>> providerType = providedBy.value();
 
     if (providerType == rawType) {
-      logError("@ProvidedBy points to the same class it annotates: " + rawType);
+      errorManager.logError("@ProvidedBy points to the same class it annotates: " + rawType);
       return null;
     }
 
@@ -788,15 +781,6 @@ class BindingsProcessor implements BindingIndex {
         || classPackage.getName().equals(ginjectorPackage.getName());
   }
 
-  private void logError(String message) {
-    logError(message, null);
-  }
-
-  private void logError(String message, Throwable t) {
-    logger.log(TreeLogger.ERROR, message, t);
-    foundError = true;
-  }
-
   private JConstructor getInjectConstructor(JClassType classType) {
     JConstructor[] constructors = classType.getConstructors();
 
@@ -807,7 +791,7 @@ class BindingsProcessor implements BindingIndex {
         if (injectConstructor == null) {
           injectConstructor = constructor;
         } else {
-          logError("More than one @Inject constructor found for "
+          errorManager.logError("More than one @Inject constructor found for "
               + classType + "; " + injectConstructor + ", " + constructor);
           return null;
         }
@@ -820,7 +804,6 @@ class BindingsProcessor implements BindingIndex {
   private class GuiceElementVisitor extends DefaultElementVisitor<Void> {
     private final List<Message> messages = new ArrayList<Message>();
 
-    @Override
     public <T> Void visit(com.google.inject.Binding<T> command) {
       GuiceBindingVisitor<T> bindingVisitor = new GuiceBindingVisitor<T>(command.getKey(),
           messages);
@@ -829,13 +812,11 @@ class BindingsProcessor implements BindingIndex {
       return null;
     }
 
-    @Override
     public Void visit(Message message) {
       messages.add(message);
       return null;
     }
 
-    @Override
     public <T> Void visit(ProviderLookup<T> providerLookup) {
       // Ignore provider lookups for now
       // TODO(bstoler): I guess we should error if you try to lookup a provider
@@ -843,14 +824,12 @@ class BindingsProcessor implements BindingIndex {
       return null;
     }
 
-    @Override
     protected Void visitOther(Element element) {
       visit(new Message(element.getSource(),
           "Ignoring unsupported Module element: " + element));
       return null;
     }
 
-    @Override
     public Void visit(StaticInjectionRequest staticInjectionRequest) {
       addStaticInjectionRequest(staticInjectionRequest);
       return null;
@@ -905,7 +884,6 @@ class BindingsProcessor implements BindingIndex {
       this.messages = messages;
     }
 
-    @Override
     public Void visit(ProviderKeyBinding<? extends T> providerKeyBinding) {
       BindProviderBinding binding = bindProviderBindingProvider.get();
       binding.setProviderKey(providerKeyBinding.getProviderKey());
@@ -915,7 +893,6 @@ class BindingsProcessor implements BindingIndex {
       return null;
     }
 
-    @Override
     public Void visit(ProviderInstanceBinding<? extends T> providerInstanceBinding) {
       // Detect provider methods and handle them
       // TODO(bstoler): Update this when the SPI explicitly has a case for provider methods
@@ -923,7 +900,7 @@ class BindingsProcessor implements BindingIndex {
       if (provider instanceof ProviderMethod) {
         ProviderMethodBinding binding = providerMethodBindingProvider.get();
         try {
-          binding.setProviderMethod((ProviderMethod) provider);
+          binding.setProviderMethod((ProviderMethod<?>) provider);
           addBinding(targetKey,
               new BindingEntry(binding, BindingContext.forElement(providerInstanceBinding)));
         } catch (UnableToCompleteException e) {
@@ -942,7 +919,6 @@ class BindingsProcessor implements BindingIndex {
       return super.visit(providerInstanceBinding);
     }
 
-    @Override
     public Void visit(LinkedKeyBinding<? extends T> linkedKeyBinding) {
       BindClassBinding binding = bindClassBindingProvider.get();
       binding.setBoundClassKey(linkedKeyBinding.getLinkedKey());
@@ -951,7 +927,6 @@ class BindingsProcessor implements BindingIndex {
       return null;
     }
 
-    @Override
     public Void visit(InstanceBinding<? extends T> instanceBinding) {
       T instance = instanceBinding.getInstance();
       if (BindConstantBinding.isConstantKey(targetKey)) {
@@ -967,7 +942,6 @@ class BindingsProcessor implements BindingIndex {
       return null;
     }
 
-    @Override
     public Void visit(UntargettedBinding<? extends T> untargettedBinding) {
       addImplicitBinding(untargettedBinding);
 
@@ -987,7 +961,6 @@ class BindingsProcessor implements BindingIndex {
       }
     }
 
-    @Override
     protected Void visitOther(com.google.inject.Binding<? extends T> binding) {
       messages.add(new Message(binding.getSource(),
           "Unsupported binding provided for key: " + targetKey + ": " + binding));
