@@ -30,10 +30,34 @@ import java.util.Set;
 @Singleton
 public class NameGenerator {
 
+  private class CacheKey {
+    private final String prefix;
+    private final Key<?> key;
+    
+    CacheKey(String prefix, Key<?> key) {
+      this.prefix = prefix;
+      this.key = key;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+      if (obj instanceof CacheKey) {
+        CacheKey other = (CacheKey) obj;
+        return other.prefix.equals(prefix) && other.key.equals(key);
+      }
+      return false;
+    }
+    
+    @Override
+    public int hashCode() {
+      return prefix.hashCode() * 31 +  key.hashCode();
+    }
+  }
+  
   /**
    * "Mangled key name" cache:  Key -> mangled name
    */
-  private final Map<Key<?>, String> cache = new HashMap<Key<?>, String>();
+  private final Map<CacheKey, String> cache = new HashMap<CacheKey, String>();
 
   /**
    * Map of known method names.
@@ -47,7 +71,7 @@ public class NameGenerator {
    * @return getter method name
    */
   public String getGetterMethodName(Key<?> key) {
-    return "get_" + mangle(key);
+    return mangle("get_", key);
   }
 
   /**
@@ -58,7 +82,7 @@ public class NameGenerator {
    * @return creator method name
    */
   public String getCreatorMethodName(Key<?> key) {
-    return "create_" + mangle(key);
+    return mangle("create_", key);
   }
 
   /**
@@ -68,7 +92,7 @@ public class NameGenerator {
    * @return member inject method name
    */
   public String getMemberInjectMethodName(Key<?> key) {
-    return "memberInject_" + mangle(key);
+    return mangle("memberInject_", key);
   }
 
   /**
@@ -77,8 +101,9 @@ public class NameGenerator {
    * @return singleton field name
    */
   public String getSingletonFieldName(Key<?> key) {
-    return "singleton_" + mangle(key);
+    return mangle("singleton_", key);
   }
+
 
   /**
    * Returns a new valid (i.e. unique) method name based on {@code base}.
@@ -108,8 +133,9 @@ public class NameGenerator {
     methodNames.add(name);
   }
 
-  private String mangle(Key<?> key) {
-    String cached = cache.get(key);
+  private String mangle(String prefix, Key<?> key) {
+    CacheKey cacheKey = new CacheKey(prefix, key);
+    String cached = cache.get(cacheKey);
     if (cached != null) {
       return cached;
     }
@@ -118,13 +144,12 @@ public class NameGenerator {
     // values are of unbounded length. One option
     // is to use mangled(type) + mangled(annotation type) + counter, where
     // counter is used just to distinguish different annotation values.
-    String name = key.toString();
+    String name = prefix + key.toString();
     name = convertToValidMemberName(name);
-
-    // TODO(schmitt):  Not necessary for field names?
+    
     name = createMethodName(name);
 
-    cache.put(key, name);
+    cache.put(cacheKey, name);
     return name;
   }
 
