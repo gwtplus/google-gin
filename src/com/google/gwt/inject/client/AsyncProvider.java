@@ -43,5 +43,5 @@ public interface AsyncProvider<T> {
    * @param callback Callback used to pass the instance of T or an exception
    *    if there is an issue creating that instance.
    */
-  void get(AsyncCallback<T> callback);
+  void get(AsyncCallback<? super T> callback);
 }
