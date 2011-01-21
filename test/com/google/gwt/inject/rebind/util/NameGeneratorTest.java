@@ -17,7 +17,9 @@ package com.google.gwt.inject.rebind.util;
 
 import com.google.inject.Key;
 
-public class NameGeneratorTest extends AbstractUtilTester {
+import junit.framework.TestCase;
+
+public class NameGeneratorTest extends TestCase {
 
   // TODO(schmitt):  Test mangle.
   // TODO(schmitt):  Test name translation.

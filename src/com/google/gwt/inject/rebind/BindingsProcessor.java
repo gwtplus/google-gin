@@ -17,17 +17,10 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JConstructor;
-import com.google.gwt.core.ext.typeinfo.JField;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JPackage;
-import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
-import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.gwt.inject.client.AsyncProvider;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
 import com.google.gwt.inject.rebind.adapter.GwtDotCreateProvider;
@@ -46,7 +39,10 @@ import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
 import com.google.gwt.inject.rebind.binding.ProviderMethodBinding;
 import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
 import com.google.gwt.inject.rebind.binding.RequiredKeys;
-import com.google.gwt.inject.rebind.util.KeyUtil;
+import com.google.gwt.inject.rebind.reflect.FieldLiteral;
+import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.inject.ConfigurationException;
@@ -59,6 +55,7 @@ import com.google.inject.ProvidedBy;
 import com.google.inject.Scope;
 import com.google.inject.Singleton;
 import com.google.inject.Stage;
+import com.google.inject.TypeLiteral;
 import com.google.inject.internal.ProviderMethod;
 import com.google.inject.spi.BindingScopingVisitor;
 import com.google.inject.spi.DefaultBindingTargetVisitor;
@@ -97,11 +94,6 @@ import javax.inject.Provider;
  */
 @Singleton
 class BindingsProcessor implements BindingIndex {
-
-  /**
-   * Type array representing zero arguments for a method.
-   */
-  private static final JType[] ZERO_ARGS = new JType[0];
 
   private final TreeLogger logger;
 
@@ -166,7 +158,7 @@ class BindingsProcessor implements BindingIndex {
   private final Provider<GinjectorBinding> ginjectorBindingProvider;
   private final Provider<FactoryBinding> factoryBindingProvider;
 
-  private final KeyUtil keyUtil;
+  private final GuiceUtil guiceUtil;
 
   /**
    * Collection of all factory modules configured in gin modules.
@@ -176,7 +168,7 @@ class BindingsProcessor implements BindingIndex {
   /**
    * Interface of the injector that this class is implementing.
    */
-  private final JClassType ginjectorInterface;
+  private final TypeLiteral<? extends Ginjector> ginjectorInterface;
 
   /**
    * Module used to pretend to Guice about the source of all generated binding
@@ -191,12 +183,12 @@ class BindingsProcessor implements BindingIndex {
       Provider<MemberCollector> collectorProvider,
       Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider,
       Provider<CallConstructorBinding> callConstructorBinding,
-      KeyUtil keyUtil,
+      GuiceUtil guiceUtil,
       Provider<BindClassBinding> bindClassBindingProvider,
       Provider<BindProviderBinding> bindProviderBindingProvider,
       Provider<ImplicitProviderBinding> implicitProviderBindingProvider,
       Provider<AsyncProviderBinding> asyncProviderBindingProvider,
-      @GinjectorInterfaceType JClassType ginjectorInterface,
+      @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
       LieToGuiceModule lieToGuiceModule,
       Provider<BindConstantBinding> bindConstantBindingProvider,
       Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider,
@@ -212,8 +204,8 @@ class BindingsProcessor implements BindingIndex {
     this.implicitProviderBindingProvider = implicitProviderBindingProvider;
     this.asyncProviderBindingProvider = asyncProviderBindingProvider;
     this.bindProviderBindingProvider = bindProviderBindingProvider;
-    this.keyUtil = keyUtil;
-    this.ginjectorInterface = ginjectorInterface;
+    this.guiceUtil = guiceUtil;
+    this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
     this.lieToGuiceModule = lieToGuiceModule;
     this.remoteServiceProxyBindingProvider = remoteServiceProxyBindingProvider;
     this.bindConstantBindingProvider = bindConstantBindingProvider;
@@ -248,10 +240,6 @@ class BindingsProcessor implements BindingIndex {
       } catch (ConfigurationException e) {
         errorManager.logError("Factory " + factoryModule.getFactoryType()
             + " could not be created: ", e);
-        continue;
-      } catch (NotFoundException e) {
-        errorManager.logError("Factory " + factoryModule.getFactoryType()
-            + " could not be created.", e);
         continue;
       }
 
@@ -326,12 +314,12 @@ class BindingsProcessor implements BindingIndex {
   public GinScope determineScope(Key<?> key) {
     GinScope scope = getScopes().get(key);
     if (scope == null) {
-      Class<?> raw = keyUtil.getRawType(key);
+      Class<?> raw = key.getTypeLiteral().getRawType();
       if (raw.getAnnotation(Singleton.class) != null
           || raw.getAnnotation(javax.inject.Singleton.class) != null) {
         // Look for scope annotation as a fallback
         scope = GinScope.SINGLETON;
-      } else if (RemoteServiceProxyBinding.isRemoteServiceProxy(keyUtil.getRawClassType(key))) {
+      } else if (RemoteServiceProxyBinding.isRemoteServiceProxy(key.getTypeLiteral())) {
         // Special case for remote services
         scope = GinScope.SINGLETON;
       } else {
@@ -348,24 +336,27 @@ class BindingsProcessor implements BindingIndex {
   }
 
   private void validateMethods() throws UnableToCompleteException {
-    for (JMethod method : completeCollector.getMethods(ginjectorInterface)) {
-      if (method.getParameters().length > 1) {
-        errorManager.logError("Injector methods cannot have more than one parameter, "
-            + " found: " + method.getReadableDeclaration());
+    for (MethodLiteral<?, Method> method : completeCollector.getMethods(ginjectorInterface)) {
+      List<TypeLiteral<?>> parameters = method.getParameterTypes();
+      if (parameters.size() > 1) {
+        errorManager.logError("Injector methods cannot have more than one parameter, found: " + method);
       }
 
-      if (method.getParameters().length == 1) {
+      if (parameters.size() == 1) {
+
         // Member inject method.
-        if (method.getParameters()[0].getType().isClassOrInterface() == null) {
-          errorManager.logError("Injector method parameter types must be a class or "
-              + "interface, found: " + method.getReadableDeclaration());
+        Class<?> paramType = parameters.get(0).getRawType();
+        if (!ReflectUtil.isClassOrInterface(paramType)) {
+          errorManager.logError(
+              "Injector method parameter types must be a class or interface, found: " + method);
         }
 
-        if (method.getReturnType() != JPrimitiveType.VOID) {
-          errorManager.logError("Injector methods with a parameter must have a void "
-              + "return type, found: " + method.getReadableDeclaration());
+        if (!method.getReturnType().getRawType().equals(Void.TYPE)) {
+          errorManager.logError("Injector methods with a parameter must have a void return type, found: "
+              + method);
         }
-      } else if (method.getReturnType() == JPrimitiveType.VOID) {
+      } else if (method.getReturnType().getRawType().equals(Void.TYPE)) {
+
         // Constructor injection.
         errorManager.logError("Injector methods with no parameters cannot return void");
       }
@@ -375,17 +366,18 @@ class BindingsProcessor implements BindingIndex {
   }
 
   private void addUnresolvedEntriesForInjectorInterface() {
-    for (JMethod method : completeCollector.getMethods(ginjectorInterface)) {
+    for (MethodLiteral<?, Method> method : completeCollector.getMethods(ginjectorInterface)) {
       nameGenerator.markAsUsed(method.getName());
-      Key<?> key = keyUtil.getKey(method);
+      Key<?> key = guiceUtil.getKey(method);
       logger.log(TreeLogger.TRACE, "Add unresolved key from injector interface: " + key);
 
       // Member inject types do not need to be gin-creatable themselves but we
       // need to provide all dependencies.
-      if (keyUtil.isMemberInject(method)) {
+      if (guiceUtil.isMemberInject(method)) {
         if (!unresolved.contains(key)) {
           memberInjectRequests.add(key);
-          RequiredKeys requiredKeys = keyUtil.getRequiredKeys(keyUtil.getClassType(key));
+          RequiredKeys requiredKeys =
+              guiceUtil.getMemberInjectionRequiredKeys(key.getTypeLiteral());
           unresolved.addAll(requiredKeys.getRequiredKeys());
           unresolvedOptional.addAll(requiredKeys.getOptionalKeys());
         }
@@ -434,11 +426,11 @@ class BindingsProcessor implements BindingIndex {
     }
   }
 
-  private void populateModulesFromInjectorInterface(JClassType iface, List<Module> modules,
-      Set<Class<? extends GinModule>> added) {
-    GinModules gmodules = iface.getAnnotation(GinModules.class);
-    if (gmodules != null) {
-      for (Class<? extends GinModule> moduleClass : gmodules.value()) {
+  private void populateModulesFromInjectorInterface(TypeLiteral<?> ginjectorType,
+      List<Module> modules, Set<Class<? extends GinModule>> added) {
+    GinModules ginModules = ginjectorType.getRawType().getAnnotation(GinModules.class);
+    if (ginModules != null) {
+      for (Class<? extends GinModule> moduleClass : ginModules.value()) {
         if (added.contains(moduleClass)) {
           continue;
         }
@@ -451,8 +443,10 @@ class BindingsProcessor implements BindingIndex {
       }
     }
 
-    for (JClassType superIface : iface.getImplementedInterfaces()) {
-      populateModulesFromInjectorInterface(superIface, modules, added);
+    for (Class<?> ancestor : ginjectorType.getRawType().getInterfaces()) {
+
+      // TODO(schmitt): Only look at ancestors extending Ginjector?
+      populateModulesFromInjectorInterface(ginjectorType.getSupertype(ancestor), modules, added);
     }
   }
 
@@ -479,16 +473,16 @@ class BindingsProcessor implements BindingIndex {
   }
 
   private Binding createImplicitBinding(Key<?> key, boolean optional) {
+    TypeLiteral<?> type = key.getTypeLiteral();
+
     // All steps per:
     // http://code.google.com/p/google-guice/wiki/BindingResolution
-
-    JClassType rawClassType = keyUtil.getRawClassType(key);
 
     // 1. Explicit binding - already finished at this point.
 
     // This is really an explicit binding, we add it here.
     // TODO(schmitt): Can we just add a binding to the module?
-    if (rawClassType.equals(ginjectorInterface)) {
+    if (type.equals(ginjectorInterface)) {
       return ginjectorBindingProvider.get();
     }
 
@@ -558,12 +552,12 @@ class BindingsProcessor implements BindingIndex {
     // TODO(schmitt): Implement TypeLiteral injections.
 
     // 9. Use resolution annotations (@ImplementedBy, @ProvidedBy)
-    ImplementedBy implementedBy = rawClassType.getAnnotation(ImplementedBy.class);
+    ImplementedBy implementedBy = type.getRawType().getAnnotation(ImplementedBy.class);
     if (implementedBy != null) {
       return createImplementedByBinding(key, implementedBy, optional);
     }
 
-    ProvidedBy providedBy = rawClassType.getAnnotation(ProvidedBy.class);
+    ProvidedBy providedBy = type.getRawType().getAnnotation(ProvidedBy.class);
     if (providedBy != null) {
       return createProvidedByBinding(key, providedBy, optional);
     }
@@ -573,41 +567,33 @@ class BindingsProcessor implements BindingIndex {
     // TODO(schmitt): Introduce check.
 
     // 11. Use a single @Inject or public no-arguments constructor.
-    JClassType classType = keyUtil.getClassType(key);
-    if (classType != null) {
-      return createImplicitBindingForClass(classType, optional, key);
-    } else if (!optional) {
-      errorManager.logError("Class not found: " + key);
-    }
-
-    return null;
+    return createImplicitBindingForClass(type, optional);
   }
 
-  private Binding createImplicitBindingForClass(JClassType classType, boolean optional,
-      Key<?> key) {
-    // Either call the @Inject constructor or use GWT.create
-    JConstructor injectConstructor = getInjectConstructor(classType);
+  private Binding createImplicitBindingForClass(TypeLiteral<?> type, boolean optional) {
 
+    // Either call the @Inject constructor or use GWT.create
+    MethodLiteral<?, Constructor<?>> injectConstructor = getInjectConstructor(type);
     if (injectConstructor != null) {
       CallConstructorBinding binding = callConstructorBinding.get();
-      binding.setConstructor(injectConstructor, key);
+      binding.setConstructor(injectConstructor);
       return binding;
     }
 
-    if (hasAccessibleZeroArgConstructor(classType)) {
-      if (RemoteServiceProxyBinding.isRemoteServiceProxy(classType)) {
+    if (hasAccessibleZeroArgConstructor(type)) {
+      if (RemoteServiceProxyBinding.isRemoteServiceProxy(type)) {
         RemoteServiceProxyBinding binding = remoteServiceProxyBindingProvider.get();
-        binding.setClassType(classType, key);
+        binding.setType(type);
         return binding;
       } else {
         CallGwtDotCreateBinding binding = callGwtDotCreateBindingProvider.get();
-        binding.setClassType(classType, key);
+        binding.setType(type);
         return binding;
       }
     }
 
     if (!optional) {
-      errorManager.logError("No @Inject or default constructor found for " + classType);
+      errorManager.logError("No @Inject or default constructor found for " + type);
     }
 
     return null;
@@ -619,24 +605,23 @@ class BindingsProcessor implements BindingIndex {
    * excepting constructors for private classes where the constructor may be of
    * any visibility.
    *
-   * @param classType type to be checked for matching constructor
+   * @param typeLiteral type to be checked for matching constructor
    * @return true if a matching constructor is present on the passed type
    */
-  private boolean hasAccessibleZeroArgConstructor(JClassType classType) {
-    if (classType.isInterface() != null) {
+  private boolean hasAccessibleZeroArgConstructor(TypeLiteral<?> typeLiteral) {
+    Class<?> rawType = typeLiteral.getRawType();
+    if (rawType.isInterface()) {
       return true;
     }
 
-    // This will return one constructor on any class that doesn't have any
-    // constructors specified:  The JDT compiler (internally used by GWT) adds
-    // a synthetic default constructor to every class with the class's
-    // visibility that gets picked up by GWT as a regular constructor.
-    //
-    // See also:
-    // http://code.google.com/p/google-web-toolkit/issues/detail?id=3514
-    // http://code.google.com/p/google-guice/wiki/Injections
-    JConstructor constructor = classType.findConstructor(ZERO_ARGS);
-    return constructor != null && (!constructor.isPrivate() || classType.isPrivate());
+    Constructor<?> constructor;
+    try {
+      constructor = rawType.getDeclaredConstructor();
+    } catch (NoSuchMethodException e) {
+      return rawType.getDeclaredConstructors().length == 0;
+    }
+
+    return !ReflectUtil.isPrivate(constructor) || ReflectUtil.isPrivate(typeLiteral);
   }
 
   private void addBinding(Key<?> key, BindingEntry bindingEntry) {
@@ -647,8 +632,7 @@ class BindingsProcessor implements BindingIndex {
       return;
     }
 
-    JClassType classType = keyUtil.getRawClassType(key);
-    if (classType != null && !isClassAccessibleFromGinjector(classType)) {
+    if (!isClassAccessibleFromGinjector(key.getTypeLiteral())) {
       errorManager.logError("Can not inject an instance of an inaccessible class. Key=" + key);
       return;
     }
@@ -765,39 +749,30 @@ class BindingsProcessor implements BindingIndex {
           ((ParameterizedType) keyType).getRawType() == AsyncProvider.class;
   }
   
-  private boolean isClassAccessibleFromGinjector(JClassType classType) {
-    if (classType.isPublic()) {
+  private boolean isClassAccessibleFromGinjector(TypeLiteral<?> type) {
+    if (ReflectUtil.isPublic(type)) {
       return true;
     }
 
-    // Null class package could be if it's not an object type
-    JPackage classPackage = classType.getPackage();
-    if (classPackage == null) {
-      return false;
-    }
-
-    JPackage ginjectorPackage = ginjectorInterface.getPackage();
-    return (ginjectorPackage.isDefault() && classPackage.isDefault())
-        || classPackage.getName().equals(ginjectorPackage.getName());
+    Package classPackage = type.getRawType().getPackage();
+    Package ginjectorPackage = ginjectorInterface.getRawType().getPackage();
+    return classPackage == ginjectorPackage;
   }
 
-  private JConstructor getInjectConstructor(JClassType classType) {
-    JConstructor[] constructors = classType.getConstructors();
-
-    JConstructor injectConstructor = null;
-    for (JConstructor constructor : constructors) {
-      if (constructor.getAnnotation(Inject.class) != null
-          || constructor.getAnnotation(javax.inject.Inject.class) != null) {
-        if (injectConstructor == null) {
-          injectConstructor = constructor;
-        } else {
-          errorManager.logError("More than one @Inject constructor found for "
-              + classType + "; " + injectConstructor + ", " + constructor);
+  private MethodLiteral<?, Constructor<?>> getInjectConstructor(TypeLiteral<?> type) {
+    Constructor[] constructors = type.getRawType().getDeclaredConstructors();
+    MethodLiteral<?, Constructor<?>> injectConstructor = null;
+    for (Constructor<?> constructor : constructors) {
+      MethodLiteral<?, Constructor<?>> constructorLiteral = MethodLiteral.get(constructor, type);
+      if (GuiceUtil.hasInject(constructorLiteral)) {
+        if (injectConstructor != null) {
+          errorManager.logError(String.format("More than one @Inject constructor found for %s; %s, %s", type,
+              injectConstructor, constructor));
           return null;
         }
+        injectConstructor = constructorLiteral;
       }
     }
-
     return injectConstructor;
   }
 
@@ -849,28 +824,21 @@ class BindingsProcessor implements BindingIndex {
       for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(type)) {
         Member member = injectionPoint.getMember();
         if (member instanceof Method) {
-          JMethod method = null;
-          try {
-            method = keyUtil.javaToGwtMethod((Method) member);
-          } catch (NotFoundException e) {
-            messages.add(
-                new Message(new ArrayList<Object>(), "Could not resolve GWT method: " + member, e));
-            return;
-          }
-          RequiredKeys keys = keyUtil.getRequiredKeys(method);
+          RequiredKeys keys = guiceUtil.getRequiredKeys(
+              MethodLiteral.get((Method) member, TypeLiteral.get(type)));
           unresolved.addAll(keys.getRequiredKeys());
           unresolvedOptional.addAll(keys.getOptionalKeys());
         } else if (member instanceof Field) {
-          JField field = keyUtil.javaToGwtField((Field) member);
-          Key<?> key = keyUtil.getKey(field);
-          if (keyUtil.isOptional(field)) {
+          FieldLiteral<?> field = FieldLiteral.get((Field) member, TypeLiteral.get(type));
+          Key<?> key = guiceUtil.getKey(field);
+          if (guiceUtil.isOptional(field)) {
             unresolvedOptional.add(key);
           } else {
             unresolved.add(key);
           }
         }
       }
-      addRequiredKeys(keyUtil.getKey(type), new RequiredKeys(unresolved, unresolvedOptional));
+      addRequiredKeys(Key.get(type), new RequiredKeys(unresolved, unresolvedOptional));
     }
   }
 
@@ -899,14 +867,9 @@ class BindingsProcessor implements BindingIndex {
       Provider<? extends T> provider = providerInstanceBinding.getProviderInstance();
       if (provider instanceof ProviderMethod) {
         ProviderMethodBinding binding = providerMethodBindingProvider.get();
-        try {
-          binding.setProviderMethod((ProviderMethod<?>) provider);
-          addBinding(targetKey,
-              new BindingEntry(binding, BindingContext.forElement(providerInstanceBinding)));
-        } catch (UnableToCompleteException e) {
-          messages.add(new Message(providerInstanceBinding.getSource(),
-              "Error processing provider method"));
-        }
+        binding.setProviderMethod((ProviderMethod) provider);
+        addBinding(targetKey,
+            new BindingEntry(binding, BindingContext.forElement(providerInstanceBinding)));
         return null;
       }
 

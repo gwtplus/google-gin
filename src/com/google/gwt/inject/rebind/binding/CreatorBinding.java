@@ -16,12 +16,14 @@
 
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.inject.rebind.util.KeyUtil;
+import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -35,29 +37,28 @@ import java.util.Set;
 abstract class CreatorBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
-  private final KeyUtil keyUtil;
+  private final GuiceUtil guiceUtil;
   private final Set<Key<?>> requiredKeys = new HashSet<Key<?>>();
   private final Set<Key<?>> optionalKeys = new HashSet<Key<?>>();
-  private JClassType classType;
-  private Key<?> classKey;
+  private TypeLiteral<?> type;
 
-  protected CreatorBinding(SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
+  protected CreatorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
-    this.keyUtil = keyUtil;
+    this.guiceUtil = guiceUtil;
   }
 
-  public void setClassType(JClassType classType, Key<?> classKey) {
-    this.classType = classType;
-    this.classKey = classKey;
-    RequiredKeys classRequiredKeys = keyUtil.getRequiredKeys(classType);
+  public void setType(TypeLiteral<?> type) {
+    this.type = type;
+    RequiredKeys classRequiredKeys = guiceUtil.getMemberInjectionRequiredKeys(type);
     requiredKeys.addAll(classRequiredKeys.getRequiredKeys());
     optionalKeys.addAll(classRequiredKeys.getOptionalKeys());
   }
 
-  public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
-    assert (classType != null);
+  public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
+      throws NoSourceNameException {
+    assert (type != null);
 
-    String memberInjectMethodName = sourceWriteUtil.appendMemberInjection(writer, classKey);
+    String memberInjectMethodName = sourceWriteUtil.appendMemberInjection(writer, Key.get(type));
 
     StringBuilder sb = new StringBuilder();
     appendCreationStatement(writer, sb);
@@ -73,20 +74,21 @@ abstract class CreatorBinding implements Binding {
     return new RequiredKeys(requiredKeys, optionalKeys);
   }
 
-  public JClassType getClassType() {
-    assert (classType != null);
-    return classType;
+  public TypeLiteral<?> getType() {
+    assert (type != null);
+    return type;
   }
 
-  protected abstract void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb);
+  protected abstract void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb)
+      throws NoSourceNameException;
 
-  protected String getTypeName() {
-    assert (classType != null);
-    return classType.getQualifiedSourceName();
+  protected String getTypeName() throws NoSourceNameException {
+    assert (type != null);
+    return ReflectUtil.getSourceName(type);
   }
 
-  protected void addParamTypes(JAbstractMethod method) {
-    RequiredKeys methodRequiredKeys = keyUtil.getRequiredKeys(method);
+  protected void addParamTypes(MethodLiteral<?, ?> method) {
+    RequiredKeys methodRequiredKeys = guiceUtil.getRequiredKeys(method);
     requiredKeys.addAll(methodRequiredKeys.getRequiredKeys());
     optionalKeys.addAll(methodRequiredKeys.getOptionalKeys());
   }

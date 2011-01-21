@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.google.gwt.inject.rebind.util;
+package com.google.gwt.inject.client;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -26,4 +26,4 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE })
-@interface MyOtherAnnotation {}
+public @interface MyOtherAnnotation {}

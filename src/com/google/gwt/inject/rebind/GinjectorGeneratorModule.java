@@ -17,18 +17,19 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.typeinfo.HasAnnotations;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JField;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Injectable;
+import com.google.gwt.inject.rebind.reflect.FieldLiteral;
+import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+
+import java.lang.reflect.Method;
 
 /**
  * Guice module used in the implementation of {@link GinjectorGenerator}.
@@ -40,10 +41,10 @@ import com.google.inject.Singleton;
 class GinjectorGeneratorModule extends AbstractModule {
   private final TreeLogger logger;
   private final GeneratorContext ctx;
-  private final JClassType ginjectorInterface;
+  private final Class<? extends Ginjector> ginjectorInterface;
 
   public GinjectorGeneratorModule(TreeLogger logger, GeneratorContext ctx,
-      JClassType ginjectorInterface) {
+      Class<? extends Ginjector> ginjectorInterface) {
     this.logger = logger;
     this.ctx = ctx;
     this.ginjectorInterface = ginjectorInterface;
@@ -53,8 +54,8 @@ class GinjectorGeneratorModule extends AbstractModule {
   protected void configure() {
     bind(TreeLogger.class).toInstance(logger);
     bind(GeneratorContext.class).toInstance(ctx);
-    bind(TypeOracle.class).toInstance(ctx.getTypeOracle());
-    bind(JClassType.class).annotatedWith(GinjectorInterfaceType.class)
+    bind(new TypeLiteral<Class<? extends Ginjector>>(){})
+        .annotatedWith(GinjectorInterfaceType.class)
         .toInstance(ginjectorInterface);
     bind(BindingIndex.class).to(BindingsProcessor.class).in(Singleton.class);
   }
@@ -65,24 +66,19 @@ class GinjectorGeneratorModule extends AbstractModule {
   MemberCollector provideInjectablesCollector(MemberCollector collector) {
     collector.setMethodFilter(
         new MemberCollector.MethodFilter() {
-          public boolean accept(JMethod method) {
+          public boolean accept(MethodLiteral<?, Method> method) {
             // TODO(schmitt): Do injectable methods require at least one parameter?
-            return hasInject(method) && !method.isStatic();
+            return GuiceUtil.hasInject(method) && !method.isStatic();
           }
         });
 
     collector.setFieldFilter(
         new MemberCollector.FieldFilter() {
-          public boolean accept(JField field) {
-            return (hasInject(field)) && !field.isStatic();
+          public boolean accept(FieldLiteral<?> field) {
+            return (GuiceUtil.hasInject(field)) && !field.isStatic();
           }
         });
 
     return collector;
-  }
-
-  private boolean hasInject(HasAnnotations method) {
-    return method.isAnnotationPresent(Inject.class)
-        || method.isAnnotationPresent(javax.inject.Inject.class);
   }
 }

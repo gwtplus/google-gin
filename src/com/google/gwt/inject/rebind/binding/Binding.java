@@ -15,7 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.inject.rebind.util.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.user.rebind.SourceWriter;
 
 /**

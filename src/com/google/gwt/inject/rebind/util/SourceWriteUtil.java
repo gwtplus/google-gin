@@ -16,49 +16,47 @@
 
 package com.google.gwt.inject.rebind.util;
 
-import com.google.gwt.core.ext.typeinfo.JAbstractMethod;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JConstructor;
-import com.google.gwt.core.ext.typeinfo.JField;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
-import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Injectable;
+import com.google.gwt.inject.rebind.reflect.FieldLiteral;
+import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Simple helper object for source writing.
+ * Helper object for source writing.
  */
 @Singleton
 public class SourceWriteUtil {
 
-  private final KeyUtil keyUtil;
+  private final GuiceUtil guiceUtil;
   private final NameGenerator nameGenerator;
   private final MemberCollector memberCollector;
   private final BindingIndex bindingIndex;
 
   @Inject
-  protected SourceWriteUtil(KeyUtil keyUtil, NameGenerator nameGenerator,
+  protected SourceWriteUtil(GuiceUtil guiceUtil, NameGenerator nameGenerator,
       @Injectable MemberCollector memberCollector, BindingIndex bindingIndex) {
-    this.keyUtil = keyUtil;
+    this.guiceUtil = guiceUtil;
     this.nameGenerator = nameGenerator;
     this.memberCollector = memberCollector;
     this.bindingIndex = bindingIndex;
@@ -75,12 +73,12 @@ public class SourceWriteUtil {
    *          are injected, in the context of the returned call string
    * @return string calling the generated method
    */
-  public String appendFieldInjection(SourceWriter sourceWriter, Iterable<JField> fields,
-      String injecteeName) {
+  public String appendFieldInjection(SourceWriter sourceWriter, Iterable<FieldLiteral<?>> fields,
+      String injecteeName) throws NoSourceNameException {
 
     StringBuilder methodInvocations = new StringBuilder();
 
-    for (JField field : fields) {
+    for (FieldLiteral<?> field : fields) {
       methodInvocations.append(createFieldInjection(sourceWriter, field, injecteeName))
           .append("\n");
     }
@@ -98,18 +96,20 @@ public class SourceWriteUtil {
    *          are injected, in the context of the returned call string
    * @return string calling the generated method
    */
-  public String createFieldInjection(SourceWriter sourceWriter, JField field, String injecteeName) {
+  public String createFieldInjection(SourceWriter sourceWriter, FieldLiteral<?> field, 
+      String injecteeName) throws NoSourceNameException {
     boolean hasInjectee = injecteeName != null;
-    boolean isPublic = field.isPublic() && field.getEnclosingType().isPublic();
+    Class<?> fieldDeclaringType = field.getRawDeclaringType();
+    boolean isPublic = field.isPublic() && ReflectUtil.isPublic(field.getDeclaringType());
 
     // Determine method signature parts.
-    String injecteeTypeName = field.getEnclosingType().getQualifiedSourceName();
-    String fieldTypeName = field.getType().getQualifiedSourceName();
+    String injecteeTypeName = ReflectUtil.getSourceName(fieldDeclaringType);
+    String fieldTypeName = ReflectUtil.getSourceName(field.getFieldType());
     String methodBaseName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
         + field.getName() + "_fieldInjection");
     String methodName = nameGenerator.createMethodName(methodBaseName);
     String signatureParams = fieldTypeName + " value";
-    String callParams = nameGenerator.getGetterMethodName(keyUtil.getKey(field)) + "()";
+    String callParams = nameGenerator.getGetterMethodName(guiceUtil.getKey(field)) + "()";
 
     if (hasInjectee) {
       signatureParams = injecteeTypeName + " injectee, " + signatureParams;
@@ -159,11 +159,12 @@ public class SourceWriteUtil {
    * @return string calling the generated method
    */
   public String createMethodInjection(SourceWriter sourceWriter,
-      Iterable<? extends JAbstractMethod> methods, String injecteeName) {
+      Iterable<? extends MethodLiteral<?, ?>> methods, String injecteeName)
+      throws NoSourceNameException {
 
     StringBuilder methodInvocations = new StringBuilder();
 
-    for (JAbstractMethod method : methods) {
+    for (MethodLiteral<?, ?> method : methods) {
       methodInvocations.append(createMethodCallWithInjection(sourceWriter, method, injecteeName))
           .append("\n");
     }
@@ -180,7 +181,8 @@ public class SourceWriteUtil {
    * @param constructor constructor to call
    * @return string calling the generated method
    */
-  public String createConstructorInjection(SourceWriter sourceWriter, JConstructor constructor) {
+  public String createConstructorInjection(SourceWriter sourceWriter,
+      MethodLiteral<?, Constructor<?>> constructor) throws NoSourceNameException {
     return createMethodCallWithInjection(sourceWriter, constructor, null);
   }
 
@@ -199,9 +201,9 @@ public class SourceWriteUtil {
    *          all passed methods are called as static/constructors.
    * @return string calling the generated method
    */
-  public String createMethodCallWithInjection(SourceWriter sourceWriter, JAbstractMethod method,
-      String injecteeName) {
-    String[] params = new String[method.getParameters().length];
+  public String createMethodCallWithInjection(SourceWriter sourceWriter, MethodLiteral<?, ?> method,
+      String injecteeName) throws NoSourceNameException {
+    String[] params = new String[method.getParameterTypes().size()];
     return createMethodCallWithInjection(sourceWriter, method, injecteeName, params);
   }
 
@@ -227,35 +229,27 @@ public class SourceWriteUtil {
    *          should be used.
    * @return string calling the generated method
    */
-  public String createMethodCallWithInjection(SourceWriter sourceWriter, JAbstractMethod method,
-      String injecteeName, String[] parameterNames) {
-    boolean returning = false;
+  public String createMethodCallWithInjection(SourceWriter sourceWriter, MethodLiteral<?, ?> method,
+      String injecteeName, String[] parameterNames) throws NoSourceNameException {
     boolean hasInjectee = injecteeName != null;
-    boolean isPublic = method.isPublic() && method.getEnclosingType().isPublic();
+    Class<?> methodDeclaringType = method.getRawDeclaringType();
+    boolean isPublic = method.isPublic() && ReflectUtil.isPublic(method.getDeclaringType());
     boolean isThrowing = hasCheckedExceptions(method);
 
     // Determine method signature parts.
-    String injecteeTypeName = method.getEnclosingType().getQualifiedSourceName();
+    String injecteeTypeName = ReflectUtil.getSourceName(methodDeclaringType);
     String methodBaseName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
         + method.getName() + "_methodInjection");
     String methodName = nameGenerator.createMethodName(methodBaseName);
-    String returnTypeString = "void";
-    if (method.isConstructor() != null) {
-      returnTypeString = injecteeTypeName;
-      returning = true;
-    } else {
-      JType returnType = ((JMethod) method).getReturnType();
-      if (returnType != JPrimitiveType.VOID) {
-        returnTypeString = returnType.getQualifiedSourceName();
-        returning = true;
-      }
-    }
+    TypeLiteral<?> returnType = method.getReturnType();
+    String returnTypeString = ReflectUtil.getSourceName(returnType);
+    boolean returning = !returnType.getRawType().equals(Void.TYPE);
 
     // Collect method parameters to be passed to the native and actual method.
-    int invokerParamCount = method.getParameters().length + (hasInjectee ? 1 : 0);
+    int invokerParamCount = method.getParameterTypes().size() + (hasInjectee ? 1 : 0);
     List<String> invokerCallParams = new ArrayList<String>(invokerParamCount);
     List<String> invokerSignatureParams = new ArrayList<String>(invokerParamCount);
-    List<String> invokeeCallParams = new ArrayList<String>(method.getParameters().length);
+    List<String> invokeeCallParams = new ArrayList<String>(method.getParameterTypes().size());
 
     if (hasInjectee) {
       invokerCallParams.add(injecteeName);
@@ -263,14 +257,20 @@ public class SourceWriteUtil {
     }
 
     int paramCount = 0;
-    for (JParameter param : method.getParameters()) {
-      String paramName = "_" + paramCount;
+    for (Key<?> paramKey : method.getParameterKeys()) {
+      String paramName = ReflectUtil.formatParameterName(paramCount);
       if (parameterNames[paramCount] != null) {
         invokerCallParams.add(parameterNames[paramCount]);
       } else {
-        invokerCallParams.add(nameGenerator.getGetterMethodName(keyUtil.getKey(param)) + "()");
+        invokerCallParams.add(nameGenerator.getGetterMethodName(paramKey) + "()");
       }
-      invokerSignatureParams.add(param.getType().getQualifiedSourceName() + " " + paramName);
+
+      // We cannot use the type literal of the key here: It is canonicalized
+      // during key creation, destroying some information, for example
+      // auto-boxing any primitives. This leads to type-mismatches when calling
+      // into JSNI. Instead we'll access the parameter's original type.
+      TypeLiteral<?> paramLiteral = method.getParameterTypes().get(paramCount);
+      invokerSignatureParams.add(ReflectUtil.getSourceName(paramLiteral) + " " + paramName);
       invokeeCallParams.add(paramName);
       paramCount++;
     }
@@ -291,15 +291,11 @@ public class SourceWriteUtil {
     }
     if (isPublic) {
       if (hasInjectee) {
-        invokerBody.append("injectee.")
-            .append(method.getName());
-      } else if (method.isConstructor() != null) {
-        invokerBody.append("new ")
-            .append(injecteeTypeName);
+        invokerBody.append("injectee.").append(method.getName());
+      } else if (method.isConstructor()) {
+        invokerBody.append("new ").append(injecteeTypeName);
       } else {
-        invokerBody.append(injecteeTypeName)
-            .append(".")
-            .append(method.getName());
+        invokerBody.append(injecteeTypeName).append(".").append(method.getName());
       }
     } else {
       if (hasInjectee) {
@@ -307,9 +303,7 @@ public class SourceWriteUtil {
       }
       invokerBody.append(getJsniSignature(method));
     }
-    invokerBody.append("(")
-        .append(join(", ", invokeeCallParams))
-        .append(");");
+    invokerBody.append("(").append(join(", ", invokeeCallParams)).append(");");
 
     if (isThrowing) {
       if (isPublic) {
@@ -333,8 +327,8 @@ public class SourceWriteUtil {
     return invokerCall;
   }
 
-  private boolean hasCheckedExceptions(JAbstractMethod method) {
-    return method.getThrows().length > 0;
+  private boolean hasCheckedExceptions(MethodLiteral<?, ?> method) {
+    return method.getExceptionTypes().size() > 0;
   }
 
   /**
@@ -433,117 +427,34 @@ public class SourceWriteUtil {
    * @param key key for which the injection is performed
    * @return name of the method created
    */
-  public String appendMemberInjection(SourceWriter writer, Key<?> key) {
-    JClassType classType = keyUtil.getClassType(key);
+  public String appendMemberInjection(SourceWriter writer, Key<?> key)
+      throws NoSourceNameException {
+    TypeLiteral<?> type = key.getTypeLiteral();
     String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(key);
 
     StringBuilder sb = new StringBuilder();
 
-    sb.append(createMethodInjection(writer, getMethodsToInject(classType), "injectee"));
-    sb.append(appendFieldInjection(writer, getFieldsToInject(classType), "injectee"));
+    sb.append(createMethodInjection(writer, getMethodsToInject(type), "injectee"));
+    sb.append(appendFieldInjection(writer, getFieldsToInject(type), "injectee"));
 
     writeMethod(writer,
         "private void " + memberInjectMethodName +
-            "(" + classType.getQualifiedSourceName() + " injectee)",
+            "(" + ReflectUtil.getSourceName(type) + " injectee)",
         sb.toString());
 
     return memberInjectMethodName;
   }
 
-  /**
-   * Alternate toString method for TypeLiterals that fixes a JDK bug that was
-   * replicated in Guice. See
-   * <a href="http://code.google.com/p/google-guice/issues/detail?id=293">
-   * the related Guice bug</a> for details.
-   *
-   * Also replaces all binary with source names in the types involved (base
-   * type and type parameters).
-   *
-   * @param typeLiteral type for which string will be returned
-   * @return String representation of type
-   * @throws NoSourceNameException if source name is not available for type
-   */
-  public String getSourceName(TypeLiteral<?> typeLiteral) throws NoSourceNameException {
-    Type type = typeLiteral.getType();
-    return getSourceName(type);
-  }
-
-  /**
-   * Returns a string representation of the passed type's name while ensuring
-   * that all type names (base and parameters) are converted to source type
-   * names.
-   *
-   * @param type type for which string will be returned
-   * @return String representation of type
-   * @throws NoSourceNameException if source name is not available for type
-   */
-  public String getSourceName(Type type) throws NoSourceNameException {
-    if (type instanceof Class<?>) {
-      String name = ((Class<?>) type).getCanonicalName();
-
-      // We get a null for anonymous inner classes or other types that don't
-      // have source names.
-      if (name == null) {
-        throw new NoSourceNameException(type);
-      }
-
-      return name;
-    }
-
-    if (type instanceof ParameterizedType) {
-      ParameterizedType parameterizedType = (ParameterizedType) type;
-      Type[] arguments = parameterizedType.getActualTypeArguments();
-      StringBuilder stringBuilder = new StringBuilder();
-      stringBuilder.append(getSourceName(parameterizedType.getRawType()));
-
-      if (arguments.length == 0) {
-        return stringBuilder.toString();
-      }
-
-      stringBuilder.append("<").append(getSourceName(arguments[0]));
-      for (int i = 1; i < arguments.length; i++) {
-        stringBuilder.append(", ").append(getSourceName(arguments[i]));
-      }
-      return stringBuilder.append(">").toString();
-    }
-
-    if (type instanceof GenericArrayType) {
-      return getSourceName(((GenericArrayType) type).getGenericComponentType()) + "[]";
-    }
-    
-    if (type instanceof WildcardType) {
-      Type[] lowerBounds = ((WildcardType) type).getLowerBounds();
-      Type[] upperBounds = ((WildcardType) type).getUpperBounds();
-
-      if (lowerBounds.length > 1 || upperBounds.length != 1) {
-        throw new NoSourceNameException(type);
-      }
-
-      if (lowerBounds.length == 1) {
-        return "? super " + getSourceName(lowerBounds[0]);
-      } else if (upperBounds[0] == Object.class) {
-        return "?";
-      } else {
-        return "? extends " + getSourceName(upperBounds[0]);
-      }
-    }
-
-    throw new NoSourceNameException(type);
-  }
-
-  private String getJsniSignature(JAbstractMethod method) {
-
+  private String getJsniSignature(MethodLiteral<?, ?> method) throws NoSourceNameException {
     StringBuilder signature = new StringBuilder();
-
     signature.append("@");
+    signature.append(ReflectUtil.getSourceName(method.getDeclaringType()));
 
-    signature.append(method.getEnclosingType().getQualifiedSourceName());
-
-    String name = method instanceof JConstructor ? "new" : method.getName();
+    String name = method.isConstructor() ? "new" : method.getName();
     signature.append("::").append(name).append("(");
 
-    for (JParameter param : method.getParameters()) {
-      signature.append(param.getType().getJNISignature());
+    for (TypeLiteral<?> param : method.getParameterTypes()) {
+      signature.append(getJniSignature(param.getType()));
     }
 
     signature.append(")");
@@ -551,20 +462,72 @@ public class SourceWriteUtil {
     return signature.toString();
   }
 
-  private String getJsniSignature(JField field) {
+  private String getJniSignature(Type type) throws NoSourceNameException {
+    if (type instanceof Class<?>) {
+      if (((Class) type).isPrimitive()) {
+        if (type.equals(Boolean.TYPE)) {
+          return "Z";
+        } else if (type.equals(Byte.TYPE)) {
+          return "B";
+        } else if (type.equals(Character.TYPE)) {
+          return "C";
+        } else if (type.equals(Double.TYPE)) {
+          return "D";
+        } else if (type.equals(Float.TYPE)) {
+          return "F";
+        } else if (type.equals(Integer.TYPE)) {
+          return "I";
+        } else if (type.equals(Long.TYPE)) {
+          return "J";
+        } else if (type.equals(Short.TYPE)) {
+          return "S";
+        }
+      }
 
+      return "L" + getBinaryName((Class) type) + ";";
+    }
+
+    if (type instanceof GenericArrayType) {
+      return "[" + getJniSignature(((GenericArrayType) type).getGenericComponentType());
+    }
+
+    if (type instanceof ParameterizedType) {
+      return getJniSignature(((ParameterizedType) type).getRawType());
+    }
+
+    if (type instanceof WildcardType) {
+
+      // TODO(schmitt): This is likely incorrect in some cases.
+      return getJniSignature(((WildcardType) type).getUpperBounds()[0]);
+    }
+
+    throw new NoSourceNameException(type);
+  }
+
+  private String getBinaryName(Class<?> type) {
+    List<String> classes = new ArrayList<String>();
+    for (Class<?> clazz = type; clazz != null; clazz = clazz.getEnclosingClass()) {
+      classes.add(clazz.getSimpleName());
+    }
+    Collections.reverse(classes);
+
+    String packageName = type.getPackage().getName().replace('.', '/');
+    if (packageName.length() > 0) {
+      packageName += "/";
+    }
+    return packageName + join("$", classes);
+  }
+
+  private String getJsniSignature(FieldLiteral<?> field) throws NoSourceNameException {
     StringBuilder signature = new StringBuilder();
-
     signature.append("@");
-
-    signature.append(field.getEnclosingType().getQualifiedSourceName());
-
+    signature.append(ReflectUtil.getSourceName(field.getDeclaringType()));
     signature.append("::").append(field.getName());
-
     return signature.toString();
   }
 
-  private static CharSequence join(CharSequence delimiter, Iterable<? extends CharSequence> list) {
+  // TODO(schmitt): Move to a better location.
+  public static CharSequence join(CharSequence delimiter, Iterable<? extends CharSequence> list) {
     Iterator<? extends CharSequence> it = list.iterator();
     if (it.hasNext()) {
       StringBuilder sb = new StringBuilder(it.next());
@@ -577,20 +540,20 @@ public class SourceWriteUtil {
     return "";
   }
 
-  private Set<JField> getFieldsToInject(JClassType classType) {
+  private Set<FieldLiteral<?>> getFieldsToInject(TypeLiteral<?> type) {
     // Only inject fields that are non optional or where the key is bound.
-    Set<JField> fields = new HashSet<JField>();
-    for (JField field : memberCollector.getFields(classType)) {
-      if (!keyUtil.isOptional(field) || bindingIndex.isBound(keyUtil.getKey(field))) {
+    Set<FieldLiteral<?>> fields = new HashSet<FieldLiteral<?>>();
+    for (FieldLiteral<?> field : memberCollector.getFields(type)) {
+      if (!guiceUtil.isOptional(field) || bindingIndex.isBound(guiceUtil.getKey(field))) {
         fields.add(field);
       }
     }
     return fields;
   }
 
-  private Set<JMethod> getMethodsToInject(JClassType classType) {
-    Set<JMethod> methods = new HashSet<JMethod>();
-    for (JMethod method : memberCollector.getMethods(classType)) {
+  private Set<MethodLiteral<?, Method>> getMethodsToInject(TypeLiteral<?> type) {
+    Set<MethodLiteral<?, Method>> methods = new HashSet<MethodLiteral<?, Method>>();
+    for (MethodLiteral<?, Method> method : memberCollector.getMethods(type)) {
       if (shouldInject(method)) {
         methods.add(method);
       }
@@ -598,11 +561,11 @@ public class SourceWriteUtil {
     return methods;
   }
 
-  private boolean shouldInject(JMethod method) {
+  private boolean shouldInject(MethodLiteral<?, Method> method) {
     // Only inject methods that are non optional or where all keys are bound.
-    if (keyUtil.isOptional(method)) {
-      for (JParameter param : method.getParameters()) {
-        if (!bindingIndex.isBound(keyUtil.getKey(param))) {
+    if (guiceUtil.isOptional(method)) {
+      for (Key<?> paramKey : method.getParameterKeys()) {
+        if (!bindingIndex.isBound(paramKey)) {
           return false;
         }
       }

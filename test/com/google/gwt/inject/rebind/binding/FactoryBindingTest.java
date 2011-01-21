@@ -32,7 +32,7 @@ import java.util.List;
 public class FactoryBindingTest extends TestCase {
 
   public void testTooManyParams() throws NotFoundException {
-    FactoryBinding binding = new FactoryBinding(null, null, null);
+    FactoryBinding binding = new FactoryBinding(null, null);
 
     try {
       binding.setKeyAndCollector(Key.get(BrokenBeetleFactory.class),
@@ -44,7 +44,7 @@ public class FactoryBindingTest extends TestCase {
   }
 
   public void testMismatchingParams() throws NotFoundException {
-    FactoryBinding binding = new FactoryBinding(null, null, null);
+    FactoryBinding binding = new FactoryBinding(null, null);
 
     try {
       binding.setKeyAndCollector(Key.get(BrokenGolfFactory.class),

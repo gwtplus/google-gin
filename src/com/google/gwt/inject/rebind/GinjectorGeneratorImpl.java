@@ -18,9 +18,6 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JPackage;
-import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -43,28 +40,25 @@ class GinjectorGeneratorImpl {
   /**
    * Interface of the injector that this class is implementing.
    */
-  private final JClassType ginjectorInterface;
-
-  private final TypeOracle oracle;
-
+  private final Class<? extends Ginjector> ginjectorInterface;
   private final GinjectorOutputter outputter;
 
   @Inject
   public GinjectorGeneratorImpl(TreeLogger logger, GeneratorContext ctx,
-      BindingsProcessor bindingsProcessor, @GinjectorInterfaceType JClassType ginjectorInterface,
-      TypeOracle oracle, GinjectorOutputter outputter) {
+      BindingsProcessor bindingsProcessor,
+      @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
+      GinjectorOutputter outputter) {
     this.logger = logger;
     this.ctx = ctx;
     this.bindingsProcessor = bindingsProcessor;
     this.ginjectorInterface = ginjectorInterface;
-    this.oracle = oracle;
     this.outputter = outputter;
   }
 
   public String generate() throws UnableToCompleteException {
     validateInjectorClass();
 
-    JPackage interfacePackage = ginjectorInterface.getPackage();
+    Package interfacePackage = ginjectorInterface.getPackage();
     String packageName = interfacePackage == null ? "" : interfacePackage.getName();
     String implClassName = ginjectorInterface.getName().replace(".", "_") + "Impl";
     String generatedClassName = packageName + "." + implClassName;
@@ -81,16 +75,9 @@ class GinjectorGeneratorImpl {
   }
 
   private void validateInjectorClass() throws UnableToCompleteException {
-    if (ginjectorInterface.isInterface() == null) {
-      logger.log(TreeLogger.ERROR, ginjectorInterface.getQualifiedSourceName()
-          + " is not an interface", null);
-      throw new UnableToCompleteException();
-    }
-
-    if (!ginjectorInterface.isAssignableTo(oracle.findType(Ginjector.class.getName()))) {
-      logger.log(TreeLogger.ERROR, ginjectorInterface.getQualifiedSourceName()
-          + " is not a subtype of " + Ginjector.class.getName());
-
+    if (!ginjectorInterface.isInterface()) {
+      logger.log(TreeLogger.ERROR,
+          ginjectorInterface.getCanonicalName() + " is not an interface", null);
       throw new UnableToCompleteException();
     }
   }

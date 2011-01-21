@@ -15,8 +15,9 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -57,8 +58,8 @@ public class ImplicitProviderBinding implements Binding {
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
       throws NoSourceNameException {
     assert (providerType != null);
-    String providerTypeName = sourceWriteUtil.getSourceName(providerType);
-    String targetKeyName = sourceWriteUtil.getSourceName(targetKey.getTypeLiteral());
+    String providerTypeName = ReflectUtil.getSourceName(providerType);
+    String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return new " + providerTypeName + "() { \n"
         + "  public " + targetKeyName + " get() { \n"
@@ -72,6 +73,7 @@ public class ImplicitProviderBinding implements Binding {
     return new RequiredKeys(Collections.<Key<?>>singleton(targetKey));
   }
 
+  // TODO(schmitt): Remove duplication with AsyncProviderBinding.
   private Key<?> getKeyWithSameAnnotation(Type keyType, Key<?> baseKey) {
     Annotation annotation = baseKey.getAnnotation();
     if (annotation != null) {

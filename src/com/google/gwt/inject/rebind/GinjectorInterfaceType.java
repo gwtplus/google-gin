@@ -23,11 +23,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A binding annotation to be applied to a {@code JClassType} for
+ * A binding annotation to be applied to a {@code Class} for
  * the type of the {@code Ginjector} interface being generated.
  */
 @BindingAnnotation
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.PARAMETER)
+@Target({ElementType.PARAMETER, ElementType.METHOD})
 public @interface GinjectorInterfaceType {
 }

@@ -16,18 +16,22 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JField;
-import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.inject.rebind.reflect.FieldLiteral;
+import com.google.gwt.inject.rebind.reflect.MemberLiteral;
+import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.util.types.SubClass;
 import com.google.gwt.inject.rebind.util.types.SubInterface;
 import com.google.gwt.inject.rebind.util.types.SuperClass;
 import com.google.gwt.inject.rebind.util.types.SuperInterface;
 import com.google.gwt.inject.rebind.util.types.secret.SecretSubClass;
+import com.google.inject.TypeLiteral;
 
+import junit.framework.TestCase;
+
+import java.lang.reflect.Method;
 import java.util.Collection;
 
-public class MemberCollectorTest extends AbstractUtilTester {
+public class MemberCollectorTest extends TestCase {
 
   public void testSetFilterAfterAccess() {
 
@@ -35,11 +39,11 @@ public class MemberCollectorTest extends AbstractUtilTester {
     // private access in TreeLogger.
     MemberCollector collector = new MemberCollector(TreeLogger.NULL);
 
-    collector.getMethods(getClassType(SuperClass.class));
+    collector.getMethods(TypeLiteral.get(SuperClass.class));
 
     try {
       collector.setMethodFilter(new MemberCollector.MethodFilter() {
-        public boolean accept(JMethod method) {
+        public boolean accept(MethodLiteral<?, Method> method) {
           return false;
         }
       });
@@ -52,7 +56,7 @@ public class MemberCollectorTest extends AbstractUtilTester {
 
     try {
       collector.setFieldFilter(new MemberCollector.FieldFilter() {
-        public boolean accept(JField field) {
+        public boolean accept(FieldLiteral<?> field) {
           return false;
         }
       });
@@ -67,16 +71,17 @@ public class MemberCollectorTest extends AbstractUtilTester {
   public void testMethodOverride() {
     MemberCollector collector = createMethodCollector();
 
-    Collection<JMethod> methods = collector.getMethods(getClassType(SubClass.class));
+    Collection<MethodLiteral<?, Method>> methods =
+        collector.getMethods(TypeLiteral.get(SubClass.class));
 
     int numFooA = 0;
     int numFooIB = 0;
     int numFooIC = 0;
     int numFooBSamePackage = 0;
     int numFooBOtherPackage = 0;
-    for (JMethod method : methods) {
+    for (MethodLiteral<?, Method> method : methods) {
       if (method.getName().equals("fooA")) {
-        assertEquals("SubClass", method.getEnclosingType().getName());
+        assertEquals("SubClass", method.getRawDeclaringType().getSimpleName());
         numFooA++;
       }
 
@@ -89,13 +94,13 @@ public class MemberCollectorTest extends AbstractUtilTester {
       }
 
       if (method.getName().equals("fooB")) {
-        assertEquals("SubClass", method.getEnclosingType().getName());
+        assertEquals("SubClass", method.getRawDeclaringType().getSimpleName());
         numFooBSamePackage++;
       }
     }
 
-    methods = collector.getMethods(getClassType(SecretSubClass.class));
-    for (JMethod method : methods) {
+    methods = collector.getMethods(TypeLiteral.get(SecretSubClass.class));
+    for (MethodLiteral<?, Method> method : methods) {
       if (method.getName().equals("fooB")) {
         numFooBOtherPackage++;
       }
@@ -111,7 +116,8 @@ public class MemberCollectorTest extends AbstractUtilTester {
   public void testInterfaceCollect() {
     MemberCollector collector = createMethodCollector();
 
-    Collection<JMethod> methods = collector.getMethods(getClassType(SubInterface.class));
+    Collection<MethodLiteral<?, Method>> methods =
+        collector.getMethods(TypeLiteral.get(SubInterface.class));
 
     assertEquals(4, methods.size());
   }
@@ -119,21 +125,21 @@ public class MemberCollectorTest extends AbstractUtilTester {
   public void testClassCollect() {
     MemberCollector collector = createAllCollector();
 
-    JClassType type = getClassType(SubClass.class);
-    Collection<JMethod> methods = collector.getMethods(type);
-    Collection<JField> fields = collector.getFields(type);
+    TypeLiteral<SubClass> type = TypeLiteral.get(SubClass.class);
+    Collection<MethodLiteral<?, Method>> methods = collector.getMethods(type);
+    Collection<FieldLiteral<?>> fields = collector.getFields(type);
 
     assertEquals(6, fields.size());
 
     int a = 0;
     int b = 0;
 
-    for (JField field : fields) {
-      if (field.getEnclosingType().getName().equals("SuperClass")) {
+    for (FieldLiteral<?> field : fields) {
+      if (field.getRawDeclaringType().getSimpleName().equals("SuperClass")) {
         a++;
       }
 
-      if (field.getEnclosingType().getName().equals("SubClass")) {
+      if (field.getRawDeclaringType().getSimpleName().equals("SubClass")) {
         b++;
       }
     }
@@ -148,16 +154,17 @@ public class MemberCollectorTest extends AbstractUtilTester {
     MemberCollector collector = new MemberCollector(TreeLogger.NULL);
 
     collector.setMethodFilter(new MemberCollector.MethodFilter() {
-      public boolean accept(JMethod method) {
-        return isObject(method) && method.getParameters().length == 0;
+      public boolean accept(MethodLiteral<?, Method> method) {
+        return isObject(method) && method.getParameterTypes().size() == 0;
       }
     });
 
-    Collection<JMethod> methods = collector.getMethods(getClassType(SuperInterface.class));
+    Collection<MethodLiteral<?, Method>> methods =
+        collector.getMethods(TypeLiteral.get(SuperInterface.class));
 
     assertEquals(2, methods.size());
 
-    for (JMethod method : methods) {
+    for (MethodLiteral<?, Method> method : methods) {
       if (method.getName().equals("noCollect")) {
         fail();
       }
@@ -166,19 +173,15 @@ public class MemberCollectorTest extends AbstractUtilTester {
 
   // Collect everything but "java.lang.Object" members (they can throw our
   // counts off and should not matter for Guice injection in production code).
-  private static boolean isObject(JMethod method) {
-    return !method.getEnclosingType().getSimpleSourceName().equals("Object");
-  }
-
-  private static boolean isObject(JField field) {
-    return !field.getEnclosingType().getSimpleSourceName().equals("Object");
+  private static boolean isObject(MemberLiteral<?, ?> member) {
+    return !member.getRawDeclaringType().getSimpleName().equals("Object");
   }
 
   private static MemberCollector createMethodCollector() {
     MemberCollector collector = new MemberCollector(TreeLogger.NULL);
 
     collector.setMethodFilter(new MemberCollector.MethodFilter() {
-      public boolean accept(JMethod method) {
+      public boolean accept(MethodLiteral<?, Method> method) {
         return isObject(method);
       }
     });
@@ -189,13 +192,13 @@ public class MemberCollectorTest extends AbstractUtilTester {
     MemberCollector collector = new MemberCollector(TreeLogger.NULL);
 
     collector.setMethodFilter(new MemberCollector.MethodFilter() {
-      public boolean accept(JMethod method) {
+      public boolean accept(MethodLiteral<?, Method> method) {
         return isObject(method);
       }
     });
 
     collector.setFieldFilter(new MemberCollector.FieldFilter() {
-      public boolean accept(JField field) {
+      public boolean accept(FieldLiteral<?> field) {
         return isObject(field);
       }
     });

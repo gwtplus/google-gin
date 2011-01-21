@@ -15,12 +15,14 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.core.ext.typeinfo.JConstructor;
-import com.google.gwt.inject.rebind.util.KeyUtil;
+import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
-import com.google.inject.Key;
+
+import java.lang.reflect.Constructor;
 
 /**
  * A binding that calls a single constructor directly. Values for constructor
@@ -30,21 +32,22 @@ public class CallConstructorBinding extends CreatorBinding {
 
   private final SourceWriteUtil sourceWriteUtil;
 
-  private JConstructor constructor;
+  private MethodLiteral<?, Constructor<?>> constructor;
 
   @Inject
-  public CallConstructorBinding(SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
-    super(sourceWriteUtil, keyUtil);
+  public CallConstructorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil) {
+    super(sourceWriteUtil, guiceUtil);
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
-  public void setConstructor(JConstructor constructor, Key<?> key) {
+  public void setConstructor(MethodLiteral<?, Constructor<?>> constructor) {
     this.constructor = constructor;
-    setClassType(constructor.getEnclosingType(), key);
+    setType(constructor.getDeclaringType());
     addParamTypes(constructor);
   }
 
-  @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb) {
+  @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb)
+      throws NoSourceNameException {
     assert (constructor != null);
     sb.append(getTypeName()).append(" result = ")
         .append(sourceWriteUtil.createConstructorInjection(sourceWriter, constructor));

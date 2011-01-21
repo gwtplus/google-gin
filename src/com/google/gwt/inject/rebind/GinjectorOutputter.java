@@ -19,23 +19,23 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingContext;
-import com.google.gwt.inject.rebind.binding.Injectable;
-import com.google.gwt.inject.rebind.util.KeyUtil;
+import com.google.gwt.inject.rebind.reflect.FieldLiteral;
+import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.spi.InjectionPoint;
 
 import java.io.PrintWriter;
@@ -80,12 +80,12 @@ class GinjectorOutputter {
 
   private final SourceWriteUtil sourceWriteUtil;
 
-  private final KeyUtil keyUtil;
+  private final GuiceUtil guiceUtil;
 
   /**
    * Interface of the injector that this class is implementing.
    */
-  private final JClassType ginjectorInterface;
+  private final TypeLiteral<? extends Ginjector> ginjectorInterface;
 
   /**
    * Writer to append Java code for our implementation class.
@@ -100,27 +100,27 @@ class GinjectorOutputter {
   @Inject
   GinjectorOutputter(NameGenerator nameGenerator, TreeLogger logger,
       Provider<MemberCollector> collectorProvider, SourceWriteUtil sourceWriteUtil,
-      final KeyUtil keyUtil, GeneratorContext ctx, BindingsProcessor bindingsProcessor,
-      @GinjectorInterfaceType JClassType ginjectorInterface) {
+      final GuiceUtil guiceUtil, GeneratorContext ctx, BindingsProcessor bindingsProcessor,
+      @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface) {
     this.nameGenerator = nameGenerator;
     this.logger = logger;
     this.sourceWriteUtil = sourceWriteUtil;
-    this.keyUtil = keyUtil;
+    this.guiceUtil = guiceUtil;
     this.ctx = ctx;
     this.bindingsProcessor = bindingsProcessor;
-    this.ginjectorInterface = ginjectorInterface;
+    this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
 
     constructorInjectCollector = collectorProvider.get();
     constructorInjectCollector.setMethodFilter(new MemberCollector.MethodFilter() {
-        public boolean accept(JMethod method) {
-          return method.getParameters().length == 0;
+        public boolean accept(MethodLiteral<?, Method> method) {
+          return !guiceUtil.isMemberInject(method);
         }
       });
 
     memberInjectCollector = collectorProvider.get();
     memberInjectCollector.setMethodFilter(new MemberCollector.MethodFilter() {
-        public boolean accept(JMethod method) {
-          return keyUtil.isMemberInject(method);
+        public boolean accept(MethodLiteral<?, Method> method) {
+          return guiceUtil.isMemberInject(method);
         }
       });
   }
@@ -130,16 +130,21 @@ class GinjectorOutputter {
     ClassSourceFileComposerFactory composerFactory = new ClassSourceFileComposerFactory(
         packageName, implClassName);
 
-    composerFactory.addImplementedInterface(
-        ginjectorInterface.getParameterizedQualifiedSourceName());
-    composerFactory.addImport(GWT.class.getCanonicalName());
+    try {
+      composerFactory.addImplementedInterface(ReflectUtil.getSourceName(ginjectorInterface));
+      composerFactory.addImport(GWT.class.getCanonicalName());
 
-    writer = composerFactory.createSourceWriter(ctx, printWriter);
+      writer = composerFactory.createSourceWriter(ctx, printWriter);
 
-    outputInterfaceMethods();
-    outputBindings();
-    outputStaticInjections();
-    outputMemberInjections();
+      outputInterfaceMethods();
+      outputBindings();
+      outputStaticInjections();
+      outputMemberInjections();
+    } catch (NoSourceNameException e) {
+
+      // TODO(schmitt): Collect errors and log list of them.
+      logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
+    }
 
     writeConstructor(implClassName);
 
@@ -162,8 +167,7 @@ class GinjectorOutputter {
       String typeName;
       try {
 
-        // toString on TypeLiteral outputs the binary name, not the source name.
-        typeName = sourceWriteUtil.getSourceName(key.getTypeLiteral());
+        typeName = ReflectUtil.getSourceName(key.getTypeLiteral());
 
         sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
 
@@ -224,32 +228,33 @@ class GinjectorOutputter {
 
   private void appendBindingContextCommentToConstructor(BindingContext bindingContext) {
     for(String line : bindingContext.toString().split("\n")) {
-      constructorBody.append("//   " + line + "\n");
+      constructorBody.append("//   ").append(line).append("\n");
     }
   }
 
-  private void outputInterfaceMethods() {
+  private void outputInterfaceMethods() throws NoSourceNameException {
     // Add a forwarding method for each zero-arg method in the ginjector interface
-    for (JMethod method : constructorInjectCollector.getMethods(ginjectorInterface)) {
+    for (MethodLiteral<?, Method> method :
+        constructorInjectCollector.getMethods(ginjectorInterface)) {
       StringBuilder body = new StringBuilder();
       body.append("return ")
-          .append(nameGenerator.getGetterMethodName(keyUtil.getKey(method)))
+          .append(nameGenerator.getGetterMethodName(guiceUtil.getKey(method)))
           .append("();");
 
-      sourceWriteUtil.writeMethod(writer,
-          method.getReadableDeclaration(false, false, false, false, true),
-          body.toString());
+      String readableDeclaration =
+          ReflectUtil.getSignature(method, ReflectUtil.nonAbstractModifiers(method));
+      sourceWriteUtil.writeMethod(writer, readableDeclaration, body.toString());
     }
 
     // Implements methods of the form "void foo(BarType bar)"
-    for (JMethod method : memberInjectCollector.getMethods(ginjectorInterface)) {
-      JParameter injectee = method.getParameters()[0];
-      String body = nameGenerator.getMemberInjectMethodName(keyUtil.getKey(injectee))
-          + "(" + injectee.getName() + ");";
+    for (MethodLiteral<?, Method> method : memberInjectCollector.getMethods(ginjectorInterface)) {
+      Key<?> injectee = method.getParameterKeys().get(0);
 
-      sourceWriteUtil.writeMethod(writer,
-          method.getReadableDeclaration(false, false, false, false, true),
-          body);
+      String body = nameGenerator.getMemberInjectMethodName(injectee) + "(param);";
+
+      String readableDeclaration = ReflectUtil.getSignature(method, new String[]{"param"},
+          ReflectUtil.nonAbstractModifiers(method));
+      sourceWriteUtil.writeMethod(writer, readableDeclaration, body);
     }
   }
 
@@ -261,17 +266,18 @@ class GinjectorOutputter {
       StringBuilder body = new StringBuilder();
       for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(type)) {
         Member member = injectionPoint.getMember();
-        if (member instanceof Method) {
-          try {
-            body.append(sourceWriteUtil.createMethodCallWithInjection(writer,
-                keyUtil.javaToGwtMethod((Method) member), null));
-          } catch (NotFoundException e) {
-            foundError = true;
-            logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
+        try {
+          if (member instanceof Method) {
+            MethodLiteral<?, Method> method =
+                MethodLiteral.get((Method) member, TypeLiteral.get(type));
+            body.append(sourceWriteUtil.createMethodCallWithInjection(writer, method, null));
+          } else if (member instanceof Field) {
+            FieldLiteral<?> field = FieldLiteral.get((Field) member, TypeLiteral.get(type));
+            body.append(sourceWriteUtil.createFieldInjection(writer, field, null));
           }
-        } else if (member instanceof Field) {
-          body.append(sourceWriteUtil.createFieldInjection(writer,
-              keyUtil.javaToGwtField((Field) member), null));
+        } catch (NoSourceNameException e) {
+          foundError = true;
+          logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
         }
       }
 
@@ -284,7 +290,7 @@ class GinjectorOutputter {
     }
   }
 
-  private void outputMemberInjections() {
+  private void outputMemberInjections() throws NoSourceNameException {
     for (Key<?> key : bindingsProcessor.getMemberInjectRequests()) {
       sourceWriteUtil.appendMemberInjection(writer, key);
     }

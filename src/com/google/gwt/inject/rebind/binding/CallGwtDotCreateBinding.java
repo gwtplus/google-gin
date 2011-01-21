@@ -15,7 +15,9 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.inject.rebind.util.KeyUtil;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -28,12 +30,12 @@ import com.google.inject.Inject;
 public class CallGwtDotCreateBinding extends CreatorBinding {
 
   @Inject
-  public CallGwtDotCreateBinding(SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
-    super(sourceWriteUtil, keyUtil);
+  public CallGwtDotCreateBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil) {
+    super(sourceWriteUtil, guiceUtil);
   }
 
   @Override protected final void appendCreationStatement(SourceWriter sourceWriter,
-      StringBuilder sb) {
+      StringBuilder sb) throws NoSourceNameException {
 
     sb.append("Object created = GWT.create(").append(getTypeNameToCreate()).append(".class);\n");
 
@@ -41,11 +43,18 @@ public class CallGwtDotCreateBinding extends CreatorBinding {
     // equal or a subtype of the requested type. Assert this here, in
     // production code (without asserts) the line below the assert will throw a
     // ClassCastException instead.
-    sb.append("assert created instanceof ").append(getTypeName()).append(";\n")
+    sb.append("assert created instanceof ").append(getExpectedTypeName()).append(";\n")
         .append(getTypeName()).append(" result = (").append(getTypeName()).append(") created;\n");
   }
 
-  protected String getTypeNameToCreate() {
-    return getClassType().getQualifiedSourceName();
+  protected String getTypeNameToCreate() throws NoSourceNameException {
+
+    // Using a raw type because GWT.create and instanceof cannot take
+    // parameterized arguments.
+    return ReflectUtil.getSourceName(getType().getRawType());
+  }
+
+  protected String getExpectedTypeName() throws NoSourceNameException {
+    return getTypeNameToCreate();
   }
 }

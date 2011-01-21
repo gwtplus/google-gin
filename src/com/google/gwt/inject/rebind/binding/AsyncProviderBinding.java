@@ -16,8 +16,9 @@
 
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -51,7 +52,6 @@ import java.util.Collections;
 public class AsyncProviderBinding implements Binding {
 
   private final NameGenerator nameGenerator;
-
   private final SourceWriteUtil sourceWriteUtil;
 
   private ParameterizedType providerType;
@@ -75,8 +75,8 @@ public class AsyncProviderBinding implements Binding {
       throws NoSourceNameException {
      assert (providerType != null);
 
-     String providerTypeName = sourceWriteUtil.getSourceName(providerType);
-     String targetKeyName = sourceWriteUtil.getSourceName(targetKey.getTypeLiteral());
+     String providerTypeName = ReflectUtil.getSourceName(providerType);
+     String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
 
      StringBuilder methodCode = new StringBuilder()
        .append("return new ").append(providerTypeName).append("() { \n") 
