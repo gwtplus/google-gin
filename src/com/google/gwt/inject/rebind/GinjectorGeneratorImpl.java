@@ -19,6 +19,8 @@ import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -60,7 +62,7 @@ class GinjectorGeneratorImpl {
 
     Package interfacePackage = ginjectorInterface.getPackage();
     String packageName = interfacePackage == null ? "" : interfacePackage.getName();
-    String implClassName = ginjectorInterface.getName().replace(".", "_") + "Impl";
+    String implClassName = getImplClassName();
     String generatedClassName = packageName + "." + implClassName;
 
     PrintWriter printWriter = ctx.tryCreate(logger, packageName, implClassName);
@@ -72,6 +74,15 @@ class GinjectorGeneratorImpl {
     }
 
     return generatedClassName;
+  }
+
+  private String getImplClassName() throws UnableToCompleteException {
+    try {
+      return ReflectUtil.getSourceName(ginjectorInterface).replace(".", "_") + "Impl";
+    } catch (NoSourceNameException e) {
+      logger.log(TreeLogger.Type.ERROR, "Could not determine source name for ginjector", e);
+      throw new UnableToCompleteException();
+    }
   }
 
   private void validateInjectorClass() throws UnableToCompleteException {
