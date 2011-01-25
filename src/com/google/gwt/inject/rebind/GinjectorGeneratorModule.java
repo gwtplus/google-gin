@@ -57,7 +57,7 @@ class GinjectorGeneratorModule extends AbstractModule {
     bind(new TypeLiteral<Class<? extends Ginjector>>(){})
         .annotatedWith(GinjectorInterfaceType.class)
         .toInstance(ginjectorInterface);
-    bind(BindingIndex.class).to(BindingsProcessor.class).in(Singleton.class);
+    bind(BindingIndex.class).to(BindingCollection.class).in(Singleton.class);
   }
 
   @Provides

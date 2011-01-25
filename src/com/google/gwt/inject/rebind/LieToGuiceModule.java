@@ -23,6 +23,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
+import com.google.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.List;
 /**
  * A module to tell Guice about implicit bindings Gin has invented.
  */
+@Singleton
 class LieToGuiceModule extends AbstractModule {
   private final List<Module> lies = new ArrayList<Module>();
   private final TreeLogger logger;

@@ -53,7 +53,7 @@ import javax.inject.Provider;
 class GinjectorOutputter {
   private final TreeLogger logger;
   private final GeneratorContext ctx;
-  private final BindingsProcessor bindingsProcessor;
+  private final BindingCollection bindingsCollection;
 
   /**
    * Generates names for code we produce to resolve injection requests.
@@ -100,14 +100,14 @@ class GinjectorOutputter {
   @Inject
   GinjectorOutputter(NameGenerator nameGenerator, TreeLogger logger,
       Provider<MemberCollector> collectorProvider, SourceWriteUtil sourceWriteUtil,
-      final GuiceUtil guiceUtil, GeneratorContext ctx, BindingsProcessor bindingsProcessor,
+      final GuiceUtil guiceUtil, GeneratorContext ctx, BindingCollection bindingsCollection,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface) {
     this.nameGenerator = nameGenerator;
     this.logger = logger;
     this.sourceWriteUtil = sourceWriteUtil;
     this.guiceUtil = guiceUtil;
     this.ctx = ctx;
-    this.bindingsProcessor = bindingsProcessor;
+    this.bindingsCollection = bindingsCollection;
     this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
 
     constructorInjectCollector = collectorProvider.get();
@@ -155,7 +155,7 @@ class GinjectorOutputter {
     boolean errors = false;
 
     // Write out each binding
-    for (Map.Entry<Key<?>, BindingEntry> entry : bindingsProcessor.getBindings().entrySet()) {
+    for (Map.Entry<Key<?>, BindingEntry> entry : bindingsCollection.getBindings().entrySet()) {
       Key<?> key = entry.getKey();
       BindingEntry bindingEntry = entry.getValue();
       Binding binding = bindingEntry.getBinding();
@@ -183,7 +183,7 @@ class GinjectorOutputter {
       // Name of the field that we might need.
       String field = nameGenerator.getSingletonFieldName(key);
 
-      GinScope scope = bindingsProcessor.determineScope(key);
+      GinScope scope = bindingsCollection.determineScope(key);
       switch (scope) {
         case EAGER_SINGLETON:
           constructorBody.append("// Eager singleton bound at:\n");
@@ -261,7 +261,7 @@ class GinjectorOutputter {
   private void outputStaticInjections() throws UnableToCompleteException {
     boolean foundError = false;
 
-    for (Class<?> type : bindingsProcessor.getStaticInjectionRequests()) {
+    for (Class<?> type : bindingsCollection.getStaticInjectionRequests()) {
       String methodName = nameGenerator.convertToValidMemberName("injectStatic_" + type.getName());
       StringBuilder body = new StringBuilder();
       for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(type)) {
@@ -291,7 +291,7 @@ class GinjectorOutputter {
   }
 
   private void outputMemberInjections() throws NoSourceNameException {
-    for (Key<?> key : bindingsProcessor.getMemberInjectRequests()) {
+    for (Key<?> key : bindingsCollection.getMemberInjectRequests()) {
       sourceWriteUtil.appendMemberInjection(writer, key);
     }
   }
