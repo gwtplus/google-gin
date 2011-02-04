@@ -58,7 +58,7 @@ class BinderAdapter implements GinBinder {
     if (install instanceof FactoryModule) {
       factoryModules.add((FactoryModule) install);
     } else {
-      binder.install(new GinModuleAdapter(install, factoryModules));
+      binder.install(install == null ? null : new GinModuleAdapter(install, factoryModules));
     }
   }
 

@@ -37,6 +37,10 @@ public final class GinModuleAdapter implements Module {
   }
 
   public GinModuleAdapter(GinModule ginModule, Set<FactoryModule<?>> factoryModules) {
+    if (ginModule == null) {
+      throw new NullPointerException("Installing a null module is not permitted");
+    }
+
     this.ginModule = ginModule;
     this.factoryModules = factoryModules;
   }
@@ -50,5 +54,20 @@ public final class GinModuleAdapter implements Module {
 
     // Install provider methods from the GinModule
     binder.install(ProviderMethodsModule.forObject(ginModule));
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof GinModuleAdapter) {
+      GinModuleAdapter other = (GinModuleAdapter) obj;
+      return ginModule.equals(other.ginModule);
+    } else {
+      return false;
+    }
+  }
+
+  @Override
+  public int hashCode() {
+    return ginModule.hashCode();
   }
 }
