@@ -19,6 +19,7 @@ import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -50,18 +51,18 @@ public class ProviderMethodBinding implements Binding {
     this.providerMethod = MethodLiteral.get(providerMethod.getMethod(),
         TypeLiteral.get(moduleClass));
   }
-
+  
   // TODO(schmitt): This implementation creates a new module instance for
   // every provider method invocation. Instead we should likely create just a
   // single instance of the module, invoke it repeatedly and share it between
   // provider methods.
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
-      throws NoSourceNameException {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
+      NameGenerator nameGenerator) throws NoSourceNameException {
     String moduleSourceName = ReflectUtil.getSourceName(providerMethod.getDeclaringType());
     String createModule = "new " + moduleSourceName + "()";
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + sourceWriteUtil.createMethodCallWithInjection(writer, providerMethod,
-            createModule));
+            createModule, nameGenerator));
   }
 
   public RequiredKeys getRequiredKeys() {

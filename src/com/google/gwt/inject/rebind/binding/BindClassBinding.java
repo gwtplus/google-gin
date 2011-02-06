@@ -28,14 +28,12 @@ import java.util.Collections;
  */
 public class BindClassBinding implements Binding {
 
-  private final NameGenerator nameGenerator;
   private final SourceWriteUtil sourceWriteUtil;
 
   private Key<?> boundClassKey;
 
   @Inject
-  public BindClassBinding(NameGenerator nameGenerator, SourceWriteUtil sourceWriteUtil) {
-    this.nameGenerator = nameGenerator;
+  public BindClassBinding(SourceWriteUtil sourceWriteUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
@@ -43,7 +41,8 @@ public class BindClassBinding implements Binding {
     this.boundClassKey = boundClassKey;
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
+      NameGenerator nameGenerator) {
     assert (boundClassKey != null);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + nameGenerator.getGetterMethodName(boundClassKey) + "();");

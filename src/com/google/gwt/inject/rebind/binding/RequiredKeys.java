@@ -44,4 +44,8 @@ public class RequiredKeys {
   public Set<Key<?>> getOptionalKeys() {
     return optionalKeys;
   }
+  
+  public boolean isEmpty() {
+    return requiredKeys.isEmpty() && optionalKeys.isEmpty();
+  }
 }

@@ -53,12 +53,7 @@ import javax.inject.Provider;
 class GinjectorOutputter {
   private final TreeLogger logger;
   private final GeneratorContext ctx;
-  private final BindingCollection bindingsCollection;
-
-  /**
-   * Generates names for code we produce to resolve injection requests.
-   */
-  private final NameGenerator nameGenerator;
+  private final GinjectorBindings rootBindings;
 
   /**
    * Collector that gathers methods from an injector interface and its
@@ -97,17 +92,24 @@ class GinjectorOutputter {
    */
   private StringBuilder constructorBody = new StringBuilder();
 
+  private final ErrorManager errorManager;
+  private final GinjectorNameGenerator ginjectorNameGenerator;
+  
   @Inject
-  GinjectorOutputter(NameGenerator nameGenerator, TreeLogger logger,
+  GinjectorOutputter(TreeLogger logger,
       Provider<MemberCollector> collectorProvider, SourceWriteUtil sourceWriteUtil,
-      final GuiceUtil guiceUtil, GeneratorContext ctx, BindingCollection bindingsCollection,
-      @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface) {
-    this.nameGenerator = nameGenerator;
+      final GuiceUtil guiceUtil, GeneratorContext ctx,
+      @RootBindings GinjectorBindings bindingsCollection,
+      @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
+      GinjectorNameGenerator ginjectorNameGenerator,
+      ErrorManager errorManager) {
     this.logger = logger;
     this.sourceWriteUtil = sourceWriteUtil;
     this.guiceUtil = guiceUtil;
     this.ctx = ctx;
-    this.bindingsCollection = bindingsCollection;
+    this.rootBindings = bindingsCollection;
+    this.ginjectorNameGenerator = ginjectorNameGenerator;
+    this.errorManager = errorManager;
     this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
 
     constructorInjectCollector = collectorProvider.get();
@@ -137,11 +139,10 @@ class GinjectorOutputter {
       writer = composerFactory.createSourceWriter(ctx, printWriter);
 
       outputInterfaceMethods();
-      outputBindings();
-      outputStaticInjections();
-      outputMemberInjections();
+      ginjectorNameGenerator.registerName(rootBindings, implClassName);
+      outputBindings(rootBindings);
+      errorManager.checkForError();
     } catch (NoSourceNameException e) {
-
       // TODO(schmitt): Collect errors and log list of them.
       logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
     }
@@ -151,79 +152,107 @@ class GinjectorOutputter {
     writer.commit(logger);
   }
 
-  private void outputBindings() throws UnableToCompleteException {
-    boolean errors = false;
+  /**
+   * Output the bindings for the given {@link GinjectorBindings}.  If it has any children
+   * in the hierarchy, it will first output the necessary classes. 
+   */
+  private void outputBindings(GinjectorBindings bindings) {
+    // Output child modules.
+    for (GinjectorBindings child : bindings.getChildren()) {
+      String className = ginjectorNameGenerator.getClassName(child);
+      String fieldName = ginjectorNameGenerator.getFieldName(child);
+      
+      writer.beginJavaDocComment();
+      writer.println("Generated class for child injector for ");
+      writer.print("  %s", child.getModule());
+      writer.endJavaDocComment();
+      writer.println("public class %s {", className);
+      writer.indent();
+      outputBindings(child);
+      writer.outdent();
+      writer.println("}");
 
-    // Write out each binding
-    for (Map.Entry<Key<?>, BindingEntry> entry : bindingsCollection.getBindings().entrySet()) {
-      Key<?> key = entry.getKey();
-      BindingEntry bindingEntry = entry.getValue();
-      Binding binding = bindingEntry.getBinding();
-      BindingContext bindingContext = bindingEntry.getBindingContext();
+      writer.beginJavaDocComment();
+      writer.println("Field for child injector for");
+      writer.print("  %s", child.getModule());
+      writer.endJavaDocComment();
+      writer.println("private final %1$s %2$s = new %1$s();", className, fieldName);
+    }
+    
+    outputMemberInjections(bindings);
+    outputStaticInjections(bindings);
 
-      String getter = nameGenerator.getGetterMethodName(key);
-      String creator = nameGenerator.getCreatorMethodName(key);
+    // Output the actual bindings
+    for (Map.Entry<Key<?>, BindingEntry> entry : bindings.getBindings().entrySet()) {
+      outputBinding(bindings.getNameGenerator(), entry.getKey(), entry.getValue(),
+          bindings.determineScope(entry.getKey()));
+    }
+  }
 
-      String typeName;
-      try {
+  /**
+   * Output the the creator/getter methods for the given binding.
+   */
+  private void outputBinding(NameGenerator nameGenerator, Key<?> key, BindingEntry bindingEntry,
+      GinScope scope) {
+    Binding binding = bindingEntry.getBinding();
+    BindingContext bindingContext = bindingEntry.getBindingContext();
 
-        typeName = ReflectUtil.getSourceName(key.getTypeLiteral());
+    String getter = nameGenerator.getGetterMethodName(key);
+    String creator = nameGenerator.getCreatorMethodName(key);
 
+    String typeName;
+    try {
+      typeName = ReflectUtil.getSourceName(key.getTypeLiteral());
+
+      sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
+
+      // Regardless of the scope, we have a creator method.
+      binding.writeCreatorMethods(writer, "private " + typeName + " " + creator + "()", 
+          nameGenerator);
+    } catch (NoSourceNameException e) {
+      errorManager.logError("Error trying to write source for [" + key + "] -> ["
+          + binding + "]; binding declaration: " + bindingContext, e);
+      return;
+    }
+
+    // Name of the field that we might need.
+    String field = nameGenerator.getSingletonFieldName(key);
+
+    switch (scope) {
+      case EAGER_SINGLETON:
+        constructorBody.append("// Eager singleton bound at:\n");
+        appendBindingContextCommentToConstructor(bindingContext);
+        constructorBody.append(getter).append("();\n");
+        // $FALL-THROUGH$
+      case SINGLETON:
+        writer.println("private " + typeName + " " + field + " = null;");
+        writer.println();
+        sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, "Singleton bound at:");
+        writer.println("private " + typeName + " " + getter + "()" + " {");
+        writer.indent();
+        writer.println("if (" + field + " == null) {");
+        writer.indent();
+        writer.println(field + " = " + creator + "();");
+        writer.outdent();
+        writer.println("}");
+        writer.println("return " + field + ";");
+        writer.outdent();
+        writer.println("}");
+        break;
+
+      case NO_SCOPE:
+        // For none, getter just returns creator
         sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
 
-        // Regardless of the scope, we have a creator method.
-        binding.writeCreatorMethods(writer, "private " + typeName + " " + creator + "()");
-      } catch (NoSourceNameException e) {
-        logger.log(TreeLogger.Type.ERROR, "Error trying to write source for [" + key + "] -> ["
-            + binding + "]; binding declaration: " + bindingContext, e);
-        errors = true;
-        continue;
-      }
+        sourceWriteUtil.writeMethod(writer, "private " + typeName + " " + getter + "()",
+          "return " + creator + "();");
+        break;
 
-      // Name of the field that we might need.
-      String field = nameGenerator.getSingletonFieldName(key);
-
-      GinScope scope = bindingsCollection.determineScope(key);
-      switch (scope) {
-        case EAGER_SINGLETON:
-          constructorBody.append("// Eager singleton bound at:\n");
-          appendBindingContextCommentToConstructor(bindingContext);
-          constructorBody.append(getter).append("();\n");
-          // Intentionally fall through.
-        case SINGLETON:
-          writer.println("private " + typeName + " " + field + " = null;");
-          writer.println();
-          sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, "Singleton bound at:");
-          writer.println("private " + typeName + " " + getter + "()" + " {");
-          writer.indent();
-          writer.println("if (" + field + " == null) {");
-          writer.indent();
-          writer.println(field + " = " + creator + "();");
-          writer.outdent();
-          writer.println("}");
-          writer.println("return " + field + ";");
-          writer.outdent();
-          writer.println("}");
-          break;
-
-        case NO_SCOPE:
-          // For none, getter just returns creator
-          sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
-
-          sourceWriteUtil.writeMethod(writer, "private " + typeName + " " + getter + "()",
-              "return " + creator + "();");
-          break;
-
-        default:
-          throw new IllegalStateException();
-      }
-
-      writer.println();
+      default:
+        throw new IllegalStateException();
     }
 
-    if (errors) {
-      throw new UnableToCompleteException();      
-    }
+    writer.println();
   }
 
   private void appendBindingContextCommentToConstructor(BindingContext bindingContext) {
@@ -233,6 +262,7 @@ class GinjectorOutputter {
   }
 
   private void outputInterfaceMethods() throws NoSourceNameException {
+    NameGenerator nameGenerator = rootBindings.getNameGenerator();
     // Add a forwarding method for each zero-arg method in the ginjector interface
     for (MethodLiteral<?, Method> method :
         constructorInjectCollector.getMethods(ginjectorInterface)) {
@@ -258,10 +288,11 @@ class GinjectorOutputter {
     }
   }
 
-  private void outputStaticInjections() throws UnableToCompleteException {
+  private void outputStaticInjections(GinjectorBindings bindings) {
+    NameGenerator nameGenerator = bindings.getNameGenerator();
     boolean foundError = false;
 
-    for (Class<?> type : bindingsCollection.getStaticInjectionRequests()) {
+    for (Class<?> type : bindings.getStaticInjectionRequests()) {
       String methodName = nameGenerator.convertToValidMemberName("injectStatic_" + type.getName());
       StringBuilder body = new StringBuilder();
       for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(type)) {
@@ -270,29 +301,30 @@ class GinjectorOutputter {
           if (member instanceof Method) {
             MethodLiteral<?, Method> method =
                 MethodLiteral.get((Method) member, TypeLiteral.get(type));
-            body.append(sourceWriteUtil.createMethodCallWithInjection(writer, method, null));
+            body.append(sourceWriteUtil.createMethodCallWithInjection(writer, method, null,
+                nameGenerator));
           } else if (member instanceof Field) {
             FieldLiteral<?> field = FieldLiteral.get((Field) member, TypeLiteral.get(type));
-            body.append(sourceWriteUtil.createFieldInjection(writer, field, null));
+            body.append(sourceWriteUtil.createFieldInjection(writer, field, null, nameGenerator));
           }
         } catch (NoSourceNameException e) {
-          foundError = true;
-          logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
+          errorManager.logError(e.getMessage(), e);
         }
       }
 
       sourceWriteUtil.writeMethod(writer, "private void " + methodName + "()", body.toString());
       constructorBody.append(methodName).append("();\n");
     }
-
-    if (foundError) {
-      throw new UnableToCompleteException();
-    }
   }
 
-  private void outputMemberInjections() throws NoSourceNameException {
-    for (Key<?> key : bindingsCollection.getMemberInjectRequests()) {
-      sourceWriteUtil.appendMemberInjection(writer, key);
+  private void outputMemberInjections(GinjectorBindings bindings) {
+    NameGenerator nameGenerator = bindings.getNameGenerator();
+    for (Key<?> key : bindings.getMemberInjectRequests()) {
+      try {
+        sourceWriteUtil.appendMemberInjection(writer, key, nameGenerator);
+      } catch (NoSourceNameException e) {
+        errorManager.logError(e.getMessage(), e);
+      }
     }
   }
 

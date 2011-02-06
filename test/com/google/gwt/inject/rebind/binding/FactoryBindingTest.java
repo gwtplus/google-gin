@@ -16,7 +16,6 @@
 
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
 import com.google.inject.ConfigurationException;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -31,8 +30,8 @@ import java.util.List;
 
 public class FactoryBindingTest extends TestCase {
 
-  public void testTooManyParams() throws NotFoundException {
-    FactoryBinding binding = new FactoryBinding(null, null);
+  public void testTooManyParams() {
+    FactoryBinding binding = new FactoryBinding(null);
 
     try {
       binding.setKeyAndCollector(Key.get(BrokenBeetleFactory.class),
@@ -43,8 +42,8 @@ public class FactoryBindingTest extends TestCase {
     }
   }
 
-  public void testMismatchingParams() throws NotFoundException {
-    FactoryBinding binding = new FactoryBinding(null, null);
+  public void testMismatchingParams() {
+    FactoryBinding binding = new FactoryBinding(null);
 
     try {
       binding.setKeyAndCollector(Key.get(BrokenGolfFactory.class),

@@ -1,0 +1,70 @@
+/*
+ * Copyright 2011 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package com.google.gwt.inject.rebind;
+
+import com.google.gwt.inject.rebind.binding.BindClassBinding;
+import com.google.gwt.inject.rebind.binding.BindConstantBinding;
+import com.google.gwt.inject.rebind.binding.BindProviderBinding;
+import com.google.gwt.inject.rebind.binding.ProviderMethodBinding;
+import com.google.inject.Inject;
+import com.google.inject.Key;
+import com.google.inject.spi.Message;
+
+import java.util.List;
+
+import javax.inject.Provider;
+
+/**
+ * Factory for creating {@link GuiceBindingVisitor}s.  We can't use assisted
+ * injection to create this, because one of the arguments is a Key, which makes
+ * Guice unhappy.
+ */
+public class GuiceBindingVisitorFactory {
+  private final Provider<BindProviderBinding> bindProviderBindingProvider;
+  private final Provider<ProviderMethodBinding> providerMethodBindingProvider;
+  private final Provider<BindClassBinding> bindClassBindingProvider;
+  private final Provider<BindConstantBinding> bindConstantBindingProvider;
+  private LieToGuiceModule lieToGuiceModule;
+
+  @Inject
+  public GuiceBindingVisitorFactory(
+      Provider<BindProviderBinding> bindProviderBindingProvider,
+      Provider<ProviderMethodBinding> providerMethodBindingProvider,
+      Provider<BindClassBinding> bindClassBindingProvider,
+      Provider<BindConstantBinding> bindConstantBindingProvider,
+      LieToGuiceModule lieToGuiceModule) {
+    this.bindProviderBindingProvider = bindProviderBindingProvider;
+    this.providerMethodBindingProvider = providerMethodBindingProvider;
+    this.bindClassBindingProvider = bindClassBindingProvider;
+    this.bindConstantBindingProvider = bindConstantBindingProvider;
+    this.lieToGuiceModule = lieToGuiceModule;
+  }
+
+  /**
+   * Create the {@link GuiceBindingVisitor}.
+   * @param <T> the type of the target for the binding
+   * @param targetKey the key that the Binding Visitor is visiting
+   * @param messages the list of messages that should be added to if anything
+   *     important happens
+   * @param ginjectorBindings he {@link GinjectorBindings} to add bindings to
+   */
+  <T> GuiceBindingVisitor<T> create(Key<T> targetKey, List<Message> messages,
+      GinjectorBindings ginjectorBindings) {
+    return new GuiceBindingVisitor<T>(bindProviderBindingProvider,
+        providerMethodBindingProvider, bindClassBindingProvider, bindConstantBindingProvider,
+        lieToGuiceModule, targetKey, messages, ginjectorBindings);
+  }
+}

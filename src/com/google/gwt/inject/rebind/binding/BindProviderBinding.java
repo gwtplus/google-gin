@@ -30,15 +30,12 @@ import javax.inject.Provider;
  */
 public class BindProviderBinding implements Binding {
 
-  private final NameGenerator nameGenerator;
-
   private final SourceWriteUtil sourceWriteUtil;
 
   private Key<? extends Provider<?>> providerKey;
 
   @Inject
-  public BindProviderBinding(NameGenerator nameGenerator, SourceWriteUtil sourceWriteUtil) {
-    this.nameGenerator = nameGenerator;
+  public BindProviderBinding(SourceWriteUtil sourceWriteUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
@@ -46,7 +43,8 @@ public class BindProviderBinding implements Binding {
     this.providerKey = providerKey;
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
+      NameGenerator nameGenerator) {
     assert (providerKey != null);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + nameGenerator.getGetterMethodName(providerKey) + "().get();");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Google Inc.
+ * Copyright 2011 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -15,49 +15,41 @@
  */
 package com.google.gwt.inject.rebind.adapter;
 
-import com.google.gwt.inject.client.AbstractGinModule;
-import com.google.gwt.inject.client.GinModule;
+import com.google.gwt.inject.client.PrivateGinModule;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.inject.Binder;
 import com.google.inject.Module;
+import com.google.inject.PrivateBinder;
+import com.google.inject.PrivateModule;
 import com.google.inject.internal.ProviderMethodsModule;
 
 /**
- * Makes a {@link GinModule} available as a {@link Module}.
+ * Makes a {@link PrivateGinModule} available as a {@link Module}.
  */
-public final class GinModuleAdapter implements Module {
-  private final GinModule ginModule;
+public class PrivateGinModuleAdapter extends PrivateModule {
+  private final PrivateGinModule ginModule;
   private final GinjectorBindings bindings;
-  
-  public GinModuleAdapter(GinModule ginModule) {
-    this.ginModule = ginModule;
-    this.bindings = null;
-  }
 
-  public GinModuleAdapter(GinModule ginModule, GinjectorBindings bindings) {
-    if (ginModule == null) {
-      throw new NullPointerException("Installing a null module is not permitted");
-    }
-
+  public PrivateGinModuleAdapter(PrivateGinModule ginModule, GinjectorBindings bindings) {
     this.ginModule = ginModule;
     this.bindings = bindings;
   }
 
-  public void configure(Binder binder) {
-    // For Guice error reporting, ignore the adapters
-    binder = binder.skipSources(GinModuleAdapter.class, BinderAdapter.class,
-        AbstractGinModule.class);
+  public void configure() {
+    Binder binder = binder().skipSources(PrivateGinModuleAdapter.class,
+        BinderAdapter.class, PrivateGinModule.class);
 
-    ginModule.configure(new BinderAdapter(binder, bindings));
+    ginModule.configure(new PrivateBinderAdapter((PrivateBinder) binder, 
+        bindings == null ? null : bindings.createChildGinjectorBindings(ginModule.getClass())));
 
     // Install provider methods from the GinModule
     binder.install(ProviderMethodsModule.forObject(ginModule));
   }
-
+  
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof GinModuleAdapter) {
-      GinModuleAdapter other = (GinModuleAdapter) obj;
+    if (obj instanceof PrivateGinModuleAdapter) {
+      PrivateGinModuleAdapter other = (PrivateGinModuleAdapter) obj;
       return ginModule.equals(other.ginModule);
     } else {
       return false;

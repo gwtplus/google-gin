@@ -34,16 +34,13 @@ import java.util.Collections;
  */
 public class ImplicitProviderBinding implements Binding {
 
-  private final NameGenerator nameGenerator;
-
   private final SourceWriteUtil sourceWriteUtil;
 
   private ParameterizedType providerType;
   private Key<?> targetKey;
 
   @Inject
-  public ImplicitProviderBinding(NameGenerator nameGenerator, SourceWriteUtil sourceWriteUtil) {
-    this.nameGenerator = nameGenerator;
+  public ImplicitProviderBinding(SourceWriteUtil sourceWriteUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
@@ -55,8 +52,8 @@ public class ImplicitProviderBinding implements Binding {
     targetKey = getKeyWithSameAnnotation(targetType, providerKey);
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
-      throws NoSourceNameException {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
+      NameGenerator nameGenerator) throws NoSourceNameException {
     assert (providerType != null);
     String providerTypeName = ReflectUtil.getSourceName(providerType);
     String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());

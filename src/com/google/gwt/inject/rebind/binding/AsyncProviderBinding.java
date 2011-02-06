@@ -51,15 +51,13 @@ import java.util.Collections;
  */
 public class AsyncProviderBinding implements Binding {
 
-  private final NameGenerator nameGenerator;
   private final SourceWriteUtil sourceWriteUtil;
 
   private ParameterizedType providerType;
   private Key<?> targetKey;
 
   @Inject
-  public AsyncProviderBinding(NameGenerator nameGenerator, SourceWriteUtil sourceWriteUtil) {
-    this.nameGenerator = nameGenerator;
+  public AsyncProviderBinding(SourceWriteUtil sourceWriteUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
@@ -71,8 +69,8 @@ public class AsyncProviderBinding implements Binding {
     targetKey = getKeyWithSameAnnotation(targetType, providerKey);
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
-      throws NoSourceNameException {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
+      NameGenerator nameGenerator) throws NoSourceNameException {
      assert (providerType != null);
 
      String providerTypeName = ReflectUtil.getSourceName(providerType);

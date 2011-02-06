@@ -16,7 +16,6 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.inject.Key;
-import com.google.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,7 +26,6 @@ import java.util.Set;
  * Helper to generate various names for members of a {@code Ginjector}
  * implementation.
  */
-@Singleton
 public class NameGenerator {
 
   private class CacheKey {
@@ -57,8 +55,8 @@ public class NameGenerator {
   /**
    * "Mangled key name" cache:  Key -> mangled name
    */
-  private final Map<CacheKey, String> cache = new HashMap<CacheKey, String>();
-
+  private final Map<CacheKey, String> methodKeyCache = new HashMap<CacheKey, String>();
+  
   /**
    * Map of known method names.
    */
@@ -103,8 +101,7 @@ public class NameGenerator {
   public String getSingletonFieldName(Key<?> key) {
     return mangle("singleton_", key);
   }
-
-
+  
   /**
    * Returns a new valid (i.e. unique) method name based on {@code base}.
    *
@@ -135,7 +132,7 @@ public class NameGenerator {
 
   private String mangle(String prefix, Key<?> key) {
     CacheKey cacheKey = new CacheKey(prefix, key);
-    String cached = cache.get(cacheKey);
+    String cached = methodKeyCache.get(cacheKey);
     if (cached != null) {
       return cached;
     }
@@ -149,7 +146,7 @@ public class NameGenerator {
     
     name = createMethodName(name);
 
-    cache.put(cacheKey, name);
+    methodKeyCache.put(cacheKey, name);
     return name;
   }
 

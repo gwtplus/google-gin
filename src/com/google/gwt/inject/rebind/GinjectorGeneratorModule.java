@@ -18,6 +18,8 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.rebind.BindingResolver.BindingResolverFactory;
+import com.google.gwt.inject.rebind.GuiceElementVisitor.GuiceElementVisitorFactory;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
@@ -25,9 +27,11 @@ import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.inject.AbstractModule;
+import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 
 import java.lang.reflect.Method;
 
@@ -57,7 +61,15 @@ class GinjectorGeneratorModule extends AbstractModule {
     bind(new TypeLiteral<Class<? extends Ginjector>>(){})
         .annotatedWith(GinjectorInterfaceType.class)
         .toInstance(ginjectorInterface);
-    bind(BindingIndex.class).to(BindingCollection.class).in(Singleton.class);
+    bind(GinjectorBindings.class).annotatedWith(RootBindings.class)
+        .to(GinjectorBindings.class).in(Singleton.class);
+    bind(BindingIndex.class)
+        .to(Key.get(GinjectorBindings.class, RootBindings.class))
+        .in(Singleton.class);
+    install(new FactoryModuleBuilder()
+        .build(GuiceElementVisitor.GuiceElementVisitorFactory.class));
+    install(new FactoryModuleBuilder()
+        .build(BindingResolverFactory.class));
   }
 
   @Provides

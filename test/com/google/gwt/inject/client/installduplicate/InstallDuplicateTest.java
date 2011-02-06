@@ -19,6 +19,7 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.PrivateGinModule;
 import com.google.gwt.inject.client.binder.GinBinder;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.name.Named;
@@ -92,6 +93,8 @@ public class InstallDuplicateTest extends GWTTestCase {
       binder.install(new TwoInstancesInstalledOnBinder());
       binder.install(module);
       binder.install(new TwoInstancesInstalledOnBinder());
+      binder.install(new PrivateModuleInstalledTwiceOnBinder());
+      binder.install(new PrivateModuleInstalledTwiceOnBinder());
     }
   }
 
@@ -159,6 +162,25 @@ public class InstallDuplicateTest extends GWTTestCase {
     @Override
     public boolean equals(Object obj) {
       return obj instanceof TwoInstancesInstalledOnBinder;
+    }
+
+    @Override
+    public int hashCode() {
+      return 42;
+    }
+  }
+  
+  static class PrivateModuleInstalledTwiceOnBinder extends PrivateGinModule {
+    @Override
+    protected void configure() {
+      bind(Foo.class).annotatedWith(Names.named("BoundInPrivateModule"))
+          .to(Foo.class);
+      expose(Foo.class).annotatedWith(Names.named("BoundInPrivateModule"));
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof PrivateModuleInstalledTwiceOnBinder;
     }
 
     @Override

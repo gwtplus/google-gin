@@ -50,15 +50,13 @@ import java.util.Set;
 public class SourceWriteUtil {
 
   private final GuiceUtil guiceUtil;
-  private final NameGenerator nameGenerator;
   private final MemberCollector memberCollector;
   private final BindingIndex bindingIndex;
 
   @Inject
-  protected SourceWriteUtil(GuiceUtil guiceUtil, NameGenerator nameGenerator,
+  protected SourceWriteUtil(GuiceUtil guiceUtil,
       @Injectable MemberCollector memberCollector, BindingIndex bindingIndex) {
     this.guiceUtil = guiceUtil;
-    this.nameGenerator = nameGenerator;
     this.memberCollector = memberCollector;
     this.bindingIndex = bindingIndex;
   }
@@ -75,12 +73,13 @@ public class SourceWriteUtil {
    * @return string calling the generated method
    */
   public String appendFieldInjection(SourceWriter sourceWriter, Iterable<FieldLiteral<?>> fields,
-      String injecteeName) throws NoSourceNameException {
+      String injecteeName, NameGenerator nameGenerator) throws NoSourceNameException {
 
     StringBuilder methodInvocations = new StringBuilder();
 
     for (FieldLiteral<?> field : fields) {
-      methodInvocations.append(createFieldInjection(sourceWriter, field, injecteeName))
+      methodInvocations
+          .append(createFieldInjection(sourceWriter, field, injecteeName, nameGenerator))
           .append("\n");
     }
 
@@ -95,10 +94,11 @@ public class SourceWriteUtil {
    * @param field field to be injected
    * @param injecteeName variable that references the object into which values
    *          are injected, in the context of the returned call string
+   * @param nameGenerator NameGenerator to be used for ensuring method name uniqueness
    * @return string calling the generated method
    */
   public String createFieldInjection(SourceWriter sourceWriter, FieldLiteral<?> field, 
-      String injecteeName) throws NoSourceNameException {
+      String injecteeName, NameGenerator nameGenerator) throws NoSourceNameException {
     boolean hasInjectee = injecteeName != null;
     Class<?> fieldDeclaringType = field.getRawDeclaringType();
     boolean isPublic = field.isPublic() && ReflectUtil.isPublic(field.getDeclaringType());
@@ -157,16 +157,18 @@ public class SourceWriteUtil {
    * @param injecteeName variable that references the object into which values
    *            are injected, in the context of the returned call string. If
    *            {@code null} all passed methods are called as static/constructors.
+   * @param nameGenerator NameGenerator to be used for ensuring method name uniqueness
    * @return string calling the generated method
    */
   public String createMethodInjection(SourceWriter sourceWriter,
-      Iterable<? extends MethodLiteral<?, ?>> methods, String injecteeName)
-      throws NoSourceNameException {
+      Iterable<? extends MethodLiteral<?, ?>> methods, String injecteeName, 
+      NameGenerator nameGenerator) throws NoSourceNameException {
 
     StringBuilder methodInvocations = new StringBuilder();
 
     for (MethodLiteral<?, ?> method : methods) {
-      methodInvocations.append(createMethodCallWithInjection(sourceWriter, method, injecteeName))
+      methodInvocations
+          .append(createMethodCallWithInjection(sourceWriter, method, injecteeName, nameGenerator))
           .append("\n");
     }
 
@@ -180,11 +182,13 @@ public class SourceWriteUtil {
    *
    * @param sourceWriter writer to which the injecting method is written
    * @param constructor constructor to call
+   * @param nameGenerator NameGenerator to be used for ensuring method name uniqueness
    * @return string calling the generated method
    */
   public String createConstructorInjection(SourceWriter sourceWriter,
-      MethodLiteral<?, Constructor<?>> constructor) throws NoSourceNameException {
-    return createMethodCallWithInjection(sourceWriter, constructor, null);
+      MethodLiteral<?, Constructor<?>> constructor, NameGenerator nameGenerator) 
+      throws NoSourceNameException {
+    return createMethodCallWithInjection(sourceWriter, constructor, null, nameGenerator);
   }
 
   /**
@@ -200,12 +204,13 @@ public class SourceWriteUtil {
    * @param injecteeName variable that references the object into which values
    *          are injected, in the context of the returned call string. If null
    *          all passed methods are called as static/constructors.
+   * @param nameGenerator NameGenerator to be used for ensuring method name uniqueness
    * @return string calling the generated method
    */
   public String createMethodCallWithInjection(SourceWriter sourceWriter, MethodLiteral<?, ?> method,
-      String injecteeName) throws NoSourceNameException {
+      String injecteeName, NameGenerator nameGenerator) throws NoSourceNameException {
     String[] params = new String[method.getParameterTypes().size()];
-    return createMethodCallWithInjection(sourceWriter, method, injecteeName, params);
+    return createMethodCallWithInjection(sourceWriter, method, injecteeName, params, nameGenerator);
   }
 
   /**
@@ -228,10 +233,12 @@ public class SourceWriteUtil {
    *          string. The array length must match the number of method
    *          parameters. A {@code null} value denotes that the getter method
    *          should be used.
+   * @param nameGenerator NameGenerator to use for ensuring method name uniqueness
    * @return string calling the generated method
    */
   public String createMethodCallWithInjection(SourceWriter sourceWriter, MethodLiteral<?, ?> method,
-      String injecteeName, String[] parameterNames) throws NoSourceNameException {
+      String injecteeName, String[] parameterNames, NameGenerator nameGenerator) 
+      throws NoSourceNameException {
     boolean hasInjectee = injecteeName != null;
     Class<?> methodDeclaringType = method.getRawDeclaringType();
     boolean isPublic = method.isPublic() && ReflectUtil.isPublic(method.getDeclaringType());
@@ -382,7 +389,7 @@ public class SourceWriteUtil {
    * @param bindingContext The context of the binding.
    */
   public void writeBindingContextJavadoc(SourceWriter writer, BindingContext bindingContext,
-      Key key) {
+      Key<?> key) {
     writeBindingContextJavadoc(writer, bindingContext,
         "Binding for " + key.getTypeLiteral() + " declared at:");
   }
@@ -428,15 +435,15 @@ public class SourceWriteUtil {
    * @param key key for which the injection is performed
    * @return name of the method created
    */
-  public String appendMemberInjection(SourceWriter writer, Key<?> key)
-      throws NoSourceNameException {
+  public String appendMemberInjection(SourceWriter writer, Key<?> key, 
+      NameGenerator nameGenerator) throws NoSourceNameException {
     TypeLiteral<?> type = key.getTypeLiteral();
     String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(key);
 
     StringBuilder sb = new StringBuilder();
 
-    sb.append(createMethodInjection(writer, getMethodsToInject(type), "injectee"));
-    sb.append(appendFieldInjection(writer, getFieldsToInject(type), "injectee"));
+    sb.append(createMethodInjection(writer, getMethodsToInject(type), "injectee", nameGenerator));
+    sb.append(appendFieldInjection(writer, getFieldsToInject(type), "injectee", nameGenerator));
 
     writeMethod(writer,
         "private void " + memberInjectMethodName +

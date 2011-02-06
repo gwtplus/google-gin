@@ -20,7 +20,7 @@ import com.google.gwt.inject.rebind.binding.BindingContext;
 
 /**
  * A single entry in the table of bindings maintained by
- * {@link BindingProcessor}.
+ * {@link BindingsProcessor}.
  */
 class BindingEntry {
 

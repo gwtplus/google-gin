@@ -44,7 +44,7 @@ public class BindConstantBindingTest extends TestCase {
 
     assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
 
-    binding.writeCreatorMethods(writerMock, signature);
+    binding.writeCreatorMethods(writerMock, signature, null);
 
     verify(utilMock);
   }
@@ -62,7 +62,7 @@ public class BindConstantBindingTest extends TestCase {
     BindConstantBinding binding = new BindConstantBinding(utilMock);
     binding.setKeyAndInstance(fontKey, Font.Verdana);
 
-    binding.writeCreatorMethods(writerMock, signature);
+    binding.writeCreatorMethods(writerMock, signature, null);
 
     verify(utilMock);
   }
@@ -80,7 +80,7 @@ public class BindConstantBindingTest extends TestCase {
     BindConstantBinding binding = new BindConstantBinding(utilMock);
     binding.setKeyAndInstance(fontKey, Font.Arial);
 
-    binding.writeCreatorMethods(writerMock, signature);
+    binding.writeCreatorMethods(writerMock, signature, null);
 
     verify(utilMock);
   }
@@ -101,7 +101,7 @@ public class BindConstantBindingTest extends TestCase {
 
     assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
 
-    binding.writeCreatorMethods(writerMock, signature);
+    binding.writeCreatorMethods(writerMock, signature, null);
 
     verify(utilMock);
   }
@@ -122,7 +122,7 @@ public class BindConstantBindingTest extends TestCase {
 
     assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
 
-    binding.writeCreatorMethods(writerMock, signature);
+    binding.writeCreatorMethods(writerMock, signature, null);
 
     verify(utilMock);
   }

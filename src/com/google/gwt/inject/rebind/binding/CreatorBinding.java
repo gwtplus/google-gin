@@ -20,6 +20,7 @@ import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
@@ -54,14 +55,15 @@ abstract class CreatorBinding implements Binding {
     optionalKeys.addAll(classRequiredKeys.getOptionalKeys());
   }
 
-  public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
-      throws NoSourceNameException {
+  public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
+      NameGenerator nameGenerator) throws NoSourceNameException {
     assert (type != null);
 
-    String memberInjectMethodName = sourceWriteUtil.appendMemberInjection(writer, Key.get(type));
+    String memberInjectMethodName = sourceWriteUtil.appendMemberInjection(writer, Key.get(type),
+        nameGenerator);
 
     StringBuilder sb = new StringBuilder();
-    appendCreationStatement(writer, sb);
+    appendCreationStatement(writer, sb, nameGenerator);
     sb.append("\n");
     sb.append(memberInjectMethodName).append("(result);\n");
 
@@ -79,8 +81,8 @@ abstract class CreatorBinding implements Binding {
     return type;
   }
 
-  protected abstract void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb)
-      throws NoSourceNameException;
+  protected abstract void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb,
+      NameGenerator nameGenerator) throws NoSourceNameException;
 
   protected String getTypeName() throws NoSourceNameException {
     assert (type != null);

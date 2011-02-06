@@ -18,6 +18,7 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -35,7 +36,7 @@ public class CallGwtDotCreateBinding extends CreatorBinding {
   }
 
   @Override protected final void appendCreationStatement(SourceWriter sourceWriter,
-      StringBuilder sb) throws NoSourceNameException {
+      StringBuilder sb, NameGenerator nameGenerator) throws NoSourceNameException {
 
     sb.append("Object created = GWT.create(").append(getTypeNameToCreate()).append(".class);\n");
 

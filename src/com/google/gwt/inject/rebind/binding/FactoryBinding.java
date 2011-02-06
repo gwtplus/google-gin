@@ -16,6 +16,8 @@
 
 package com.google.gwt.inject.rebind.binding;
 
+import static com.google.inject.internal.Annotations.getKey;
+
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
@@ -39,8 +41,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.google.inject.internal.Annotations.getKey;
 
 /**
  * Binder producing assisted inject factories.
@@ -87,7 +87,6 @@ public class FactoryBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
   private final List<AssistData> assistData = new ArrayList<AssistData>();
-  private final NameGenerator nameGenerator;
 
   private Map<Key<?>, TypeLiteral<?>> collector;
   private TypeLiteral<?> factoryType;
@@ -100,9 +99,8 @@ public class FactoryBinding implements Binding {
   private Set<Key<?>> implementations;
 
   @Inject
-  public FactoryBinding(SourceWriteUtil sourceWriteUtil, NameGenerator nameGenerator) {
+  public FactoryBinding(SourceWriteUtil sourceWriteUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
-    this.nameGenerator = nameGenerator;
   }
 
   public void setKeyAndCollector(Key<?> factoryKey, Map<Key<?>, TypeLiteral<?>> bindings) {
@@ -117,8 +115,8 @@ public class FactoryBinding implements Binding {
     }
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
-      throws NoSourceNameException {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
+      NameGenerator nameGenerator) throws NoSourceNameException {
     assert (factoryType != null);
 
     String factoryTypeName = ReflectUtil.getSourceName(factoryType);
@@ -132,7 +130,7 @@ public class FactoryBinding implements Binding {
       String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(
           Key.get(assisted.implementation, Assisted.class));
       String methodCall = sourceWriteUtil.createMethodCallWithInjection(writer,
-          assisted.constructor, null, assisted.parameterNames);
+          assisted.constructor, null, assisted.parameterNames, nameGenerator);
 
       String signature = ReflectUtil.getSignature(assisted.method,
           ReflectUtil.nonAbstractModifiers(assisted.method));

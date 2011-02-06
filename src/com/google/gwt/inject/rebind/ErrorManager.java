@@ -40,7 +40,7 @@ public class ErrorManager {
     logError(message, null);
   }
 
-  public  void logError(String message, Throwable t) {
+  public void logError(String message, Throwable t) {
     logger.log(TreeLogger.ERROR, message, t);
     foundError = true;
   }

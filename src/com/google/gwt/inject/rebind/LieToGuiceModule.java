@@ -26,7 +26,9 @@ import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A module to tell Guice about implicit bindings Gin has invented.
@@ -34,6 +36,7 @@ import java.util.List;
 @Singleton
 class LieToGuiceModule extends AbstractModule {
   private final List<Module> lies = new ArrayList<Module>();
+  private final Set<Key<?>> blacklist = new HashSet<Key<?>>();
   private final TreeLogger logger;
 
   @Inject
@@ -56,8 +59,22 @@ class LieToGuiceModule extends AbstractModule {
    * @param key Key to bind
    */
   <T> void registerImplicitBinding(Key<T> key) {
-    logger.log(TreeLogger.Type.TRACE, "Implicit binding registered with Guice for " + key);
-    lies.add(new ImplicitBindingModule<T>(key));
+    if (!blacklist.contains(key)) {
+      logger.log(TreeLogger.Type.TRACE, "Implicit binding registered with Guice for " + key);
+      lies.add(new ImplicitBindingModule<T>(key));
+    }
+  }
+  
+  /**
+   * Add the given to the "blacklist".  This records types that we may try to register
+   * with the module, but we know shouldn't actually have a lie created for.  Specifically,
+   * this is used for Untargetted Bindings.  Once registered, the calls to 
+   * {@link #registerImplicitBinding(Key)} will have no effect.
+   * 
+   * @param key The key to blacklist
+   */
+  void blacklist(Key<?> key) {
+    blacklist.add(key);
   }
 
   private class ImplicitBindingModule<T> implements Module, Provider<T> {
