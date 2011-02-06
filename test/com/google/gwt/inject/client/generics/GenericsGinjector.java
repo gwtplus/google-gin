@@ -17,6 +17,7 @@ package com.google.gwt.inject.client.generics;
 
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.generics.GenericsGinModule.InjectedWithGenerics;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -36,4 +37,5 @@ public interface GenericsGinjector extends Ginjector {
 
   List<? super String> getSuperStringList();
   List<Parameterized<?>> getWildcardList();
+  InjectedWithGenerics getInjectedWithGeneric();
 }

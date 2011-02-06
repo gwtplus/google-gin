@@ -16,6 +16,7 @@
 package com.google.gwt.inject.client.generics;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.inject.client.generics.GenericsGinModule.InjectedWithGenerics;
 import com.google.gwt.junit.client.GWTTestCase;
 
 import java.util.ArrayList;
@@ -86,8 +87,13 @@ public class GenericsTest extends GWTTestCase {
 
   public void testNestedWildcard() {
     GenericsGinjector ginjector = GWT.create(GenericsGinjector.class);
+    ginjector.getWildcardList();
+  }
 
-    List<Parameterized<?>> list = ginjector.getWildcardList();
+  // Testing http://code.google.com/p/google-gin/issues/detail?id=136
+  public void testJsniGenerics() {
+    GenericsGinjector ginjector = GWT.create(GenericsGinjector.class);
+    ginjector.getInjectedWithGeneric();
   }
 
   public String getModuleName() {

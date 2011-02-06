@@ -25,8 +25,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.google.gwt.inject.rebind.util.SourceWriteUtil.join;
@@ -107,6 +109,18 @@ public abstract class MethodLiteral<T, M extends Member & AnnotatedElement & Gen
     }
     return parameterTypes;
   }
+
+  /**
+   * Returns this method's parameter types without any type parametrization
+   * applied.
+   *
+   * For example, {@code &lt;T> void foo(T t)} will return a list with a single
+   * entry, a {@link TypeVariable} with name {@code T} and bounded by
+   * {@code java.lang.Object}.
+   *
+   * @return raw parameter types
+   */
+  public abstract List<Type> getRawParameterTypes();
 
   /**
    * Returns this method's exception types, if appropriate parametrized with
@@ -201,6 +215,11 @@ public abstract class MethodLiteral<T, M extends Member & AnnotatedElement & Gen
     protected Annotation[][] getParameterAnnotations() {
       return getMember().getParameterAnnotations();
     }
+
+    @Override
+    public List<Type> getRawParameterTypes() {
+      return Arrays.asList(getMember().getGenericParameterTypes());
+    }
   }
 
   /**
@@ -225,6 +244,11 @@ public abstract class MethodLiteral<T, M extends Member & AnnotatedElement & Gen
     @Override
     protected Annotation[][] getParameterAnnotations() {
       return getMember().getParameterAnnotations();
+    }
+
+    @Override
+    public List<Type> getRawParameterTypes() {
+      return Arrays.asList(getMember().getGenericParameterTypes());
     }
   }
 }

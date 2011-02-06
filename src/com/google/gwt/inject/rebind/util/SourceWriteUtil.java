@@ -34,6 +34,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -448,13 +449,15 @@ public class SourceWriteUtil {
   private String getJsniSignature(MethodLiteral<?, ?> method) throws NoSourceNameException {
     StringBuilder signature = new StringBuilder();
     signature.append("@");
-    signature.append(ReflectUtil.getSourceName(method.getDeclaringType()));
+    signature.append(ReflectUtil.getSourceName(method.getRawDeclaringType()));
 
     String name = method.isConstructor() ? "new" : method.getName();
     signature.append("::").append(name).append("(");
 
-    for (TypeLiteral<?> param : method.getParameterTypes()) {
-      signature.append(getJniSignature(param.getType()));
+    // Using raw parameter types here since JNI doesn't know about
+    // parametrization at lookup time.
+    for (Type param : method.getRawParameterTypes()) {
+      signature.append(getJniSignature(param));
     }
 
     signature.append(")");
@@ -501,6 +504,12 @@ public class SourceWriteUtil {
       return getJniSignature(((WildcardType) type).getUpperBounds()[0]);
     }
 
+    if (type instanceof TypeVariable) {
+
+      // TODO(schmitt): This is likely incorrect in some cases.
+      return getJniSignature(((TypeVariable) type).getBounds()[0]);
+    }
+
     throw new NoSourceNameException(type);
   }
 
@@ -521,7 +530,7 @@ public class SourceWriteUtil {
   private String getJsniSignature(FieldLiteral<?> field) throws NoSourceNameException {
     StringBuilder signature = new StringBuilder();
     signature.append("@");
-    signature.append(ReflectUtil.getSourceName(field.getDeclaringType()));
+    signature.append(ReflectUtil.getSourceName(field.getRawDeclaringType()));
     signature.append("::").append(field.getName());
     return signature.toString();
   }

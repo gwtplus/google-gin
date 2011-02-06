@@ -16,6 +16,7 @@
 package com.google.gwt.inject.client.generics;
 
 import com.google.gwt.inject.client.AbstractGinModule;
+import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -74,4 +75,22 @@ public class GenericsGinModule extends AbstractGinModule {
   }
 
   public static class CharSequenceList extends ArrayList<CharSequence> {}
+  
+  public static class MyGeneric<T> {
+    List<String> myListOfString;
+    @Inject void setMyListOfString(List<String> myListOfString) {
+      this.myListOfString = myListOfString;
+    }
+
+    @Inject T myT;
+    T myOtherT;
+    @Inject void setMyOtherT(T myOtherT) {
+      this.myOtherT = myOtherT;
+    }
+  }
+
+  public static class InjectedWithGenerics {
+    @Inject MyGeneric<List<Integer>> myGeneric;
+  }
+
 }
