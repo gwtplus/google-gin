@@ -15,8 +15,12 @@
  */
 package com.google.gwt.inject.rebind;
 
+import java.lang.reflect.Method;
+import java.util.Set;
+
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.BindingResolver.BindingResolverFactory;
 import com.google.gwt.inject.rebind.GuiceElementVisitor.GuiceElementVisitorFactory;
@@ -33,8 +37,6 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
-import java.lang.reflect.Method;
-
 /**
  * Guice module used in the implementation of {@link GinjectorGenerator}.
  * <p>
@@ -46,12 +48,15 @@ class GinjectorGeneratorModule extends AbstractModule {
   private final TreeLogger logger;
   private final GeneratorContext ctx;
   private final Class<? extends Ginjector> ginjectorInterface;
+  private final Set<Class<? extends GinModule>> configurationModules;
 
   public GinjectorGeneratorModule(TreeLogger logger, GeneratorContext ctx,
-      Class<? extends Ginjector> ginjectorInterface) {
+      Class<? extends Ginjector> ginjectorInterface, 
+      Set<Class<? extends GinModule>> configurationModules) {
     this.logger = logger;
     this.ctx = ctx;
     this.ginjectorInterface = ginjectorInterface;
+    this.configurationModules = configurationModules;
   }
 
   @Override
@@ -70,6 +75,9 @@ class GinjectorGeneratorModule extends AbstractModule {
         .build(GuiceElementVisitor.GuiceElementVisitorFactory.class));
     install(new FactoryModuleBuilder()
         .build(BindingResolverFactory.class));
+    bind(new TypeLiteral<Set<Class<? extends GinModule>>>(){})
+        .annotatedWith(ConfigurationModuleTypes.class)
+        .toInstance(configurationModules);
   }
 
   @Provides

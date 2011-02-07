@@ -81,7 +81,11 @@ class BindingsProcessor {
   private final GinjectorBindings rootGinjectorBindings;
 
   private final GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory;
-
+  /**
+   * Modules specified via a GWT configuration property
+   */
+  private final Set<Class<? extends GinModule>> configurationModules;
+  
   @Inject
   BindingsProcessor(Provider<MemberCollector> collectorProvider,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
@@ -90,7 +94,8 @@ class BindingsProcessor {
       Provider<GinjectorBinding> ginjectorBindingProvider,
       ErrorManager errorManager,
       @RootBindings GinjectorBindings rootGinjectorBindings,
-      GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory) {
+      GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory,
+      @ConfigurationModuleTypes Set<Class<? extends GinModule>> configurationModules) {
     this.ginjectorBindingProvider = ginjectorBindingProvider;
     this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
     this.lieToGuiceModule = lieToGuiceModule;
@@ -98,6 +103,7 @@ class BindingsProcessor {
     this.errorManager = errorManager;
     this.rootGinjectorBindings = rootGinjectorBindings;
     this.guiceElementVisitorFactory = guiceElementVisitorFactory;
+    this.configurationModules = configurationModules;
 
     completeCollector = collectorProvider.get();
     completeCollector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
@@ -213,9 +219,18 @@ class BindingsProcessor {
   }
 
   private List<Module> createModules() {
+    Set<Class<? extends GinModule>> moduleClasses = 
+        new HashSet<Class<? extends GinModule>>(configurationModules);
+    getModulesFromInjectorInterface(ginjectorInterface, moduleClasses);
+    
     List<Module> modules = new ArrayList<Module>();
-    populateModulesFromInjectorInterface(ginjectorInterface, modules,
-        new HashSet<Class<? extends GinModule>>());
+    for (Class<? extends GinModule> moduleClass : moduleClasses) {
+      Module module = instantiateGModuleClass(moduleClass);
+      if (module != null) {
+        modules.add(module);
+      }
+    }
+    
     return modules;
   }
 
@@ -230,35 +245,27 @@ class BindingsProcessor {
     }
   }
 
-  private void populateModulesFromInjectorInterface(TypeLiteral<?> ginjectorType,
-      List<Module> modules, Set<Class<? extends GinModule>> added) {
-    GinModules ginModules = ginjectorType.getRawType().getAnnotation(GinModules.class);
-    if (ginModules != null) {
-      for (Class<? extends GinModule> moduleClass : ginModules.value()) {
-        if (added.contains(moduleClass)) {
-          continue;
-        }
-
-        Module module = instantiateGModuleClass(moduleClass);
-        if (module != null) {
-          modules.add(module);
-          added.add(moduleClass);
-        }
+  private void getModulesFromInjectorInterface(TypeLiteral<?> ginjectorType,
+      Set<Class<? extends GinModule>> moduleClasses) {
+    GinModules ginModulesAnnotation = ginjectorType.getRawType().getAnnotation(GinModules.class);
+    if (ginModulesAnnotation != null) {
+      for (Class<? extends GinModule> moduleClass : ginModulesAnnotation.value()) {
+        moduleClasses.add(moduleClass);
       }
     }
 
     for (Class<?> ancestor : ginjectorType.getRawType().getInterfaces()) {
       // TODO(schmitt): Only look at ancestors extending Ginjector?
-      populateModulesFromInjectorInterface(ginjectorType.getSupertype(ancestor), modules, added);
+      getModulesFromInjectorInterface(ginjectorType.getSupertype(ancestor), moduleClasses);
     }
   }
 
-  private Module instantiateGModuleClass(Class<? extends GinModule> moduleClassName) {
+  private Module instantiateGModuleClass(Class<? extends GinModule> moduleClass) {
     try {
-      Constructor<? extends GinModule> constructor = moduleClassName.getDeclaredConstructor();
+      Constructor<? extends GinModule> constructor = moduleClass.getDeclaredConstructor();
       try {
         constructor.setAccessible(true);
-        if (PrivateGinModule.class.isAssignableFrom(moduleClassName)) {
+        if (PrivateGinModule.class.isAssignableFrom(moduleClass)) {
           return new PrivateGinModuleAdapter(
               (PrivateGinModule) constructor.newInstance(), rootGinjectorBindings);
         } else {
@@ -268,13 +275,13 @@ class BindingsProcessor {
         constructor.setAccessible(false);
       }
     } catch (IllegalAccessException e) {
-      errorManager.logError("Error creating module: " + moduleClassName, e);
+      errorManager.logError("Error creating module: " + moduleClass, e);
     } catch (InstantiationException e) {
-      errorManager.logError("Error creating module: " + moduleClassName, e);
+      errorManager.logError("Error creating module: " + moduleClass, e);
     } catch (NoSuchMethodException e) {
-      errorManager.logError("Error creating module: " + moduleClassName, e);
+      errorManager.logError("Error creating module: " + moduleClass, e);
     } catch (InvocationTargetException e) {
-      errorManager.logError("Error creating module: " + moduleClassName, e);
+      errorManager.logError("Error creating module: " + moduleClass, e);
     }
 
     return null;

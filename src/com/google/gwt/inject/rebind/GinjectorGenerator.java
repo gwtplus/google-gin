@@ -15,10 +15,18 @@
  */
 package com.google.gwt.inject.rebind;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import com.google.gwt.core.ext.BadPropertyValueException;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
+import com.google.gwt.core.ext.PropertyOracle;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.inject.Guice;
@@ -29,8 +37,16 @@ import com.google.inject.Module;
  */
 public class GinjectorGenerator extends Generator {
 
+  /**
+   * Name of the multivalued GWT configuration property containing 
+   * permutation-specific modules.
+   */
+  private static final String GIN_MODULES_CONFIGURATION_PROPERTY_NAME = 
+      "com.google.gwt.inject.ginmodules";
+
   public String generate(TreeLogger logger, GeneratorContext ctx, String requestedClass)
       throws UnableToCompleteException {
+    
     Class<? extends Ginjector> ginjectorInterface;
     try {
       ginjectorInterface = getGinjectorType(requestedClass);
@@ -45,7 +61,8 @@ public class GinjectorGenerator extends Generator {
 
     // This is the Injector we use for the Generator internally,
     // it has nothing to do with user code.
-    Module module = new GinjectorGeneratorModule(logger, ctx, ginjectorInterface);
+    Module module = new GinjectorGeneratorModule(logger, ctx, ginjectorInterface,
+        getConfigurationModules(ctx.getPropertyOracle(), logger));
     return Guice.createInjector(module).getInstance(GinjectorGeneratorImpl.class).generate();
   }
 
@@ -61,5 +78,42 @@ public class GinjectorGenerator extends Generator {
     }
 
     return (Class<? extends Ginjector>) type;
+  }
+
+
+  @SuppressWarnings("unchecked")
+  // We check that the class is a GinModule before casting it.
+  private Set<Class<? extends GinModule>> getConfigurationModules(PropertyOracle propertyOracle,
+      TreeLogger logger) throws UnableToCompleteException {
+
+    List<String> configurationModuleNames;
+    try {
+      // Result of getConfigurationProperty can never be null.
+      configurationModuleNames = propertyOracle.getConfigurationProperty(
+          GIN_MODULES_CONFIGURATION_PROPERTY_NAME).getValues();
+    } catch (BadPropertyValueException e) {
+      // Thrown when the configuration property is not defined.
+      return Collections.emptySet();
+    }
+
+    Set<Class<? extends GinModule>> ginModules = 
+          new HashSet<Class<? extends GinModule>>(configurationModuleNames.size());
+    for (String moduleName : configurationModuleNames) {
+      try {
+        Class<?> ginModule = ReflectUtil.loadClass(moduleName);
+        if (!GinModule.class.isAssignableFrom(ginModule)) {
+          logger.log(TreeLogger.Type.ERROR, String.format("The gin module type [%s] does not "
+              + "inherit from GinModule, please check your definition of " + 
+              GIN_MODULES_CONFIGURATION_PROPERTY_NAME + " in the GWT module.", moduleName));
+          throw new UnableToCompleteException();
+        }
+        ginModules.add((Class<? extends GinModule>) ginModule);
+      } catch (ClassNotFoundException e) {
+        logger.log(TreeLogger.ERROR, String.format("Unable to load gin module type [%s], "
+            + "maybe you haven't compiled your client java sources?", moduleName), e);
+        throw new UnableToCompleteException();
+      }
+    }
+    return ginModules;
   }
 }
