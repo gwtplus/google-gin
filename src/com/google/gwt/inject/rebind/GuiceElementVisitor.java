@@ -118,7 +118,7 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
   }
 
   public Void visit(StaticInjectionRequest staticInjectionRequest) {
-    bindings.addStaticInjectionRequest(staticInjectionRequest.getType(), messages);
+    bindings.addStaticInjectionRequest(staticInjectionRequest.getType());
     return null;
   }
   

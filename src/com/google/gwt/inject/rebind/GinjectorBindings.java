@@ -444,7 +444,7 @@ public class GinjectorBindings implements BindingIndex {
     return classPackage == ginjectorPackage;
   }
 
-  void addStaticInjectionRequest(Class<?> type, List<Message> messages) {
+  void addStaticInjectionRequest(Class<?> type) {
     assertNotFinalized();
     staticInjectionRequests.add(type);
 
@@ -454,12 +454,13 @@ public class GinjectorBindings implements BindingIndex {
     for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(type)) {
       Member member = injectionPoint.getMember();
       if (member instanceof Method) {
-        RequiredKeys keys =
-            guiceUtil.getRequiredKeys(MethodLiteral.get((Method) member, TypeLiteral.get(type)));
+        RequiredKeys keys = guiceUtil.getRequiredKeys(
+            MethodLiteral.get((Method) member, TypeLiteral.get(member.getDeclaringClass())));
         unresolved.addAll(keys.getRequiredKeys());
         unresolvedOptional.addAll(keys.getOptionalKeys());
       } else if (member instanceof Field) {
-        FieldLiteral<?> field = FieldLiteral.get((Field) member, TypeLiteral.get(type));
+        FieldLiteral<?> field =
+            FieldLiteral.get((Field) member, TypeLiteral.get(member.getDeclaringClass()));
         Key<?> key = guiceUtil.getKey(field);
         if (guiceUtil.isOptional(field)) {
           unresolvedOptional.add(key);

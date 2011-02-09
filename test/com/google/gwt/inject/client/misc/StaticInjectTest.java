@@ -16,7 +16,13 @@
 package com.google.gwt.inject.client.misc;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.inject.client.AbstractGinModule;
+import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 
 public class StaticInjectTest extends GWTTestCase {
 
@@ -57,7 +63,40 @@ public class StaticInjectTest extends GWTTestCase {
     assertNotNull(StaticClass.getInjector());
   }
 
+  public void testSuperClassInjection() {
+    GWT.create(SuperClassGinjector.class);
+
+    assertEquals("f00", SuperClass.foo);
+    assertEquals("b4r", SuperClass.bar);
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }
+
+
+  public static class SuperClass {
+    @Inject @Named("foo") static String foo;
+    static String bar;
+
+    @Inject
+    static void setBar(@Named("bar") String string) {
+      bar = string;
+    }
+  }
+
+  public static class SubClass extends SuperClass {}
+
+  public static class SuperClassGinModule extends AbstractGinModule {
+
+    @Override
+    protected void configure() {
+      bindConstant().annotatedWith(Names.named("foo")).to("f00");
+      bindConstant().annotatedWith(Names.named("bar")).to("b4r");
+      requestStaticInjection(SubClass.class);
+    }
+  }
+
+  @GinModules(SuperClassGinModule.class)
+  public static interface SuperClassGinjector extends Ginjector {}
 }

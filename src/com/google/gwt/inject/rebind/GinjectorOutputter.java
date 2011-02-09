@@ -288,9 +288,9 @@ class GinjectorOutputter {
     }
   }
 
-  private void outputStaticInjections(GinjectorBindings bindings) {
+  // Visible for tests.
+  void outputStaticInjections(GinjectorBindings bindings) {
     NameGenerator nameGenerator = bindings.getNameGenerator();
-    boolean foundError = false;
 
     for (Class<?> type : bindings.getStaticInjectionRequests()) {
       String methodName = nameGenerator.convertToValidMemberName("injectStatic_" + type.getName());
@@ -300,11 +300,12 @@ class GinjectorOutputter {
         try {
           if (member instanceof Method) {
             MethodLiteral<?, Method> method =
-                MethodLiteral.get((Method) member, TypeLiteral.get(type));
+                MethodLiteral.get((Method) member, TypeLiteral.get(member.getDeclaringClass()));
             body.append(sourceWriteUtil.createMethodCallWithInjection(writer, method, null,
                 nameGenerator));
           } else if (member instanceof Field) {
-            FieldLiteral<?> field = FieldLiteral.get((Field) member, TypeLiteral.get(type));
+            FieldLiteral<?> field =
+                FieldLiteral.get((Field) member, TypeLiteral.get(member.getDeclaringClass()));
             body.append(sourceWriteUtil.createFieldInjection(writer, field, null, nameGenerator));
           }
         } catch (NoSourceNameException e) {
