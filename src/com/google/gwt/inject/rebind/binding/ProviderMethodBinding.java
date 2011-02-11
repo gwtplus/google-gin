@@ -39,6 +39,7 @@ public class ProviderMethodBinding implements Binding {
   private final SourceWriteUtil sourceWriteUtil;
 
   private MethodLiteral<?, Method> providerMethod;
+  private Class<?> moduleType;
 
   @Inject
   public ProviderMethodBinding(GuiceUtil guiceUtil, SourceWriteUtil sourceWriteUtil) {
@@ -47,9 +48,9 @@ public class ProviderMethodBinding implements Binding {
   }
 
   public void setProviderMethod(ProviderMethod providerMethod) {
-    Class<?> moduleClass = providerMethod.getInstance().getClass();
-    this.providerMethod = MethodLiteral.get(providerMethod.getMethod(),
-        TypeLiteral.get(moduleClass));
+    moduleType = providerMethod.getInstance().getClass();
+    Method method = providerMethod.getMethod();
+    this.providerMethod = MethodLiteral.get(method, TypeLiteral.get(method.getDeclaringClass()));
   }
   
   // TODO(schmitt): This implementation creates a new module instance for
@@ -58,7 +59,7 @@ public class ProviderMethodBinding implements Binding {
   // provider methods.
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
       NameGenerator nameGenerator) throws NoSourceNameException {
-    String moduleSourceName = ReflectUtil.getSourceName(providerMethod.getDeclaringType());
+    String moduleSourceName = ReflectUtil.getSourceName(moduleType);
     String createModule = "new " + moduleSourceName + "()";
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + sourceWriteUtil.createMethodCallWithInjection(writer, providerMethod,
