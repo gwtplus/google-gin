@@ -16,6 +16,8 @@
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.gwt.inject.rebind.BindingResolver.BindingResolverFactory;
@@ -221,8 +223,10 @@ public class GinjectorBindings implements BindingIndex {
     if (!unresolved.isEmpty() || !unresolvedOptional.isEmpty()) {
       // Sanity check to make sure we never let bound things into the unresolved
       // sets
-      assert unresolved.removeAll(bindings.keySet());
-      assert unresolvedOptional.removeAll(bindings.keySet());
+      Preconditions.checkState(!unresolved.removeAll(bindings.keySet()),
+          "There shouldn't be any unresolved bindings in the bindings set");
+      Preconditions.checkState(!unresolvedOptional.removeAll(bindings.keySet()),
+          "There shouldn't be any unresolved bindings in the bindings set");
 
       // Iterate through copies because we will modify sets during iteration
       for (Key<?> key : new ArrayList<Key<?>>(unresolved)) {
@@ -339,13 +343,15 @@ public class GinjectorBindings implements BindingIndex {
   }
 
   public boolean isBound(Key<?> key) {
-    assertFinalized();
     return bindings.containsKey(key);
   }
 
   public void addUnresolved(Key<?> key) {
     assertNotFinalized();
-    unresolved.add(key);
+    if (!bindings.containsKey(key)) {
+      logger.log(TreeLogger.TRACE, "Add unresolved key: " + key);
+      unresolved.add(key);
+    }
   }
 
   void addUnresolvedEntriesForInjectorInterface() {
@@ -411,7 +417,7 @@ public class GinjectorBindings implements BindingIndex {
   public boolean isBoundInChild(Key<?> key) {
     return boundInChildren.contains(key);
   }
-
+  
   private void addRequiredKeys(Key<?> key, RequiredKeys requiredKeys) {
     // Resolve optional keys.
     // Clone the returned set so we can safely mutate it
