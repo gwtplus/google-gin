@@ -161,7 +161,7 @@ public class FactoryBinding implements Binding {
     Set<Key<?>> requiredKeys = new HashSet<Key<?>>();
     Class<?> factoryRawType = factoryType.getRawType();
 
-    // TODO(schmitt): Also get methods from super-interfaces.
+    // getMethods() includes inherited methods from super-interfaces.
     for (Method method : factoryRawType.getMethods()) {
 
       Key<?> returnType = getKey(factoryType.getReturnType(method), method,
@@ -194,8 +194,9 @@ public class FactoryBinding implements Binding {
       String[] parameterNames = extractConstructorParameters(implementation, constructor,
           paramList, errors, requiredKeys);
 
+      TypeLiteral<?> methodDeclaringType = factoryType.getSupertype(method.getDeclaringClass());
       assistData.add(new AssistData(implementation, MethodLiteral.get(constructor, implementation),
-          MethodLiteral.get(method, factoryType), parameterNames));
+          MethodLiteral.get(method, methodDeclaringType), parameterNames));
       implementations.add(Key.get(implementation, Assisted.class));
     }
 
