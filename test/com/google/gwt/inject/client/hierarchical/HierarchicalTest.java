@@ -21,6 +21,7 @@ import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.SimpleObject;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.inject.Provides;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -59,6 +60,11 @@ public class HierarchicalTest extends GWTTestCase {
     assertEquals("baz", ginjector.getGreen());
   }
 
+  public void testInheritedNonGinjector() {
+    InheritingGinjector ginjector = GWT.create(InheritingGinjector.class);
+    assertEquals("foo", ginjector.getString());
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }
@@ -95,4 +101,22 @@ public class HierarchicalTest extends GWTTestCase {
   public static interface ChildGinjector extends SuperGinjector {
     @Named("blue") String getBlue();
   }
+
+  static class SimpleGinModule extends AbstractGinModule {
+
+    @Override
+    protected void configure() {}
+
+    @Provides
+    String provideString() {
+      return "foo";
+    }
+  }
+
+  interface RandomInterface {
+    String getString();
+  }
+
+  @GinModules(SimpleGinModule.class)
+  interface InheritingGinjector extends RandomInterface, Ginjector {}
 }

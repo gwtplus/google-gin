@@ -59,9 +59,6 @@ public class GuiceUtil {
    * @return key based on passed method
    */
   public Key<?> getKey(MethodLiteral<?, ?> method) {
-    assertGinjectorMethod(method, String.format("Can only determine keys for ginjector methods but "
-        + "got %s instead.", method));
-
     if (isMemberInject(method)) {
       return getKey(method.getParameterTypes().get(0).getType(), method.getBindingAnnotation());
     }
@@ -105,18 +102,9 @@ public class GuiceUtil {
    * @return true if the passed method is used for member injection
    */
   public boolean isMemberInject(MethodLiteral<?, ?> method) {
-    assertGinjectorMethod(method, String.format("Can only determine member injection status for "
-        + "ginjector methods but got %s instead.", method));
-
     // TODO(schmitt): Consider returning an enum for the type of ginjector
     // method instead.
     return method.getReturnType().getRawType().equals(Void.TYPE);
-  }
-
-  private void assertGinjectorMethod(MethodLiteral<?, ?> method, String error) {
-    if (!Ginjector.class.isAssignableFrom(method.getDeclaringType().getRawType())) {
-      throw new IllegalArgumentException(error);
-    }
   }
 
   /**

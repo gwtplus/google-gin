@@ -84,15 +84,6 @@ public class GuiceUtilTest extends TestCase {
     assertEquals(MyBindingAnnotation.class, key.getAnnotationType());
   }
 
-  public void testGetKey_nonGinjectorMethod() throws NoSuchMethodException {
-    try {
-      new GuiceUtil(createInjectableCollector()).getKey(getNonGinjectorMethod());
-      fail("Expected IllegalArgumentException.");
-    } catch (IllegalArgumentException e) {
-      // Expected.
-    }
-  }
-
   private Key<?> getMethodKey(String name, Class... parameters) throws NoSuchMethodException {
     return new GuiceUtil(createInjectableCollector()).getKey(
         (MethodLiteral<?, Method>) getMethod(name, parameters));
@@ -148,15 +139,6 @@ public class GuiceUtilTest extends TestCase {
     GuiceUtil guiceUtil = new GuiceUtil(createInjectableCollector());
     assertFalse(guiceUtil.isMemberInject(getMethod("unAnnotated")));
     assertTrue(guiceUtil.isMemberInject(getMethod("memberInjectUnAnnotated", String.class)));
-  }
-
-  public void testIsMemberInject_nonGinjectorMethod() throws NoSuchMethodException {
-    try {
-      new GuiceUtil(createInjectableCollector()).isMemberInject(getNonGinjectorMethod());
-      fail("Expected IllegalArgumentException.");
-    } catch (IllegalArgumentException e) {
-      // Expected.
-    }
   }
 
   public void testIsOptional_method() throws NoSuchMethodException {
@@ -294,6 +276,4 @@ public class GuiceUtilTest extends TestCase {
   public static class Bar {}
 
   public static class Baz {}
-
-  public void nonGinjectorMethod() {}
 }
