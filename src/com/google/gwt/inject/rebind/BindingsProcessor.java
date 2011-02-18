@@ -116,14 +116,13 @@ class BindingsProcessor {
     rootGinjectorBindings.addUnresolvedEntriesForInjectorInterface();
     registerGinjectorBinding();
 
-    List<Module> modules = createModules();
-    createBindingsForModules(modules);
+    createBindingsForModules(createModules(rootGinjectorBindings));
     errorManager.checkForError();
     
     resolveAllUnresolvedBindings(rootGinjectorBindings);
     errorManager.checkForError();
     
-    validateModulesUsingGuice(modules);
+    validateModulesUsingGuice(createModules(null));
     errorManager.checkForError();
   }
   
@@ -219,14 +218,14 @@ class BindingsProcessor {
     visitor.visitElementsAndReportErrors(Elements.getElements(modules));
   }
 
-  private List<Module> createModules() {
+  private List<Module> createModules(GinjectorBindings rootGinjectorBindings) {
     Set<Class<? extends GinModule>> moduleClasses = 
         new HashSet<Class<? extends GinModule>>(configurationModules);
     getModulesFromInjectorInterface(ginjectorInterface, moduleClasses);
     
     List<Module> modules = new ArrayList<Module>();
     for (Class<? extends GinModule> moduleClass : moduleClasses) {
-      Module module = instantiateGModuleClass(moduleClass);
+      Module module = instantiateGModuleClass(moduleClass, rootGinjectorBindings);
       if (module != null) {
         modules.add(module);
       }
@@ -259,7 +258,8 @@ class BindingsProcessor {
     }
   }
 
-  private Module instantiateGModuleClass(Class<? extends GinModule> moduleClass) {
+  private Module instantiateGModuleClass(
+      Class<? extends GinModule> moduleClass, GinjectorBindings rootGinjectorBindings) {
     try {
       Constructor<? extends GinModule> constructor = moduleClass.getDeclaredConstructor();
       try {

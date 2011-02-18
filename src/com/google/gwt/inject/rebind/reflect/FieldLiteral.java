@@ -1,5 +1,6 @@
 package com.google.gwt.inject.rebind.reflect;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.inject.TypeLiteral;
 
 import java.lang.reflect.Field;
@@ -20,7 +21,10 @@ public class FieldLiteral<T> extends MemberLiteral<T, Field> {
    * @return new field literal
    */
   public static <T> FieldLiteral<T> get(Field field, TypeLiteral<T> declaringType) {
-    assert field.getDeclaringClass().equals(declaringType.getRawType());
+    Preconditions.checkArgument(
+        field.getDeclaringClass().equals(declaringType.getRawType()),
+        "declaringType (%s) must be the type literal where field was declared (%s)!",
+        declaringType, field.getDeclaringClass());
     return new FieldLiteral<T>(field, declaringType);
   }
 

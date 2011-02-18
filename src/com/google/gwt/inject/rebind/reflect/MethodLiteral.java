@@ -16,6 +16,7 @@
 
 package com.google.gwt.inject.rebind.reflect;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
@@ -52,7 +53,9 @@ public abstract class MethodLiteral<T, M extends Member & AnnotatedElement & Gen
    * @return new method literal
    */
   public static <T> MethodLiteral<T, Method> get(Method method, TypeLiteral<T> declaringType) {
-    assert method.getDeclaringClass().equals(declaringType.getRawType());
+    Preconditions.checkArgument(method.getDeclaringClass().equals(declaringType.getRawType()),
+        "declaringType (%s) must be the type literal where method was declared (%s)!",
+        declaringType, method.getDeclaringClass());
     return new ConcreteMethodLiteral<T>(method, declaringType);
   }
 
@@ -66,7 +69,10 @@ public abstract class MethodLiteral<T, M extends Member & AnnotatedElement & Gen
    */
   public static <T> MethodLiteral<T, Constructor<?>> get(Constructor<?> constructor,
       TypeLiteral<T> declaringType) {
-    assert constructor.getDeclaringClass().equals(declaringType.getRawType());
+    Preconditions.checkArgument(
+        constructor.getDeclaringClass().equals(declaringType.getRawType()),
+        "declaringType (%s) must be the type literal where constructor was declared (%s)!",
+        declaringType, constructor.getDeclaringClass());
     return new ConstructorLiteral<T>(constructor, declaringType);
   }
 

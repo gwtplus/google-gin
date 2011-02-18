@@ -16,6 +16,7 @@
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
@@ -128,7 +129,8 @@ public class BindingResolver {
    */
   public GinjectorBindings resolveAndInherit(Key<?> key, boolean optional, BindingContext context) {
     GinjectorBindings source = resolve(key, optional, context);
-    assert resolutionChain.isEmpty(); // We should have popped all the elements on the way up.
+    Preconditions.checkState(resolutionChain.isEmpty(),
+        "Expected all elements to be popped from resolution chain");
     return ensureParentBinding(origin, source, key);
   }
   
@@ -157,6 +159,8 @@ public class BindingResolver {
         errorManager.logError("Unable to create binding for " + key 
             + ".  It is already bound in a descendent.  Consider exposing it?");
       }
+      
+      resolutionChain.remove(key);
       return null;
     }
 
@@ -187,7 +191,7 @@ public class BindingResolver {
       return source;
     }
     
-    assert origin.getBinding(key) == null; // We shouldn't be resolving bound things
+    Preconditions.checkState(!origin.isBound(key), "Shouldn't be trying to resolve bound keys");
     
     // TODO(bchambers): Modify addBinding to actually indicate which injector
     // it's modifying?  Also, should context include the BindingContext that caused us to
@@ -300,7 +304,7 @@ public class BindingResolver {
     // Find the target by examining all the sources, and determining the "lowest" dependency
     Set<GinjectorBindings> injectorDeps = new HashSet<GinjectorBindings>(depSources.values());
     GinjectorBindings target = lowest(key, injectorDeps);
-    assert target != null;
+    Preconditions.checkNotNull(target);
     
     // Add bindings to the target to make any binding that come from "above" available
     for (Map.Entry<Key<?>, GinjectorBindings> dependencySource : depSources.entrySet()) {

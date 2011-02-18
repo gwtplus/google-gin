@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.GinjectorNameGenerator;
 import com.google.gwt.inject.rebind.util.NameGenerator;
@@ -55,7 +56,7 @@ public class ExposedChildBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) {
-    assert childBindings != null; // should be filled in during resolution
+    Preconditions.checkNotNull(childBindings);
     String childMethodName = childBindings.getNameGenerator().getGetterMethodName(key);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, String.format("return %s.%s();",
         ginjectorNameGenerator.getFieldName(childBindings), childMethodName));

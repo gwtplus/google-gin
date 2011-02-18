@@ -16,7 +16,6 @@
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
@@ -38,7 +37,6 @@ import com.google.inject.Key;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.spi.InjectionPoint;
-import com.google.inject.spi.Message;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -195,11 +193,13 @@ public class GinjectorBindings implements BindingIndex {
   }
 
   void assertFinalized() {
-    assert finalized;
+    Preconditions.checkState(finalized, 
+        "Can only use this method after finalizing the ginjector bindings!");
   }
 
   void assertNotFinalized() {
-    assert !finalized;
+    Preconditions.checkState(!finalized,
+        "Can only use this method before finalizing the ginjector bindings!");
   }
 
   /**
@@ -246,8 +246,11 @@ public class GinjectorBindings implements BindingIndex {
     }
 
     // After one pass, all bindings should be resolved.
-    assert unresolved.isEmpty();
-    assert unresolvedOptional.isEmpty();
+    Preconditions.checkState(unresolved.isEmpty(),
+        "Expected all unresolved bindings to be resolved, but still contains: %s", unresolved);
+    Preconditions.checkState(unresolvedOptional.isEmpty(),
+        "Expected all unresolved optional bindings to be resolved, but still contains: %s",
+        unresolvedOptional);
 
     // Mark this collection as finalized, so that no new bindings or unresolved
     // dependencies

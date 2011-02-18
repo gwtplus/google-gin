@@ -16,6 +16,7 @@
 
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
@@ -71,36 +72,36 @@ public class AsyncProviderBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
       NameGenerator nameGenerator) throws NoSourceNameException {
-     assert (providerType != null);
+    Preconditions.checkNotNull(providerType);
 
-     String providerTypeName = ReflectUtil.getSourceName(providerType);
-     String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
+    String providerTypeName = ReflectUtil.getSourceName(providerType);
+    String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
 
-     StringBuilder methodCode = new StringBuilder()
-       .append("return new ").append(providerTypeName).append("() { \n") 
-       .append("    public void get(")
-       .append("final com.google.gwt.user.client.rpc.AsyncCallback<? super ")
-       .append(targetKeyName).append("> callback) { \n")
-       .append("      com.google.gwt.core.client.GWT.runAsync(")
-       .append(targetKey.getTypeLiteral().getRawType().getCanonicalName())
-       .append(".class,")
-       .append("new com.google.gwt.core.client.RunAsyncCallback() { \n")
-       .append("        public void onSuccess() { \n")
-       .append("          callback.onSuccess(")
-       .append(nameGenerator.getGetterMethodName(targetKey)).append("()); \n")
-       .append("        }\n")
-       .append("        public void onFailure(Throwable ex) { \n ")
-       .append("          callback.onFailure(ex); \n" )
-       .append("        } \n")
-       .append("    }); \n")
-       .append("    }\n")
-       .append(" };\n");
+    StringBuilder methodCode = new StringBuilder()
+        .append("return new ").append(providerTypeName).append("() { \n") 
+        .append("    public void get(")
+        .append("final com.google.gwt.user.client.rpc.AsyncCallback<? super ")
+        .append(targetKeyName).append("> callback) { \n")
+        .append("      com.google.gwt.core.client.GWT.runAsync(")
+        .append(targetKey.getTypeLiteral().getRawType().getCanonicalName())
+        .append(".class,")
+        .append("new com.google.gwt.core.client.RunAsyncCallback() { \n")
+        .append("        public void onSuccess() { \n")
+        .append("          callback.onSuccess(")
+        .append(nameGenerator.getGetterMethodName(targetKey)).append("()); \n")
+        .append("        }\n")
+        .append("        public void onFailure(Throwable ex) { \n ")
+        .append("          callback.onFailure(ex); \n" )
+        .append("        } \n")
+        .append("    }); \n")
+        .append("    }\n")
+        .append(" };\n");
 
-     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, methodCode.toString());
+    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, methodCode.toString());
   }
 
   public RequiredKeys getRequiredKeys() {
-    assert (targetKey != null);
+    Preconditions.checkNotNull(targetKey);
     return new RequiredKeys(Collections.<Key<?>>singleton(targetKey));
   }
 

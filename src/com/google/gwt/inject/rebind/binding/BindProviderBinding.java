@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
@@ -45,13 +46,13 @@ public class BindProviderBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
       NameGenerator nameGenerator) {
-    assert (providerKey != null);
+    Preconditions.checkNotNull(providerKey);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + nameGenerator.getGetterMethodName(providerKey) + "().get();");
   }
 
   public RequiredKeys getRequiredKeys() {
-    assert (providerKey != null);
+    Preconditions.checkNotNull(providerKey);
     return new RequiredKeys(Collections.<Key<?>>singleton(providerKey));
   }
 }

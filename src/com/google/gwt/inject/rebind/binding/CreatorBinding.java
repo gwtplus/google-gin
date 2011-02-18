@@ -16,6 +16,7 @@
 
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
@@ -57,7 +58,7 @@ abstract class CreatorBinding implements Binding {
 
   public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) throws NoSourceNameException {
-    assert (type != null);
+    Preconditions.checkNotNull(type);
 
     String memberInjectMethodName = sourceWriteUtil.appendMemberInjection(writer, Key.get(type),
         nameGenerator);
@@ -77,7 +78,7 @@ abstract class CreatorBinding implements Binding {
   }
 
   public TypeLiteral<?> getType() {
-    assert (type != null);
+    Preconditions.checkNotNull(type);
     return type;
   }
 
@@ -85,7 +86,7 @@ abstract class CreatorBinding implements Binding {
       NameGenerator nameGenerator) throws NoSourceNameException;
 
   protected String getTypeName() throws NoSourceNameException {
-    assert (type != null);
+    Preconditions.checkNotNull(type);
     return ReflectUtil.getSourceName(type);
   }
 

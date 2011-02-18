@@ -18,6 +18,7 @@ package com.google.gwt.inject.rebind.binding;
 
 import static com.google.inject.internal.Annotations.getKey;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
@@ -117,7 +118,7 @@ public class FactoryBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
       NameGenerator nameGenerator) throws NoSourceNameException {
-    assert (factoryType != null);
+    Preconditions.checkNotNull(factoryType);
 
     String factoryTypeName = ReflectUtil.getSourceName(factoryType);
     StringBuilder sb = new StringBuilder();
@@ -148,7 +149,7 @@ public class FactoryBinding implements Binding {
   }
 
   public RequiredKeys getRequiredKeys() {
-    assert factoryType != null;
+    Preconditions.checkNotNull(factoryType);
     return requiredKeys;
   }
 
@@ -179,7 +180,7 @@ public class FactoryBinding implements Binding {
 
       // Try to match up the method to the constructor.
       TypeLiteral<?> implementation = collector.get(returnType);
-      if(implementation == null) {
+      if (implementation == null) {
         implementation = returnType.getTypeLiteral();
       }
       Constructor<?> constructor =
@@ -227,7 +228,7 @@ public class FactoryBinding implements Binding {
 
         // This should never happen since the constructor was already checked
         // in #[inject]constructorHasMatchingParams(..).
-        assert location != -1;
+        Preconditions.checkState(location != -1);
 
         parameterNames[p] = ReflectUtil.formatParameterName(location);
       } else {

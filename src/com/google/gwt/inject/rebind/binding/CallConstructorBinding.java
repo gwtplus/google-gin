@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
@@ -49,7 +50,7 @@ public class CallConstructorBinding extends CreatorBinding {
 
   @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb, 
       NameGenerator nameGenerator) throws NoSourceNameException {
-    assert (constructor != null);
+    Preconditions.checkNotNull(constructor);
     sb.append(getTypeName()).append(" result = ")
         .append(sourceWriteUtil.createConstructorInjection(sourceWriter, constructor, nameGenerator));
   }

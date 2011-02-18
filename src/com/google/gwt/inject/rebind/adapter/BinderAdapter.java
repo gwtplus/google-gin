@@ -57,7 +57,9 @@ class BinderAdapter implements GinBinder {
 
     // Filtering out fake factory modules.
     if (install instanceof FactoryModule) {
-      bindings.addFactoryModule((FactoryModule<?>) install);
+      if (bindings != null) {
+        bindings.addFactoryModule((FactoryModule<?>) install);
+      }
     } else {
       // Here we need to take care to ensure that PrivateGinModule uses the appropriate
       // type of adapter, and also get the corresponding Guice private binder.

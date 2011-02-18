@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.inject.Singleton;
 
 import java.util.HashMap;
@@ -34,7 +35,8 @@ public class GinjectorNameGenerator {
    * to the cache.
    */ 
   public void registerName(GinjectorBindings bindings, String name) {
-    assert !numberOfAppearances.containsKey(bindings.getModule().getSimpleName());
+    Preconditions.checkState(!numberOfAppearances.containsKey(bindings.getModule().getSimpleName()),
+        "Can only register names for ginjectors that haven't been used yet.");
     numberOfAppearances.put(bindings.getModule().getSimpleName(), 1);
     nameCache.put(bindings, name);
   }

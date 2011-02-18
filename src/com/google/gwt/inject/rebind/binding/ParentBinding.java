@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.GinjectorNameGenerator;
 import com.google.gwt.inject.rebind.util.NameGenerator;
@@ -60,7 +61,7 @@ public class ParentBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) {
-    assert parentBindings != null; // should be filled in during resolution
+    Preconditions.checkNotNull(parentBindings);
     String parentMethodName = parentBindings.getNameGenerator().getGetterMethodName(key);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, 
         String.format("return %s.this.%s();", ginjectorNameGenerator.getClassName(parentBindings),
