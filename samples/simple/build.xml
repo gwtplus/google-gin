@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<project name="GinExample" default="hosted" basedir=".">
+<project name="SimpleGinExample" default="devmode" basedir=".">
   <description>
     Example build file for GIN projects.
   </description>
@@ -14,19 +14,11 @@
        or can be provided by system property GWT_HOME. -->
   <property name="gwt.home" value="${env.GWT_HOME}"/>
 
-  <!-- Mac GWT requires -XstartOnFirstThread -->
-  <condition property="mac">
-    <os name="Mac OS X"/>
-  </condition>
-  <condition property="macJvmArgs" value="-XstartOnFirstThread" else="">
-    <isset property="mac"/>
-  </condition>
-
   <!-- Output config -->
   <property name="bin.dir" value="bin"/>
   <property name="javac.out.dir" value="${bin.dir}/java"/>
-  <property name="gwt.web.out.dir" value="${bin.dir}/www"/>
-  <property name="gwt.hosted.out.dir" value="${bin.dir}/hosted"/>
+  <property name="gwt.web.out.dir" value="${bin.dir}/web"/>
+  <property name="gwt.devmode.out.dir" value="${bin.dir}/devmode"/>
 
   <!-- Source files -->
   <property name="src.dir" value="src"/>
@@ -41,7 +33,9 @@
   <path id="javac.path">
     <pathelement path="${lib.dir}/aopalliance.jar"/>
     <pathelement path="${lib.dir}/gin.jar"/>
-    <pathelement path="${lib.dir}/guice-2.0.jar"/>
+    <pathelement path="${lib.dir}/guice-snapshot.jar"/>
+    <pathelement path="${lib.dir}/javax.inject.jar" />
+    <pathelement path="${lib.dir}/guice-assistedinject-snapshot.jar" />
     <pathelement path="${gwt.home}/gwt-user.jar"/>
   </path>
 
@@ -51,7 +45,7 @@
       <path location="${src.dir}"/>
 
       <!-- Location of the GWT compiler and libraries -->
-      <fileset dir="${gwt.home}" includes="gwt-dev*.jar"/>
+      <pathelement path="${gwt.home}/gwt-dev.jar"/>
 
       <!-- GIN runs Guice at GWT compile time, so it needs the compiled project sources -->
       <path location="${javac.out.dir}"/>
@@ -81,34 +75,16 @@
 
   <!-- GWT's development mode, allows debugging of the application in your browser. -->
   <!-- Only works with GWT 2.0 and later. -->
-  <target name="devmode" depends="web" description="GWT Development Mode (GWT 2.0+ only)">
+  <target name="devmode" depends="compile" description="GWT Development Mode (GWT 2.0+ only)">
     <java failonerror="true" fork="true" classpathref="gwt.path"
           classname="com.google.gwt.dev.DevMode">
       <jvmarg value="-Xmx256M"/>
-
       <arg value="-startupUrl"/>
       <arg value="${gwt.module}/index.html" />
       <arg value="-war"/>
       <arg value="${gwt.web.out.dir}" />
       <arg value="-logLevel"/>
       <arg value="INFO" />
-      <arg value="${gwt.module}"/>
-    </java>
-  </target>
-
-  <!-- GWT's hosted mode, allows debugging of the application in a GWT-run browser. -->
-  <!-- Only works with GWT before 2.0 (use dev mode instead for GWT 2.0+)-->
-  <target name="hosted" depends="compile" description="GWT Hosted Mode (GWT before 2.0 only)">
-    <java fork="true" classpathref="gwt.path" classname="com.google.gwt.dev.HostedMode">
-      <jvmarg value="${macJvmArgs}"/>
-      <jvmarg value="-Xmx256M"/>
-
-      <arg value="-logLevel"/>
-      <arg value="INFO" />
-      <arg value="-war"/>
-      <arg value="${gwt.hosted.out.dir}" />
-      <arg value="-startupUrl"/>
-      <arg value="${gwt.module}/index.html" />
       <arg value="${gwt.module}"/>
     </java>
   </target>
