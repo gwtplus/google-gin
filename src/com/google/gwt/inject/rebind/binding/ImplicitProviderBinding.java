@@ -15,10 +15,8 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.dev.util.Preconditions;
-import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
-import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -35,13 +33,16 @@ import java.util.Collections;
  */
 public class ImplicitProviderBinding implements Binding {
 
+  private final NameGenerator nameGenerator;
+
   private final SourceWriteUtil sourceWriteUtil;
 
   private ParameterizedType providerType;
   private Key<?> targetKey;
 
   @Inject
-  public ImplicitProviderBinding(SourceWriteUtil sourceWriteUtil) {
+  public ImplicitProviderBinding(NameGenerator nameGenerator, SourceWriteUtil sourceWriteUtil) {
+    this.nameGenerator = nameGenerator;
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
@@ -53,11 +54,11 @@ public class ImplicitProviderBinding implements Binding {
     targetKey = getKeyWithSameAnnotation(targetType, providerKey);
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
-      NameGenerator nameGenerator) throws NoSourceNameException {
-    Preconditions.checkNotNull(providerType);
-    String providerTypeName = ReflectUtil.getSourceName(providerType);
-    String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
+      throws NoSourceNameException {
+    assert (providerType != null);
+    String providerTypeName = sourceWriteUtil.getSourceName(providerType);
+    String targetKeyName = sourceWriteUtil.getSourceName(targetKey.getTypeLiteral());
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return new " + providerTypeName + "() { \n"
         + "  public " + targetKeyName + " get() { \n"
@@ -67,11 +68,10 @@ public class ImplicitProviderBinding implements Binding {
   }
 
   public RequiredKeys getRequiredKeys() {
-    Preconditions.checkNotNull(targetKey);
+    assert (targetKey != null);
     return new RequiredKeys(Collections.<Key<?>>singleton(targetKey));
   }
 
-  // TODO(schmitt): Remove duplication with AsyncProviderBinding.
   private Key<?> getKeyWithSameAnnotation(Type keyType, Key<?> baseKey) {
     Annotation annotation = baseKey.getAnnotation();
     if (annotation != null) {

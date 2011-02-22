@@ -15,16 +15,12 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.dev.util.Preconditions;
-import com.google.gwt.inject.rebind.reflect.MethodLiteral;
-import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
-import com.google.gwt.inject.rebind.util.GuiceUtil;
-import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.core.ext.typeinfo.JConstructor;
+import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
-
-import java.lang.reflect.Constructor;
+import com.google.inject.Key;
 
 /**
  * A binding that calls a single constructor directly. Values for constructor
@@ -34,24 +30,23 @@ public class CallConstructorBinding extends CreatorBinding {
 
   private final SourceWriteUtil sourceWriteUtil;
 
-  private MethodLiteral<?, Constructor<?>> constructor;
+  private JConstructor constructor;
 
   @Inject
-  public CallConstructorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil) {
-    super(sourceWriteUtil, guiceUtil);
+  public CallConstructorBinding(SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil) {
+    super(sourceWriteUtil, keyUtil);
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
-  public void setConstructor(MethodLiteral<?, Constructor<?>> constructor) {
+  public void setConstructor(JConstructor constructor, Key<?> key) {
     this.constructor = constructor;
-    setType(constructor.getDeclaringType());
+    setClassType(constructor.getEnclosingType(), key);
     addParamTypes(constructor);
   }
 
-  @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb, 
-      NameGenerator nameGenerator) throws NoSourceNameException {
-    Preconditions.checkNotNull(constructor);
+  @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb) {
+    assert (constructor != null);
     sb.append(getTypeName()).append(" result = ")
-        .append(sourceWriteUtil.createConstructorInjection(sourceWriter, constructor, nameGenerator));
+        .append(sourceWriteUtil.createConstructorInjection(sourceWriter, constructor));
   }
 }

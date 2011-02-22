@@ -22,7 +22,6 @@ import com.google.gwt.inject.client.binding.ConstantBindingTest;
 import com.google.gwt.inject.client.binding.EagerBindingTest;
 import com.google.gwt.inject.client.binding.GinjectorBindingTest;
 import com.google.gwt.inject.client.binding.InjectMembersTest;
-import com.google.gwt.inject.client.configurationmodules.ConfigurationModulesTest;
 import com.google.gwt.inject.client.eager.EagerSingletonTest;
 import com.google.gwt.inject.client.field.FieldInjectTest;
 import com.google.gwt.inject.client.generics.GenericsTest;
@@ -32,16 +31,12 @@ import com.google.gwt.inject.client.gwtdotcreate.GwtDotCreateInjectTest;
 import com.google.gwt.inject.client.hierarchical.HierarchicalTest;
 import com.google.gwt.inject.client.implicit.AsyncProviderTest;
 import com.google.gwt.inject.client.implicit.ImplicitBindingTest;
-import com.google.gwt.inject.client.installduplicate.InstallDuplicateTest;
 import com.google.gwt.inject.client.jsr330.Jsr330Test;
 import com.google.gwt.inject.client.method.MethodInjectTest;
 import com.google.gwt.inject.client.misc.StaticInjectTest;
 import com.google.gwt.inject.client.nomodules.NoModulesTest;
 import com.google.gwt.inject.client.nonpublic.NonPublicTest;
 import com.google.gwt.inject.client.optional.OptionalInjectionTest;
-import com.google.gwt.inject.client.privatebasic.PrivateBasicTest;
-import com.google.gwt.inject.client.privatefactory.PrivateFactoryTest;
-import com.google.gwt.inject.client.privatemanylevel.PrivateManyLevelTest;
 import com.google.gwt.inject.client.provider.ProviderTest;
 import com.google.gwt.inject.client.providermethods.ProviderMethodsTest;
 import com.google.gwt.inject.client.scopedimplicit.ScopedImplicitTest;
@@ -83,11 +78,6 @@ public class GinClientTestSuite {
     suite.addTestSuite(CarFactoryTest.class);
     suite.addTestSuite(CarTest.class);
     suite.addTestSuite(BikeTest.class);
-    suite.addTestSuite(ConfigurationModulesTest.class);
-    suite.addTestSuite(InstallDuplicateTest.class);
-    suite.addTestSuite(PrivateBasicTest.class);
-    suite.addTestSuite(PrivateManyLevelTest.class);
-    suite.addTestSuite(PrivateFactoryTest.class);
 
     return suite;
   }

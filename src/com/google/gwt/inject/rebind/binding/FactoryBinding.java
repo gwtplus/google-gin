@@ -16,13 +16,11 @@
 
 package com.google.gwt.inject.rebind.binding;
 
-import static com.google.inject.internal.Annotations.getKey;
-
-import com.google.gwt.dev.util.Preconditions;
-import com.google.gwt.inject.rebind.reflect.MethodLiteral;
-import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
-import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.core.ext.typeinfo.JConstructor;
+import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -42,6 +40,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.google.inject.internal.Annotations.getKey;
 
 /**
  * Binder producing assisted inject factories.
@@ -87,7 +87,9 @@ public class FactoryBinding implements Binding {
 
 
   private final SourceWriteUtil sourceWriteUtil;
+  private final KeyUtil keyUtil;
   private final List<AssistData> assistData = new ArrayList<AssistData>();
+  private final NameGenerator nameGenerator;
 
   private Map<Key<?>, TypeLiteral<?>> collector;
   private TypeLiteral<?> factoryType;
@@ -100,11 +102,15 @@ public class FactoryBinding implements Binding {
   private Set<Key<?>> implementations;
 
   @Inject
-  public FactoryBinding(SourceWriteUtil sourceWriteUtil) {
+  public FactoryBinding(SourceWriteUtil sourceWriteUtil, KeyUtil keyUtil,
+      NameGenerator nameGenerator) {
     this.sourceWriteUtil = sourceWriteUtil;
+    this.keyUtil = keyUtil;
+    this.nameGenerator = nameGenerator;
   }
 
-  public void setKeyAndCollector(Key<?> factoryKey, Map<Key<?>, TypeLiteral<?>> bindings) {
+  public void setKeyAndCollector(Key<?> factoryKey, Map<Key<?>, TypeLiteral<?>> bindings)
+      throws NotFoundException {
     factoryType = factoryKey.getTypeLiteral();
     this.implementations = new HashSet<Key<?>>();
     this.collector = bindings;
@@ -116,31 +122,29 @@ public class FactoryBinding implements Binding {
     }
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
-      NameGenerator nameGenerator) throws NoSourceNameException {
-    Preconditions.checkNotNull(factoryType);
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature)
+      throws NoSourceNameException {
+    assert (factoryType != null);
 
-    String factoryTypeName = ReflectUtil.getSourceName(factoryType);
+    String factoryTypeName = sourceWriteUtil.getSourceName(factoryType);
     StringBuilder sb = new StringBuilder();
 
     sb.append("return new ").append(factoryTypeName).append("() {");
 
     for (AssistData assisted : assistData) {
-      String returnName = ReflectUtil.getSourceName(assisted.implementation);
+      String returnName = sourceWriteUtil.getSourceName(assisted.implementation);
 
       String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(
           Key.get(assisted.implementation, Assisted.class));
       String methodCall = sourceWriteUtil.createMethodCallWithInjection(writer,
-          assisted.constructor, null, assisted.parameterNames, nameGenerator);
+          assisted.constructor, null, assisted.parameterNames);
 
-      String signature = ReflectUtil.getSignature(assisted.method,
-          ReflectUtil.nonAbstractModifiers(assisted.method));
-
-      sb.append("\n\n    ").append(signature).append(" {")
-          .append("\n      ").append(returnName).append(" result = ").append(methodCall)
-          .append("\n      ").append(memberInjectMethodName).append("(result);")
-          .append("\n      ").append("return result;")
-          .append("\n    }"); // End method.
+      sb.append("\n\n    ");
+      appendSignature(sb, assisted);
+      sb.append("\n      ").append(returnName).append(" result = ").append(methodCall);
+      sb.append("\n      ").append(memberInjectMethodName).append("(result);");
+      sb.append("\n      ").append("return result;");
+      sb.append("\n    }"); // End method.
     }
 
     sb.append("\n};"); // End factory implementation.
@@ -149,7 +153,7 @@ public class FactoryBinding implements Binding {
   }
 
   public RequiredKeys getRequiredKeys() {
-    Preconditions.checkNotNull(factoryType);
+    assert factoryType != null;
     return requiredKeys;
   }
 
@@ -157,12 +161,30 @@ public class FactoryBinding implements Binding {
     return implementations;
   }
 
-  private void matchMethods(TypeLiteral<?> factoryType) throws ErrorsException {
+  private void appendSignature(StringBuilder sb, AssistData assistData)
+      throws NoSourceNameException {
+    String returnName = sourceWriteUtil.getSourceName(assistData.implementation);
+    sb.append("public ").append(returnName).append(" ").append(assistData.method.getName())
+        .append("(");
+
+    int i = 0;
+    for (TypeLiteral<?> param : assistData.params) {
+      if (i > 0) {
+        sb.append(", ");
+      }
+      sb.append(sourceWriteUtil.getSourceName(param)).append(" p").append(i);
+      i++;
+    }
+
+    sb.append(") {");
+  }
+
+  private void matchMethods(TypeLiteral<?> factoryType) throws ErrorsException, NotFoundException {
     Errors errors = new Errors();
     Set<Key<?>> requiredKeys = new HashSet<Key<?>>();
     Class<?> factoryRawType = factoryType.getRawType();
 
-    // getMethods() includes inherited methods from super-interfaces.
+    // TODO(schmitt): Also get methods from super-interfaces.
     for (Method method : factoryRawType.getMethods()) {
 
       Key<?> returnType = getKey(factoryType.getReturnType(method), method,
@@ -180,7 +202,7 @@ public class FactoryBinding implements Binding {
 
       // Try to match up the method to the constructor.
       TypeLiteral<?> implementation = collector.get(returnType);
-      if (implementation == null) {
+      if(implementation == null) {
         implementation = returnType.getTypeLiteral();
       }
       Constructor<?> constructor =
@@ -195,9 +217,9 @@ public class FactoryBinding implements Binding {
       String[] parameterNames = extractConstructorParameters(implementation, constructor,
           paramList, errors, requiredKeys);
 
-      TypeLiteral<?> methodDeclaringType = factoryType.getSupertype(method.getDeclaringClass());
-      assistData.add(new AssistData(implementation, MethodLiteral.get(constructor, implementation),
-          MethodLiteral.get(method, methodDeclaringType), parameterNames));
+      JConstructor gwtConstructor = keyUtil.javaToGwtConstructor(constructor, implementation);
+      assistData.add(new AssistData(implementation, gwtConstructor, method, parameterNames,
+          params));
       implementations.add(Key.get(implementation, Assisted.class));
     }
 
@@ -228,9 +250,9 @@ public class FactoryBinding implements Binding {
 
         // This should never happen since the constructor was already checked
         // in #[inject]constructorHasMatchingParams(..).
-        Preconditions.checkState(location != -1);
+        assert location != -1;
 
-        parameterNames[p] = ReflectUtil.formatParameterName(location);
+        parameterNames[p] = "p" + location;
       } else {
         requiredKeyCollector.add(ctorParamKey);
       }
@@ -377,16 +399,18 @@ public class FactoryBinding implements Binding {
 
   private static class AssistData {
     final TypeLiteral<?> implementation;
-    final MethodLiteral<?, Constructor<?>> constructor;
-    final MethodLiteral<?, Method> method;
+    final JConstructor constructor;
+    final List<TypeLiteral<?>> params;
+    final Method method;
     final String[] parameterNames;
 
-    private AssistData(TypeLiteral<?> implementation, MethodLiteral<?, Constructor<?>> constructor,
-        MethodLiteral<?, Method> method, String[] parameterNames) {
+    private AssistData(TypeLiteral<?> implementation, JConstructor constructor, Method method,
+        String[] parameterNames, List<TypeLiteral<?>> params) {
       this.implementation = implementation;
       this.parameterNames = parameterNames;
       this.method = method;
       this.constructor = constructor;
+      this.params = params;
     }
   }
 }
