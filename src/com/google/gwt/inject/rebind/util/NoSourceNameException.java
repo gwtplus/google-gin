@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.gwt.inject.rebind.reflect;
+package com.google.gwt.inject.rebind.util;
 
 import java.lang.reflect.Type;
 

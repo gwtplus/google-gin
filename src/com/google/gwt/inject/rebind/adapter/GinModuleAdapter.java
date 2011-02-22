@@ -17,30 +17,28 @@ package com.google.gwt.inject.rebind.adapter;
 
 import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.gwt.inject.client.GinModule;
-import com.google.gwt.inject.rebind.GinjectorBindings;
+import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.internal.ProviderMethodsModule;
+
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * Makes a {@link GinModule} available as a {@link Module}.
  */
 public final class GinModuleAdapter implements Module {
   private final GinModule ginModule;
-  private final GinjectorBindings bindings;
-  
+  private final Set<FactoryModule<?>> factoryModules;
+
   public GinModuleAdapter(GinModule ginModule) {
-    this.ginModule = ginModule;
-    this.bindings = null;
+    this(ginModule, Collections.<FactoryModule<?>>emptySet());
   }
 
-  public GinModuleAdapter(GinModule ginModule, GinjectorBindings bindings) {
-    if (ginModule == null) {
-      throw new NullPointerException("Installing a null module is not permitted");
-    }
-
+  public GinModuleAdapter(GinModule ginModule, Set<FactoryModule<?>> factoryModules) {
     this.ginModule = ginModule;
-    this.bindings = bindings;
+    this.factoryModules = factoryModules;
   }
 
   public void configure(Binder binder) {
@@ -48,24 +46,9 @@ public final class GinModuleAdapter implements Module {
     binder = binder.skipSources(GinModuleAdapter.class, BinderAdapter.class,
         AbstractGinModule.class);
 
-    ginModule.configure(new BinderAdapter(binder, bindings));
+    ginModule.configure(new BinderAdapter(binder, factoryModules));
 
     // Install provider methods from the GinModule
     binder.install(ProviderMethodsModule.forObject(ginModule));
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj instanceof GinModuleAdapter) {
-      GinModuleAdapter other = (GinModuleAdapter) obj;
-      return ginModule.equals(other.ginModule);
-    } else {
-      return false;
-    }
-  }
-
-  @Override
-  public int hashCode() {
-    return ginModule.hashCode();
   }
 }

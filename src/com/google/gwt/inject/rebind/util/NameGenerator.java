@@ -16,6 +16,7 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.inject.Key;
+import com.google.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,37 +27,14 @@ import java.util.Set;
  * Helper to generate various names for members of a {@code Ginjector}
  * implementation.
  */
+@Singleton
 public class NameGenerator {
 
-  private class CacheKey {
-    private final String prefix;
-    private final Key<?> key;
-    
-    CacheKey(String prefix, Key<?> key) {
-      this.prefix = prefix;
-      this.key = key;
-    }
-    
-    @Override
-    public boolean equals(Object obj) {
-      if (obj instanceof CacheKey) {
-        CacheKey other = (CacheKey) obj;
-        return other.prefix.equals(prefix) && other.key.equals(key);
-      }
-      return false;
-    }
-    
-    @Override
-    public int hashCode() {
-      return prefix.hashCode() * 31 +  key.hashCode();
-    }
-  }
-  
   /**
    * "Mangled key name" cache:  Key -> mangled name
    */
-  private final Map<CacheKey, String> methodKeyCache = new HashMap<CacheKey, String>();
-  
+  private final Map<Key<?>, String> cache = new HashMap<Key<?>, String>();
+
   /**
    * Map of known method names.
    */
@@ -69,7 +47,7 @@ public class NameGenerator {
    * @return getter method name
    */
   public String getGetterMethodName(Key<?> key) {
-    return mangle("get_", key);
+    return "get_" + mangle(key);
   }
 
   /**
@@ -80,7 +58,7 @@ public class NameGenerator {
    * @return creator method name
    */
   public String getCreatorMethodName(Key<?> key) {
-    return mangle("create_", key);
+    return "create_" + mangle(key);
   }
 
   /**
@@ -90,7 +68,7 @@ public class NameGenerator {
    * @return member inject method name
    */
   public String getMemberInjectMethodName(Key<?> key) {
-    return mangle("memberInject_", key);
+    return "memberInject_" + mangle(key);
   }
 
   /**
@@ -99,9 +77,9 @@ public class NameGenerator {
    * @return singleton field name
    */
   public String getSingletonFieldName(Key<?> key) {
-    return mangle("singleton_", key);
+    return "singleton_" + mangle(key);
   }
-  
+
   /**
    * Returns a new valid (i.e. unique) method name based on {@code base}.
    *
@@ -130,9 +108,8 @@ public class NameGenerator {
     methodNames.add(name);
   }
 
-  private String mangle(String prefix, Key<?> key) {
-    CacheKey cacheKey = new CacheKey(prefix, key);
-    String cached = methodKeyCache.get(cacheKey);
+  private String mangle(Key<?> key) {
+    String cached = cache.get(key);
     if (cached != null) {
       return cached;
     }
@@ -141,12 +118,13 @@ public class NameGenerator {
     // values are of unbounded length. One option
     // is to use mangled(type) + mangled(annotation type) + counter, where
     // counter is used just to distinguish different annotation values.
-    String name = prefix + key.toString();
+    String name = key.toString();
     name = convertToValidMemberName(name);
-    
+
+    // TODO(schmitt):  Not necessary for field names?
     name = createMethodName(name);
 
-    methodKeyCache.put(cacheKey, name);
+    cache.put(key, name);
     return name;
   }
 
