@@ -15,7 +15,6 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
@@ -31,12 +30,15 @@ import javax.inject.Provider;
  */
 public class BindProviderBinding implements Binding {
 
+  private final NameGenerator nameGenerator;
+
   private final SourceWriteUtil sourceWriteUtil;
 
   private Key<? extends Provider<?>> providerKey;
 
   @Inject
-  public BindProviderBinding(SourceWriteUtil sourceWriteUtil) {
+  public BindProviderBinding(NameGenerator nameGenerator, SourceWriteUtil sourceWriteUtil) {
+    this.nameGenerator = nameGenerator;
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
@@ -44,15 +46,14 @@ public class BindProviderBinding implements Binding {
     this.providerKey = providerKey;
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
-      NameGenerator nameGenerator) {
-    Preconditions.checkNotNull(providerKey);
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
+    assert (providerKey != null);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + nameGenerator.getGetterMethodName(providerKey) + "().get();");
   }
 
   public RequiredKeys getRequiredKeys() {
-    Preconditions.checkNotNull(providerKey);
+    assert (providerKey != null);
     return new RequiredKeys(Collections.<Key<?>>singleton(providerKey));
   }
 }

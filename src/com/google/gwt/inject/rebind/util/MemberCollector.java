@@ -17,20 +17,17 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.inject.rebind.reflect.FieldLiteral;
-import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.JPackage;
 import com.google.inject.Inject;
-import com.google.inject.TypeLiteral;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -48,7 +45,7 @@ public class MemberCollector {
 
   public static final MethodFilter ALL_METHOD_FILTER =
     new MethodFilter() {
-      public boolean accept(MethodLiteral<?, Method> method) {
+      public boolean accept(JMethod method) {
         return true;
       }
     };
@@ -62,10 +59,10 @@ public class MemberCollector {
    * Note: The method filter influences override detection!  If a method A
    * overrides a method A*, without a filter only A would be collected.  If the
    * filter only accepts A* and not A, A will not be collected, and A* will be
-   * collected <b>despite being overridden</b> by A.
+   * collected <b>despite being overriden</b> by A.
    */
   public static interface MethodFilter {
-    boolean accept(MethodLiteral<?, Method> method);
+    boolean accept(JMethod method);
   }
 
   /**
@@ -73,7 +70,7 @@ public class MemberCollector {
    * collected fields.
    */
   public static interface FieldFilter {
-    boolean accept(FieldLiteral<?> field);
+    boolean accept(JField field);
   }
 
   /**
@@ -82,70 +79,71 @@ public class MemberCollector {
    * The comparator assumes that both classes have been investigated for java
    * specification compliance.
    */
-  private static final Comparator<MethodLiteral<?, Method>> METHOD_COMPARATOR =
-      new Comparator<MethodLiteral<?, Method>>() {
-        public int compare(MethodLiteral<?, Method> m1, MethodLiteral<?, Method> m2) {
-          if (m1 == m2) {
-            return 0;
-          }
+  private static final Comparator<JMethod> METHOD_COMPARATOR = new Comparator<JMethod>() {
+    public int compare(JMethod m1, JMethod m2) {
+      if (m1 == m2) {
+        return 0;
+      }
 
-          int nameCompare = m1.getName().compareTo(m2.getName());
-          if (nameCompare != 0) {
-            return nameCompare;
-          }
+      int nameCompare = m1.getName().compareTo(m2.getName());
+      if (nameCompare != 0) {
+        return nameCompare;
+      }
 
-          List<TypeLiteral<?>> parameters1 = m1.getParameterTypes();
-          List<TypeLiteral<?>> parameters2 = m2.getParameterTypes();
-          
+      if (m1.getParameters().length != m2.getParameters().length) {
+        return m1.getParameters().length - m2.getParameters().length;
+      }
 
-          if (parameters1.size() != parameters2.size()) {
-            return parameters1.size() - parameters2.size();
-          }
+      for (int i = 0; i < m1.getParameters().length; i++) {
+        String param1 = m1.getParameters()[i].getType().getQualifiedSourceName();
+        String param2 = m2.getParameters()[i].getType().getQualifiedSourceName();
 
-          for (int i = 0; i < parameters1.size(); i++) {
-            TypeLiteral<?> param1 = parameters1.get(i);
-            TypeLiteral<?> param2 = parameters2.get(i);
-            if (!param1.equals(param2)) {
-              return param1.toString().compareTo(param2.toString());
-            }
-          }
-
-          /* If either of the methods is private, it is either (a) in the
-           * superclass, and thus invisible to the subclass, or (b) in the
-           * subclass, which implies that the method must be private in the
-           * superclass as well.
-           *
-           * If either of the methods has default access and the classes are not in
-           * the same package then they are invisible to each other and thus not
-           * override-equivalent.
-           */
-
-          if ((m1.isPrivate() || m2.isPrivate())
-              || ((m1.isDefaultAccess() || m2.isDefaultAccess()) && !samePackage(m1, m2))) {
-            return m1.getRawDeclaringType().getCanonicalName().compareTo(
-                m2.getRawDeclaringType().getCanonicalName());
-          }
-
-          // Methods have same name, parameter types and compatible visibility
-          return 0;
+        int paramCompare = param1.compareTo(param2);
+        if (paramCompare != 0) {
+          return paramCompare;
         }
+      }
 
-        private boolean samePackage(MethodLiteral<?, Method> m1, MethodLiteral<?, Method> m2) {
-          return m1.getRawDeclaringType().getPackage() == m2.getRawDeclaringType().getPackage();
-        }
-      };
+      /* If either of the methods is private, it is either (a) in the
+       * superclass, and thus invisible to the subclass, or (b) in the
+       * subclass, which implies that the method must be private in the
+       * superclass as well.
+       *
+       * If either of the methods has default access and the classes are not in
+       * the same package then they are invisible to each other and thus not
+       * override-equivalent.
+       */
+      if (m1.isPrivate() || m2.isPrivate()
+          || ((m1.isDefaultAccess() || m2.isDefaultAccess()) && !samePackage(m1, m2))) {
+        return m1.getEnclosingType().getQualifiedSourceName().compareTo(
+            m2.getEnclosingType().getQualifiedSourceName());
+      }
+
+      // Methods have same name, parameter types and compatible visibility
+      return 0;
+    }
+
+    private boolean samePackage(JMethod m1, JMethod m2) {
+      JPackage p1 = m1.getEnclosingType().getPackage();
+      JPackage p2 = m2.getEnclosingType().getPackage();
+
+      if (p1 == null || p2 == null) {
+        return p1 == p2;
+      }
+
+      return (p1.isDefault() && p2.isDefault()) || (p1.getName().equals(p2.getName()));
+    }
+  };
 
   /**
    * Internal method cache: Type name -> Method Set
    */
-  private final Map<TypeLiteral<?>, Set<MethodLiteral<?, Method>>> methodMultiMap =
-      new HashMap<TypeLiteral<?>, Set<MethodLiteral<?, Method>>>();
+  private final Map<String, Set<JMethod>> methodMultiMap = new HashMap<String, Set<JMethod>>();
 
   /**
    * Internal field cache: Type name -> Method Set
    */
-  private final Map<TypeLiteral<?>, Set<FieldLiteral<?>>> fieldMultiMap =
-      new HashMap<TypeLiteral<?>, Set<FieldLiteral<?>>>();
+  private final Map<String, Set<JField>> fieldMultiMap = new HashMap<String, Set<JField>>();
 
   private final TreeLogger logger;
 
@@ -177,10 +175,14 @@ public class MemberCollector {
    *
    * @param filter new method filter for this collector
    * @throws IllegalStateException if the filter is set after members have been
-   *    requested
+   *           requested
    */
   public void setMethodFilter(MethodFilter filter) throws IllegalStateException {
-    assertNotLocked();
+    if (locked) {
+      String msg = "A filter can only be set on this collector before members are requested!";
+      logger.log(TreeLogger.Type.ERROR, msg);
+      throw new IllegalStateException(msg);
+    }
     this.methodFilter = filter;
   }
 
@@ -190,19 +192,15 @@ public class MemberCollector {
    *
    * @param filter new field filter for this collector
    * @throws IllegalStateException if the filter is set after members have been
-   *    requested
+   *           requested
    */
   public void setFieldFilter(FieldFilter filter) throws IllegalStateException {
-    assertNotLocked();
-    this.fieldFilter = filter;
-  }
-
-  private void assertNotLocked() {
     if (locked) {
       String msg = "A filter can only be set on this collector before members are requested!";
       logger.log(TreeLogger.Type.ERROR, msg);
       throw new IllegalStateException(msg);
     }
+    this.fieldFilter = filter;
   }
 
   /**
@@ -210,12 +208,13 @@ public class MemberCollector {
    * (recursive) super classes and interfaces.  Treats overloads correctly.  If
    * no method filter is set will return an empty set.
    *
-   * @param typeLiteral type for which methods are collected
+   * @param type type for which methods are collected
    * @return all methods for the given type
    */
-  public Collection<MethodLiteral<?, Method>> getMethods(TypeLiteral<?> typeLiteral) {
-    collect(typeLiteral);
-    return Collections.unmodifiableCollection(methodMultiMap.get(typeLiteral));
+  public Collection<JMethod> getMethods(JClassType type) {
+    collect(type);
+    String typeName = type.getParameterizedQualifiedSourceName();
+    return Collections.unmodifiableCollection(methodMultiMap.get(typeName));
   }
 
   /**
@@ -223,92 +222,82 @@ public class MemberCollector {
    * (recursive) super classes.  If no field filter is set will return an empty
    * set.
    *
-   * @param typeLiteral type for which fields are collected
+   * @param type type for which fields are collected
    * @return all fields for the given type
    */
-  public Collection<FieldLiteral<?>> getFields(TypeLiteral<?> typeLiteral) {
-    collect(typeLiteral);
-    return Collections.unmodifiableCollection(fieldMultiMap.get(typeLiteral));
+  public Collection<JField> getFields(JClassType type) {
+    collect(type);
+    String typeName = type.getParameterizedQualifiedSourceName();
+    return Collections.unmodifiableCollection(fieldMultiMap.get(typeName));
   }
 
-  private void collect(TypeLiteral<?> typeLiteral) {
+  private void collect(JClassType type) {
     locked = true;
+    String typeName = type.getParameterizedQualifiedSourceName();
 
-    if (methodMultiMap.containsKey(typeLiteral)) {
+    if (methodMultiMap.containsKey(typeName)) {
       return;
     }
 
     // Type hasn't been collected yet.
-    Set<MethodLiteral<?, Method>> typeMethods =
-        new TreeSet<MethodLiteral<?, Method>>(METHOD_COMPARATOR);
-    Set<FieldLiteral<?>> typeFields = new HashSet<FieldLiteral<?>>();
-    accumulateMembers(typeLiteral, typeMethods, typeFields);
-    methodMultiMap.put(typeLiteral, typeMethods);
-    fieldMultiMap.put(typeLiteral, typeFields);
+    Set<JMethod> typeMethods = new TreeSet<JMethod>(METHOD_COMPARATOR);
+    Set<JField> typeFields = new HashSet<JField>();
+    accumulateMembers(type, typeMethods, typeFields);
+    methodMultiMap.put(typeName, typeMethods);
+    fieldMultiMap.put(typeName, typeFields);
   }
 
-  private void accumulateMembers(TypeLiteral<?> typeLiteral,
-      Set<MethodLiteral<?, Method>> methodAccu, Set<FieldLiteral<?>> fieldAccu) {
+  private void accumulateMembers(JClassType type, Set<JMethod> methodAccu, Set<JField> fieldAccu) {
+    String typeName = type.getParameterizedQualifiedSourceName();
 
     if (methodFilter != null) {
-      if (methodMultiMap.containsKey(typeLiteral)) {
-        for (MethodLiteral<?, Method> method : methodMultiMap.get(typeLiteral)) {
+      if (methodMultiMap.containsKey(typeName)) {
+        for (JMethod method : methodMultiMap.get(typeName)) {
           methodAccu.add(method);
         }
       } else {
-        for (MethodLiteral<?, Method> method : getTypeMethods(typeLiteral)) {
+        for (JMethod method : type.getMethods()) {
           if (methodFilter.accept(method)) {
             methodAccu.add(method);
-            logger.log(TreeLogger.TRACE, String.format("Found method: %s", method));
+            logger.log(TreeLogger.TRACE, "Found method: " + type.getName() + "#"
+                + method.getReadableDeclaration());
           } else {
-            logger.log(TreeLogger.DEBUG, String.format("Ignoring method: %s", method));
+            logger.log(TreeLogger.DEBUG, "Ignoring method: " + type.getName() + "#"
+                + method.getReadableDeclaration());
           }
         }
       }
     }
 
     if (fieldFilter != null) {
-      if (fieldMultiMap.containsKey(typeLiteral)) {
-        for (FieldLiteral<?> field : fieldMultiMap.get(typeLiteral)) {
+      if (fieldMultiMap.containsKey(typeName)) {
+        for (JField field : fieldMultiMap.get(typeName)) {
           fieldAccu.add(field);
         }
       } else {
-        for (FieldLiteral<?> field : getTypeFields(typeLiteral)) {
+        for (JField field : type.getFields()) {
           if (fieldFilter.accept(field)) {
             fieldAccu.add(field);
-            logger.log(TreeLogger.TRACE, String.format("Found field: %s", field));
+            logger.log(TreeLogger.TRACE, "Found field: " + type.getName() + "#"
+                + field.getName());
           } else {
-            logger.log(TreeLogger.DEBUG, String.format("Ignoring field: %s", field));
+            logger.log(TreeLogger.DEBUG, "Ignoring field: " + type.getName() + "#"
+                + field.getName());
           }
         }
       }
     }
 
-    for (Class<?> ancestor : typeLiteral.getRawType().getInterfaces()) {
-      accumulateMembers(typeLiteral.getSupertype(ancestor), methodAccu, fieldAccu);
+    for (JClassType ancestor : type.getImplementedInterfaces()) {
+      accumulateMembers(ancestor, methodAccu, fieldAccu);
     }
 
-    Class<?> ancestor = typeLiteral.getRawType().getSuperclass();
+    JClassType ancestor = type.getSuperclass();
+
 
     if (ancestor != null) {
-      accumulateMembers(typeLiteral.getSupertype(ancestor), methodAccu, fieldAccu);
+      accumulateMembers(ancestor, methodAccu, fieldAccu);
     }
-  }
-
-  private <T> Iterable<MethodLiteral<T, Method>> getTypeMethods(TypeLiteral<T> typeLiteral) {
-    List<MethodLiteral<T, Method>> methods = new ArrayList<MethodLiteral<T, Method>>();
-    for (Method method : typeLiteral.getRawType().getDeclaredMethods()) {
-      methods.add(MethodLiteral.get(method, typeLiteral));
-    }
-    return methods;
-  }
-  
-  private <T> Iterable<FieldLiteral<T>> getTypeFields(TypeLiteral<T> typeLiteral) {
-    List<FieldLiteral<T>> fields = new ArrayList<FieldLiteral<T>>();
-    for (Field field : typeLiteral.getRawType().getDeclaredFields()) {
-      fields.add(FieldLiteral.get(field, typeLiteral));
-    }
-    return fields;
   }
 }
 

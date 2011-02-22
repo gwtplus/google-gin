@@ -17,9 +17,7 @@ package com.google.gwt.inject.rebind.util;
 
 import com.google.inject.Key;
 
-import junit.framework.TestCase;
-
-public class NameGeneratorTest extends TestCase {
+public class NameGeneratorTest extends AbstractUtilTester {
 
   // TODO(schmitt):  Test mangle.
   // TODO(schmitt):  Test name translation.
@@ -59,25 +57,5 @@ public class NameGeneratorTest extends TestCase {
 
     // Test reserve for existing name (should be ok).
     nameGenerator.markAsUsed(foo);
-  }
-  
-  public void testGetCreatorMethodName() {
-    NameGenerator nameGenerator = new NameGenerator();
-    Key<?> key = Key.get(String.class);
-    String reserved = "create_" 
-        + nameGenerator.convertToValidMemberName(key.toString()); 
-    nameGenerator.markAsUsed(reserved);
-    String getStringCreator = nameGenerator.getCreatorMethodName(key);
-    assertFalse(String.format("Expected '%s' to not equal '%s'",
-        reserved, getStringCreator), reserved.equals(getStringCreator));
-  }
-  
-  public void testCaching() {
-    NameGenerator nameGenerator = new NameGenerator();
-    Key<?> key = Key.get(String.class);
-    String getStringCreator = nameGenerator.getCreatorMethodName(key);
-    String getStringGetter = nameGenerator.getGetterMethodName(key);
-    assertFalse(getStringGetter.equals(getStringCreator));
-    assertEquals(getStringGetter, nameGenerator.getGetterMethodName(key));
   }
 }

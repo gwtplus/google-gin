@@ -15,26 +15,25 @@
  */
 package com.google.gwt.inject.rebind.adapter;
 
-import com.google.gwt.inject.client.GinModule;
-import com.google.gwt.inject.client.PrivateGinModule;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
+import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.binder.GinAnnotatedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinAnnotatedConstantBindingBuilder;
-import com.google.gwt.inject.client.binder.GinBinder;
 import com.google.gwt.inject.client.binder.GinLinkedBindingBuilder;
-import com.google.gwt.inject.rebind.GinjectorBindings;
+import com.google.gwt.inject.client.binder.GinBinder;
 import com.google.inject.Binder;
 import com.google.inject.Key;
-import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
+
+import java.util.Set;
 
 class BinderAdapter implements GinBinder {
   private final Binder binder;
-  private GinjectorBindings bindings;
+  private final Set<FactoryModule<?>> factoryModules;
 
-  BinderAdapter(Binder binder, GinjectorBindings bindings) {
+  BinderAdapter(Binder binder, Set<FactoryModule<?>> factoryModules) {
     this.binder = binder;
-    this.bindings = bindings;
+    this.factoryModules = factoryModules;
   }
 
   public <T> GinAnnotatedBindingBuilder<T> bind(Class<T> clazz) {
@@ -57,21 +56,9 @@ class BinderAdapter implements GinBinder {
 
     // Filtering out fake factory modules.
     if (install instanceof FactoryModule) {
-      if (bindings != null) {
-        bindings.addFactoryModule((FactoryModule<?>) install);
-      }
+      factoryModules.add((FactoryModule) install);
     } else {
-      // Here we need to take care to ensure that PrivateGinModule uses the appropriate
-      // type of adapter, and also get the corresponding Guice private binder.
-      final Module moduleAdapter;
-      if (install == null) {
-        moduleAdapter = null;
-      } else if (install instanceof PrivateGinModule) {
-        moduleAdapter = new PrivateGinModuleAdapter((PrivateGinModule) install, bindings);
-      } else {
-        moduleAdapter = new GinModuleAdapter(install, bindings);
-      }
-      binder.install(moduleAdapter);
+      binder.install(new GinModuleAdapter(install, factoryModules));
     }
   }
 

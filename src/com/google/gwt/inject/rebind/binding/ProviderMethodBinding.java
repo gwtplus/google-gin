@@ -15,18 +15,22 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.inject.rebind.reflect.MethodLiteral;
-import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
-import com.google.gwt.inject.rebind.reflect.ReflectUtil;
-import com.google.gwt.inject.rebind.util.GuiceUtil;
-import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.inject.rebind.util.KeyUtil;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
-import com.google.inject.TypeLiteral;
+import com.google.inject.Key;
 import com.google.inject.internal.ProviderMethod;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A binding that calls a provider method. This binding depends on
@@ -35,38 +39,53 @@ import java.lang.reflect.Method;
  * method.
  */
 public class ProviderMethodBinding implements Binding {
-  private final GuiceUtil guiceUtil;
+  private final KeyUtil keyUtil;
   private final SourceWriteUtil sourceWriteUtil;
+  private final TreeLogger logger;
 
-  private MethodLiteral<?, Method> providerMethod;
-  private Class<?> moduleType;
+  private Class<?> moduleClass;
+  private Set<Key<?>> parameterKeys;
+  private JMethod gwtProviderMethod;
 
   @Inject
-  public ProviderMethodBinding(GuiceUtil guiceUtil, SourceWriteUtil sourceWriteUtil) {
-    this.guiceUtil = guiceUtil;
+  public ProviderMethodBinding(KeyUtil keyUtil, SourceWriteUtil sourceWriteUtil,
+      TreeLogger logger) {
+    this.keyUtil = keyUtil;
     this.sourceWriteUtil = sourceWriteUtil;
+    this.logger = logger;
   }
 
-  public void setProviderMethod(ProviderMethod providerMethod) {
-    moduleType = providerMethod.getInstance().getClass();
+  public void setProviderMethod(ProviderMethod providerMethod) throws UnableToCompleteException {
+    try {
+      this.gwtProviderMethod = keyUtil.javaToGwtMethod(providerMethod.getMethod());
+    } catch (NotFoundException e) {
+      logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
+      throw new UnableToCompleteException();
+    }
+
+    moduleClass = providerMethod.getInstance().getClass();
+
     Method method = providerMethod.getMethod();
-    this.providerMethod = MethodLiteral.get(method, TypeLiteral.get(method.getDeclaringClass()));
+
+    Type[] parameterTypes = method.getGenericParameterTypes();
+    Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+    assert parameterTypes.length == parameterAnnotations.length;
+    parameterKeys = new HashSet<Key<?>>(parameterTypes.length);
+
+    for (int i = 0; i < parameterTypes.length; i++) {
+      parameterKeys.add(keyUtil.getKey(parameterTypes[i], parameterAnnotations[i]));
+    }
   }
-  
-  // TODO(schmitt): This implementation creates a new module instance for
-  // every provider method invocation. Instead we should likely create just a
-  // single instance of the module, invoke it repeatedly and share it between
-  // provider methods.
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
-      NameGenerator nameGenerator) throws NoSourceNameException {
-    String moduleSourceName = ReflectUtil.getSourceName(moduleType);
+
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
+    String moduleSourceName = moduleClass.getCanonicalName();
     String createModule = "new " + moduleSourceName + "()";
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
-        "return " + sourceWriteUtil.createMethodCallWithInjection(writer, providerMethod,
-            createModule, nameGenerator));
+        "return " + sourceWriteUtil.createMethodCallWithInjection(writer, gwtProviderMethod,
+            createModule));
   }
 
   public RequiredKeys getRequiredKeys() {
-    return guiceUtil.getRequiredKeys(providerMethod);
+    return new RequiredKeys(parameterKeys);
   }
 }
