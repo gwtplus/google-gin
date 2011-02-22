@@ -18,9 +18,10 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JPackage;
+import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.client.Ginjector;
-import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
-import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -42,27 +43,30 @@ class GinjectorGeneratorImpl {
   /**
    * Interface of the injector that this class is implementing.
    */
-  private final Class<? extends Ginjector> ginjectorInterface;
+  private final JClassType ginjectorInterface;
+
+  private final TypeOracle oracle;
+
   private final GinjectorOutputter outputter;
 
   @Inject
   public GinjectorGeneratorImpl(TreeLogger logger, GeneratorContext ctx,
-      BindingsProcessor bindingsProcessor,
-      @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
-      GinjectorOutputter outputter) {
+      BindingsProcessor bindingsProcessor, @GinjectorInterfaceType JClassType ginjectorInterface,
+      TypeOracle oracle, GinjectorOutputter outputter) {
     this.logger = logger;
     this.ctx = ctx;
     this.bindingsProcessor = bindingsProcessor;
     this.ginjectorInterface = ginjectorInterface;
+    this.oracle = oracle;
     this.outputter = outputter;
   }
 
   public String generate() throws UnableToCompleteException {
     validateInjectorClass();
 
-    Package interfacePackage = ginjectorInterface.getPackage();
+    JPackage interfacePackage = ginjectorInterface.getPackage();
     String packageName = interfacePackage == null ? "" : interfacePackage.getName();
-    String implClassName = getImplClassName();
+    String implClassName = ginjectorInterface.getName().replace(".", "_") + "Impl";
     String generatedClassName = packageName + "." + implClassName;
 
     PrintWriter printWriter = ctx.tryCreate(logger, packageName, implClassName);
@@ -76,19 +80,17 @@ class GinjectorGeneratorImpl {
     return generatedClassName;
   }
 
-  private String getImplClassName() throws UnableToCompleteException {
-    try {
-      return ReflectUtil.getSourceName(ginjectorInterface).replace(".", "_") + "Impl";
-    } catch (NoSourceNameException e) {
-      logger.log(TreeLogger.Type.ERROR, "Could not determine source name for ginjector", e);
+  private void validateInjectorClass() throws UnableToCompleteException {
+    if (ginjectorInterface.isInterface() == null) {
+      logger.log(TreeLogger.ERROR, ginjectorInterface.getQualifiedSourceName()
+          + " is not an interface", null);
       throw new UnableToCompleteException();
     }
-  }
 
-  private void validateInjectorClass() throws UnableToCompleteException {
-    if (!ginjectorInterface.isInterface()) {
-      logger.log(TreeLogger.ERROR,
-          ginjectorInterface.getCanonicalName() + " is not an interface", null);
+    if (!ginjectorInterface.isAssignableTo(oracle.findType(Ginjector.class.getName()))) {
+      logger.log(TreeLogger.ERROR, ginjectorInterface.getQualifiedSourceName()
+          + " is not a subtype of " + Ginjector.class.getName());
+
       throw new UnableToCompleteException();
     }
   }

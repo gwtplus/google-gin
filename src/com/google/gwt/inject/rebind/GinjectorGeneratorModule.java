@@ -15,27 +15,20 @@
  */
 package com.google.gwt.inject.rebind;
 
-import java.lang.reflect.Method;
-import java.util.Set;
-
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.inject.client.GinModule;
-import com.google.gwt.inject.client.Ginjector;
-import com.google.gwt.inject.rebind.BindingResolver.BindingResolverFactory;
-import com.google.gwt.inject.rebind.GuiceElementVisitor.GuiceElementVisitorFactory;
+import com.google.gwt.core.ext.typeinfo.HasAnnotations;
+import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JField;
+import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Injectable;
-import com.google.gwt.inject.rebind.reflect.FieldLiteral;
-import com.google.gwt.inject.rebind.reflect.MethodLiteral;
-import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.inject.AbstractModule;
-import com.google.inject.Key;
+import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
 
 /**
  * Guice module used in the implementation of {@link GinjectorGenerator}.
@@ -47,37 +40,23 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
 class GinjectorGeneratorModule extends AbstractModule {
   private final TreeLogger logger;
   private final GeneratorContext ctx;
-  private final Class<? extends Ginjector> ginjectorInterface;
-  private final Set<Class<? extends GinModule>> configurationModules;
+  private final JClassType ginjectorInterface;
 
   public GinjectorGeneratorModule(TreeLogger logger, GeneratorContext ctx,
-      Class<? extends Ginjector> ginjectorInterface, 
-      Set<Class<? extends GinModule>> configurationModules) {
+      JClassType ginjectorInterface) {
     this.logger = logger;
     this.ctx = ctx;
     this.ginjectorInterface = ginjectorInterface;
-    this.configurationModules = configurationModules;
   }
 
   @Override
   protected void configure() {
     bind(TreeLogger.class).toInstance(logger);
     bind(GeneratorContext.class).toInstance(ctx);
-    bind(new TypeLiteral<Class<? extends Ginjector>>(){})
-        .annotatedWith(GinjectorInterfaceType.class)
+    bind(TypeOracle.class).toInstance(ctx.getTypeOracle());
+    bind(JClassType.class).annotatedWith(GinjectorInterfaceType.class)
         .toInstance(ginjectorInterface);
-    bind(GinjectorBindings.class).annotatedWith(RootBindings.class)
-        .to(GinjectorBindings.class).in(Singleton.class);
-    bind(BindingIndex.class)
-        .to(Key.get(GinjectorBindings.class, RootBindings.class))
-        .in(Singleton.class);
-    install(new FactoryModuleBuilder()
-        .build(GuiceElementVisitor.GuiceElementVisitorFactory.class));
-    install(new FactoryModuleBuilder()
-        .build(BindingResolverFactory.class));
-    bind(new TypeLiteral<Set<Class<? extends GinModule>>>(){})
-        .annotatedWith(ConfigurationModuleTypes.class)
-        .toInstance(configurationModules);
+    bind(BindingIndex.class).to(BindingsProcessor.class).in(Singleton.class);
   }
 
   @Provides
@@ -86,19 +65,24 @@ class GinjectorGeneratorModule extends AbstractModule {
   MemberCollector provideInjectablesCollector(MemberCollector collector) {
     collector.setMethodFilter(
         new MemberCollector.MethodFilter() {
-          public boolean accept(MethodLiteral<?, Method> method) {
+          public boolean accept(JMethod method) {
             // TODO(schmitt): Do injectable methods require at least one parameter?
-            return GuiceUtil.hasInject(method) && !method.isStatic();
+            return hasInject(method) && !method.isStatic();
           }
         });
 
     collector.setFieldFilter(
         new MemberCollector.FieldFilter() {
-          public boolean accept(FieldLiteral<?> field) {
-            return (GuiceUtil.hasInject(field)) && !field.isStatic();
+          public boolean accept(JField field) {
+            return (hasInject(field)) && !field.isStatic();
           }
         });
 
     return collector;
+  }
+
+  private boolean hasInject(HasAnnotations method) {
+    return method.isAnnotationPresent(Inject.class)
+        || method.isAnnotationPresent(javax.inject.Inject.class);
   }
 }

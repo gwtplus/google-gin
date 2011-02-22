@@ -15,7 +15,6 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -35,8 +34,7 @@ public class GinjectorBinding implements Binding {
     this.sourceWriteUtil = sourceWriteUtil;
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
-      NameGenerator nameGenerator) {
+  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature) {
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return this;");
   }
 

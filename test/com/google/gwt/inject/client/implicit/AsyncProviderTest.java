@@ -112,20 +112,6 @@ public class AsyncProviderTest extends GWTTestCase {
     });
   }
   
-  public void testAsyncProviderWithSupertype() {
-    AsyncProvider<Foo> fooAsyncProvider = injector.getFooAsyncProvider();
-    assertNotNull(fooAsyncProvider);
-    delayTestFinish(500);
-    fooAsyncProvider.get(new AbstractAsyncCallback<Object>() {
-
-      public void onSuccess(Object result) {
-        assertNotNull(result);
-        finishTest();
-      }
-      
-    });
-  }
-
   @Override
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
