@@ -23,7 +23,9 @@ import com.google.inject.name.Named;
  * Some modules are defined by the "com.google.gwt.inject.ginmodules" configuration
  * property in the GWT module.
  */
-@GinModules({RegularModule.class, ConfigurationModulesTest.NestedRegularModule.class})
+@GinModules(
+    value={RegularModule.class, ConfigurationModulesTest.NestedRegularModule.class},
+    properties={"ginmodules","extra.ginmodule"})
 public interface ConfigurationModulesGinjector extends Ginjector {
   @Named("one") int getOne();
   @Named("two") int getTwo();

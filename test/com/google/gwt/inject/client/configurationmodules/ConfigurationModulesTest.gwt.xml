@@ -19,11 +19,17 @@
   <inherits name='com.google.gwt.inject.Inject'/>
   <inherits name="com.google.gwt.junit.JUnit"/>
 
-  <extend-configuration-property name="com.google.gwt.inject.ginmodules" 
+  <!-- Multi-valued configuration property used to specify gin modules -->
+  <define-configuration-property name="ginmodules" is-multi-valued="true" />
+
+  <extend-configuration-property name="ginmodules" 
       value="com.google.gwt.inject.client.configurationmodules.ConfigurationModule" />
-  <extend-configuration-property name="com.google.gwt.inject.ginmodules" 
+  <extend-configuration-property name="ginmodules" 
       value="com.google.gwt.inject.client.configurationmodules.ConfigurationModulesTest$NestedConfigurationModuleA" />
-  <extend-configuration-property name="com.google.gwt.inject.ginmodules" 
+
+  <!-- Single-valued configuration property used to specify gin modules -->
+  <define-configuration-property name="extra.ginmodule" is-multi-valued="false" />
+  <set-configuration-property name="extra.ginmodule" 
       value="com.google.gwt.inject.client.configurationmodules.ConfigurationModulesTest.NestedConfigurationModuleB" />
 
 </module>

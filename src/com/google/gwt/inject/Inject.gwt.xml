@@ -12,7 +12,4 @@
   <!-- Though the default, without this seems not to work. Perhaps due to super-src? -->
   <source path="client"/>
 
-  <!-- Configuration property used to specify gin modules -->
-  <define-configuration-property name="com.google.gwt.inject.ginmodules" is-multi-valued="true" />
-
 </module>

@@ -23,7 +23,6 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.BindingResolver.BindingResolverFactory;
-import com.google.gwt.inject.rebind.GuiceElementVisitor.GuiceElementVisitorFactory;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
