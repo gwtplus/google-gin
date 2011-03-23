@@ -40,10 +40,12 @@ public class GinjectorGenerator extends Generator {
 
   public String generate(TreeLogger logger, GeneratorContext ctx, String requestedClass)
       throws UnableToCompleteException {
-    
+
+    ClassLoader classLoader = new GinBridgeClassLoader(ctx, logger);
+
     Class<? extends Ginjector> ginjectorInterface;
     try {
-      ginjectorInterface = getGinjectorType(requestedClass);
+      ginjectorInterface = getGinjectorType(requestedClass, classLoader);
     } catch (ClassNotFoundException e) {
       logger.log(TreeLogger.ERROR, String.format("Unable to load ginjector type [%s], "
           + "maybe you haven't compiled your client java sources?", requestedClass), e);
@@ -56,16 +58,16 @@ public class GinjectorGenerator extends Generator {
     // This is the Injector we use for the Generator internally,
     // it has nothing to do with user code.
     Module module = new GinjectorGeneratorModule(logger, ctx, ginjectorInterface,
-        getConfigurationModules(ginjectorInterface, ctx.getPropertyOracle(), logger));
+        getConfigurationModules(ctx.getPropertyOracle(), logger, classLoader, ginjectorInterface));
     return Guice.createInjector(module).getInstance(GinjectorGeneratorImpl.class).generate();
   }
 
   @SuppressWarnings("unchecked")
   // Due to deferred binding we assume that the requested class has to be a
   // ginjector.
-  private Class<? extends Ginjector> getGinjectorType(String requestedClass)
-      throws ClassNotFoundException {
-    Class<?> type = ReflectUtil.loadClass(requestedClass);
+  private Class<? extends Ginjector> getGinjectorType(String requestedClass,
+      ClassLoader classLoader) throws ClassNotFoundException {
+    Class<?> type = ReflectUtil.loadClass(requestedClass, classLoader);
     if (!Ginjector.class.isAssignableFrom(type)) {
       throw new IllegalArgumentException("The type passed does not inherit from Ginjector - "
           + "please check the deferred binding rules.");
@@ -76,10 +78,9 @@ public class GinjectorGenerator extends Generator {
 
   @SuppressWarnings("unchecked")
   // We check that the class is a GinModule before casting it.
-  private Set<Class<? extends GinModule>> getConfigurationModules(
-      Class<? extends Ginjector> ginjectorInterface,
-      PropertyOracle propertyOracle,
-      TreeLogger logger) throws UnableToCompleteException {
+  private Set<Class<? extends GinModule>> getConfigurationModules(PropertyOracle propertyOracle,
+      TreeLogger logger, ClassLoader classLoader, Class<? extends Ginjector> ginjectorInterface)
+      throws UnableToCompleteException {
 
     Set<String> propertyNames = new HashSet<String>();
     getPropertyNamesFromInjectorInterface(ginjectorInterface, propertyNames);
@@ -99,7 +100,7 @@ public class GinjectorGenerator extends Generator {
           new HashSet<Class<? extends GinModule>>(configurationModuleNames.size());
     for (String moduleName : configurationModuleNames) {
       try {
-        Class<?> ginModule = ReflectUtil.loadClass(moduleName);
+        Class<?> ginModule = ReflectUtil.loadClass(moduleName, classLoader);
         if (!GinModule.class.isAssignableFrom(ginModule)) {
           logger.log(TreeLogger.Type.ERROR, String.format("The gin module type [%s] does not "
               + "inherit from GinModule.", moduleName));
@@ -135,7 +136,6 @@ public class GinjectorGenerator extends Generator {
     }
 
     for (Class<?> ancestor : ginjectorInterface.getInterfaces()) {
-      // TODO(schmitt): Only look at ancestors extending Ginjector?
       getPropertyNamesFromInjectorInterface(ancestor, propertyNames);
     }
   }

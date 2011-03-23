@@ -45,6 +45,7 @@ import com.google.gwt.inject.client.privatemanylevel.PrivateManyLevelTest;
 import com.google.gwt.inject.client.provider.ProviderTest;
 import com.google.gwt.inject.client.providermethods.ProviderMethodsTest;
 import com.google.gwt.inject.client.scopedimplicit.ScopedImplicitTest;
+import com.google.gwt.inject.generated.client.GeneratorTest;
 import com.google.gwt.junit.tools.GWTTestSuite;
 
 import junit.framework.Test;
@@ -88,6 +89,7 @@ public class GinClientTestSuite {
     suite.addTestSuite(PrivateBasicTest.class);
     suite.addTestSuite(PrivateManyLevelTest.class);
     suite.addTestSuite(PrivateFactoryTest.class);
+    suite.addTestSuite(GeneratorTest.class);
 
     return suite;
   }

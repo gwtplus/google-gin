@@ -28,8 +28,6 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.google.gwt.inject.rebind.util.SourceWriteUtil.join;
 
@@ -352,15 +350,17 @@ public class ReflectUtil {
    * and {@code A$B$C}. 
    *
    * @param requestedClass binary or source name of class to be loaded
+   * @param classLoader class loader to use to retrieve requested class
    * @return loaded class
    * @throws ClassNotFoundException if no class could be found for the provided
    *    name
    */
-  public static Class<?> loadClass(String requestedClass) throws ClassNotFoundException {
+  public static Class<?> loadClass(String requestedClass, ClassLoader classLoader)
+      throws ClassNotFoundException {
     String binaryName = requestedClass;
     while (true) {
       try {
-        return Class.forName(binaryName);
+        return Class.forName(binaryName, true, classLoader);
       } catch (ClassNotFoundException e) {
         if (!binaryName.contains(".")) {
           throw e;

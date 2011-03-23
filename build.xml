@@ -170,6 +170,7 @@
       <classpath location="${gin.output.dir}"/>
       <src refid="gin.test.sourcepath"/>
       <exclude name="com/google/gwt/inject/client/" />
+      <exclude name="com/google/gwt/inject/generated/" />
     </javac>
 
     <!-- Required to run the tests in IntelliJ under GWT 2.0. -->
@@ -201,6 +202,7 @@
     <copy todir="${gin.testoutput.dir}">
       <fileset dir="${gin.basedir}/test">
         <include name="com/google/gwt/inject/client/**/*.java" />
+        <include name="com/google/gwt/inject/generated/client/**/*.java" />
       </fileset>
     </copy>
   </target>
