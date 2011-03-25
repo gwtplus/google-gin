@@ -340,43 +340,4 @@ public class ReflectUtil {
     return !clazz.isPrimitive() && !clazz.isAnnotation() && !clazz.isArray() && !clazz.isEnum()
         && !clazz.isAnonymousClass();
   }
-
-  /**
-   * Loads the class with the given name. If the provided name is a source name
-   * this method tries to find the appropriate class.
-   *
-   * <p>For example, given a string {@code A.B.C}, this method will try to load
-   * (in this order, returning upon found class): {@code A.B.C}, {@code A.B$C}
-   * and {@code A$B$C}. 
-   *
-   * @param requestedClass binary or source name of class to be loaded
-   * @param classLoader class loader to use to retrieve requested class
-   * @return loaded class
-   * @throws ClassNotFoundException if no class could be found for the provided
-   *    name
-   */
-  public static Class<?> loadClass(String requestedClass, ClassLoader classLoader)
-      throws ClassNotFoundException {
-    String binaryName = requestedClass;
-    while (true) {
-      try {
-        return Class.forName(binaryName, true, classLoader);
-      } catch (ClassNotFoundException e) {
-        if (!binaryName.contains(".")) {
-          throw e;
-        } else {
-          binaryName = replaceLastPeriodWithDollar(binaryName);
-        }
-      }
-    }
-  }
-
-  private static String replaceLastPeriodWithDollar(String input) {
-    int where = input.lastIndexOf('.');
-    if (where != -1) {
-      return input.substring(0, where) + '$' + input.substring(where + 1);
-    } else {
-      return input;
-    }
-  }
 }

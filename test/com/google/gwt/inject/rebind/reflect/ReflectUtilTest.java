@@ -16,6 +16,7 @@
 
 package com.google.gwt.inject.rebind.reflect;
 
+import com.google.gwt.inject.rebind.GinjectorGenerator;
 import com.google.inject.TypeLiteral;
 
 import junit.framework.TestCase;
@@ -176,23 +177,6 @@ public class ReflectUtilTest extends TestCase {
   private MethodLiteral<?, ?> getMethod(TypeLiteral<?> type, String methodName, Class... paramTypes)
       throws NoSuchMethodException {
     return MethodLiteral.get(type.getRawType().getDeclaredMethod(methodName, paramTypes), type);
-  }
-
-  public void testLoadClass() throws ClassNotFoundException {
-    assertEquals(ReflectUtilTest.class,
-        ReflectUtil.loadClass("com.google.gwt.inject.rebind.reflect.ReflectUtilTest",
-            ReflectUtilTest.class.getClassLoader()));
-  }
-
-  public void testLoadClass_nestedClass() throws ClassNotFoundException {
-    assertEquals(Nested.class,
-        ReflectUtil.loadClass("com.google.gwt.inject.rebind.reflect.ReflectUtilTest.Nested",
-            ReflectUtilTest.class.getClassLoader()));
-
-    assertEquals(Nested.DoublyNested.class,
-        ReflectUtil.loadClass(
-            "com.google.gwt.inject.rebind.reflect.ReflectUtilTest.Nested.DoublyNested",
-            ReflectUtilTest.class.getClassLoader()));
   }
 
   //
