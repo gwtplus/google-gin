@@ -16,7 +16,6 @@
 
 package com.google.gwt.inject.rebind;
 
-import com.google.gwt.inject.rebind.reflect.ReflectUtilTest;
 import junit.framework.TestCase;
 
 public class GinjectorGeneratorTest extends TestCase {
@@ -24,33 +23,34 @@ public class GinjectorGeneratorTest extends TestCase {
   static boolean initializedA = false;
   static boolean initializedB = false;
 
+  private GinjectorGenerator ginjectorGenerator;
+
+  protected void setUp() throws Exception {
+    super.setUp();
+    ginjectorGenerator = new GinjectorGenerator();
+    ginjectorGenerator.classLoader = this.getClass().getClassLoader();
+  }
+
   public void testLoadClass() throws ClassNotFoundException {
-    assertEquals(GinjectorGeneratorTest.class,
-        GinjectorGenerator.loadClass("com.google.gwt.inject.rebind.GinjectorGeneratorTest",
-            ReflectUtilTest.class.getClassLoader(), true));
+    assertEquals(GinjectorGeneratorTest.class, ginjectorGenerator.loadClass(
+        "com.google.gwt.inject.rebind.GinjectorGeneratorTest", true));
   }
 
   public void testLoadClass_nestedClass() throws ClassNotFoundException {
-    assertEquals(Nested.class,
-        GinjectorGenerator.loadClass("com.google.gwt.inject.rebind.GinjectorGeneratorTest.Nested",
-            GinjectorGeneratorTest.class.getClassLoader(), true));
+    assertEquals(Nested.class, ginjectorGenerator.loadClass(
+            "com.google.gwt.inject.rebind.GinjectorGeneratorTest.Nested" , true));
 
-    assertEquals(Nested.DoublyNested.class,
-        GinjectorGenerator.loadClass(
-            "com.google.gwt.inject.rebind.GinjectorGeneratorTest.Nested.DoublyNested",
-            GinjectorGeneratorTest.class.getClassLoader(), true));
+    assertEquals(Nested.DoublyNested.class, ginjectorGenerator.loadClass(
+            "com.google.gwt.inject.rebind.GinjectorGeneratorTest.Nested.DoublyNested", true));
   }
-
 
   public void testLoadClass_initialize() throws ClassNotFoundException {
     assertFalse(initializedA);
-    GinjectorGenerator.loadClass("com.google.gwt.inject.rebind.InitializableA",
-        GinjectorGeneratorTest.class.getClassLoader(), true);
+    ginjectorGenerator.loadClass("com.google.gwt.inject.rebind.InitializableA", true);
     assertTrue(initializedA);
 
     assertFalse(initializedB);
-    GinjectorGenerator.loadClass("com.google.gwt.inject.rebind.InitializableB",
-        GinjectorGeneratorTest.class.getClassLoader(), false);
+    ginjectorGenerator.loadClass("com.google.gwt.inject.rebind.InitializableB", false);
     assertFalse(initializedB);
   }
 

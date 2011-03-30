@@ -170,7 +170,9 @@
       <classpath location="${gin.output.dir}"/>
       <src refid="gin.test.sourcepath"/>
       <exclude name="com/google/gwt/inject/client/" />
+      <exclude name="com/google/gwt/inject/superclient/" />
       <exclude name="com/google/gwt/inject/generated/" />
+      <exclude name="com/google/gwt/inject/super/" />
     </javac>
 
     <!-- Required to run the tests in IntelliJ under GWT 2.0. -->
@@ -189,6 +191,7 @@
       <classpath location="${gin.output.dir}"/>
       <src refid="gin.test.sourcepath"/>
       <exclude name="com/google/gwt/inject/rebind/" />
+      <exclude name="com/google/gwt/inject/super/" />
     </javac>
 
     <copy todir="${gin.testoutput.dir}">
@@ -202,7 +205,9 @@
     <copy todir="${gin.testoutput.dir}">
       <fileset dir="${gin.basedir}/test">
         <include name="com/google/gwt/inject/client/**/*.java" />
+        <include name="com/google/gwt/inject/superclient/**/*.java" />
         <include name="com/google/gwt/inject/generated/client/**/*.java" />
+        <include name="com/google/gwt/inject/super/**/*.java" />
       </fileset>
     </copy>
   </target>

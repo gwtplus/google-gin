@@ -17,4 +17,13 @@
   <inherits name='com.google.gwt.user.User'/>
   <inherits name='com.google.gwt.inject.Inject'/>
   <inherits name="com.google.gwt.junit.JUnit"/>
+
+  <source path="client"/>
+
+  <!-- Additional client directory for tests whose package cannot start with
+       com.google.gwt.inject.client -->
+  <source path="superclient"/>
+
+  <!-- Super source for tests in com.google.gwt.inject.superclient.supersource -->
+  <super-source path="super" />
 </module>
