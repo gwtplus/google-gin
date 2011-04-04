@@ -27,6 +27,7 @@ import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,8 +41,7 @@ abstract class CreatorBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
   private final GuiceUtil guiceUtil;
-  private final Set<Key<?>> requiredKeys = new HashSet<Key<?>>();
-  private final Set<Key<?>> optionalKeys = new HashSet<Key<?>>();
+  private final Set<Dependency> dependencies = new HashSet<Dependency>();
   private TypeLiteral<?> type;
 
   protected CreatorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil) {
@@ -51,9 +51,8 @@ abstract class CreatorBinding implements Binding {
 
   public void setType(TypeLiteral<?> type) {
     this.type = type;
-    RequiredKeys classRequiredKeys = guiceUtil.getMemberInjectionRequiredKeys(type);
-    requiredKeys.addAll(classRequiredKeys.getRequiredKeys());
-    optionalKeys.addAll(classRequiredKeys.getOptionalKeys());
+    dependencies.add(new Dependency(Dependency.GINJECTOR, Key.get(type)));
+    dependencies.addAll(guiceUtil.getMemberInjectionDependencies(Key.get(type), type));
   }
 
   public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
@@ -73,8 +72,8 @@ abstract class CreatorBinding implements Binding {
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, sb.toString());
   }
 
-  public RequiredKeys getRequiredKeys() {
-    return new RequiredKeys(requiredKeys, optionalKeys);
+  public Collection<Dependency> getDependencies() {
+    return dependencies;
   }
 
   public TypeLiteral<?> getType() {
@@ -91,8 +90,6 @@ abstract class CreatorBinding implements Binding {
   }
 
   protected void addParamTypes(MethodLiteral<?, ?> method) {
-    RequiredKeys methodRequiredKeys = guiceUtil.getRequiredKeys(method);
-    requiredKeys.addAll(methodRequiredKeys.getRequiredKeys());
-    optionalKeys.addAll(methodRequiredKeys.getOptionalKeys());
+    dependencies.addAll(guiceUtil.getDependencies(Key.get(type), method));
   }
 }

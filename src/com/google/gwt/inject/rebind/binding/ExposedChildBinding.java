@@ -24,7 +24,8 @@ import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Binding that represents a value exposed to this level from lower in the injector hierarchy.
@@ -62,7 +63,8 @@ public class ExposedChildBinding implements Binding {
         ginjectorNameGenerator.getFieldName(childBindings), childMethodName));
   }
 
-  public RequiredKeys getRequiredKeys() {
-    return new RequiredKeys(new HashSet<Key<?>>());
+  public Collection<Dependency> getDependencies() {
+    // Don't need to do anything.  The binding is positioned in an earlier stage of resolution.
+    return Collections.<Dependency>emptySet();
   }
 }

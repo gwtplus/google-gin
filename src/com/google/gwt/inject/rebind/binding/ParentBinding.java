@@ -24,7 +24,8 @@ import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Binding that represents a value inherited from higher in the injector hierarchy.
@@ -68,7 +69,9 @@ public class ParentBinding implements Binding {
             parentMethodName));
   }
 
-  public RequiredKeys getRequiredKeys() {
-    return new RequiredKeys(new HashSet<Key<?>>());
+  public Collection<Dependency> getDependencies() {
+    // ParentBindings are only added *after* resolution has happened, so their dependencies don't
+    // matter
+    return Collections.<Dependency>emptyList();
   }
 }

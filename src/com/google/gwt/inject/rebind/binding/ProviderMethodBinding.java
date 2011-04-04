@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
@@ -23,10 +24,12 @@ import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
+import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.ProviderMethod;
 
 import java.lang.reflect.Method;
+import java.util.Collection;
 
 /**
  * A binding that calls a provider method. This binding depends on
@@ -40,7 +43,8 @@ public class ProviderMethodBinding implements Binding {
 
   private MethodLiteral<?, Method> providerMethod;
   private Class<?> moduleType;
-
+  private Key<?> targetKey;
+  
   @Inject
   public ProviderMethodBinding(GuiceUtil guiceUtil, SourceWriteUtil sourceWriteUtil) {
     this.guiceUtil = guiceUtil;
@@ -51,6 +55,7 @@ public class ProviderMethodBinding implements Binding {
     moduleType = providerMethod.getInstance().getClass();
     Method method = providerMethod.getMethod();
     this.providerMethod = MethodLiteral.get(method, TypeLiteral.get(method.getDeclaringClass()));
+    this.targetKey = providerMethod.getKey();
   }
   
   // TODO(schmitt): This implementation creates a new module instance for
@@ -66,7 +71,11 @@ public class ProviderMethodBinding implements Binding {
             createModule, nameGenerator));
   }
 
-  public RequiredKeys getRequiredKeys() {
-    return guiceUtil.getRequiredKeys(providerMethod);
+  public Collection<Dependency> getDependencies() {
+    Preconditions.checkNotNull(providerMethod, 
+        "Must call setProviderMethod after creating ProviderMethodBinding");
+    Collection<Dependency> dependencies = guiceUtil.getDependencies(targetKey, providerMethod);
+    dependencies.add(new Dependency(Dependency.GINJECTOR, targetKey));
+    return dependencies;
   }
 }

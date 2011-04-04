@@ -27,6 +27,7 @@ import com.google.inject.Key;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -39,6 +40,7 @@ public class ImplicitProviderBinding implements Binding {
 
   private ParameterizedType providerType;
   private Key<?> targetKey;
+  private Key<?> providerKey;
 
   @Inject
   public ImplicitProviderBinding(SourceWriteUtil sourceWriteUtil) {
@@ -46,6 +48,7 @@ public class ImplicitProviderBinding implements Binding {
   }
 
   public void setProviderKey(Key<?> providerKey) {
+    this.providerKey = providerKey;
     providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
 
     // Pass any binding annotation on the Provider to the thing we create
@@ -66,9 +69,9 @@ public class ImplicitProviderBinding implements Binding {
         + "};");
   }
 
-  public RequiredKeys getRequiredKeys() {
-    Preconditions.checkNotNull(targetKey);
-    return new RequiredKeys(Collections.<Key<?>>singleton(targetKey));
+  public Collection<Dependency> getDependencies() {
+    Preconditions.checkNotNull(targetKey, "Must call setProviderKey before resolution");
+    return Collections.<Dependency>singleton(new Dependency(providerKey, targetKey, false, true));
   }
 
   // TODO(schmitt): Remove duplication with AsyncProviderBinding.

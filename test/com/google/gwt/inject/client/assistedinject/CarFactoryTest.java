@@ -29,7 +29,6 @@ import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import com.google.inject.name.Named;
 
-import java.util.Collection;
 import java.util.Set;
 
 public class CarFactoryTest extends GWTTestCase {

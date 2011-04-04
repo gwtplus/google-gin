@@ -15,12 +15,15 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.rebind.GinjectorInterfaceType;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -29,10 +32,14 @@ import java.util.Collections;
 public class GinjectorBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
+  private final Class<? extends Ginjector> ginjectorInterface;
 
   @Inject
-  public GinjectorBinding(SourceWriteUtil sourceWriteUtil) {
+  public GinjectorBinding(SourceWriteUtil sourceWriteUtil, 
+      @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface) {
     this.sourceWriteUtil = sourceWriteUtil;
+    this.ginjectorInterface = ginjectorInterface;
+
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
@@ -40,7 +47,8 @@ public class GinjectorBinding implements Binding {
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return this;");
   }
 
-  public RequiredKeys getRequiredKeys() {
-    return new RequiredKeys(Collections.<Key<?>>emptySet());
+  public Collection<Dependency> getDependencies() {
+    return Collections.<Dependency>singletonList(
+        new Dependency(Dependency.GINJECTOR, Key.get(ginjectorInterface)));
   }
 }

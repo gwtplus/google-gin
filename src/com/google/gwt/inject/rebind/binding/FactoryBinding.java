@@ -38,7 +38,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,7 +93,7 @@ public class FactoryBinding implements Binding {
 
   private Map<Key<?>, TypeLiteral<?>> collector;
   private TypeLiteral<?> factoryType;
-  private RequiredKeys requiredKeys;
+  private Set<Dependency> dependencies;
 
   /**
    * Collection of all implementations produced by this factory, each annotated
@@ -110,7 +112,7 @@ public class FactoryBinding implements Binding {
     this.collector = bindings;
 
     try {
-      matchMethods(factoryType);
+      matchMethods(factoryKey);
     } catch (ErrorsException e) {
       e.getErrors().throwConfigurationExceptionIfErrorsExist();
     }
@@ -148,23 +150,23 @@ public class FactoryBinding implements Binding {
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, sb.toString());
   }
 
-  public RequiredKeys getRequiredKeys() {
+  public Collection<Dependency> getDependencies() {
     Preconditions.checkNotNull(factoryType);
-    return requiredKeys;
+    return dependencies;
   }
 
   public Set<Key<?>> getImplementations() {
     return implementations;
   }
 
-  private void matchMethods(TypeLiteral<?> factoryType) throws ErrorsException {
+  private void matchMethods(Key<?> factoryKey) throws ErrorsException {
     Errors errors = new Errors();
-    Set<Key<?>> requiredKeys = new HashSet<Key<?>>();
+    dependencies = new LinkedHashSet<Dependency>();
+    dependencies.add(new Dependency(Dependency.GINJECTOR, factoryKey));
     Class<?> factoryRawType = factoryType.getRawType();
 
     // getMethods() includes inherited methods from super-interfaces.
     for (Method method : factoryRawType.getMethods()) {
-
       Key<?> returnType = getKey(factoryType.getReturnType(method), method,
           method.getAnnotations(), errors);
 
@@ -192,8 +194,8 @@ public class FactoryBinding implements Binding {
 
       // Calculate a map from method to constructor parameters and required
       // keys.
-      String[] parameterNames = extractConstructorParameters(implementation, constructor,
-          paramList, errors, requiredKeys);
+      String[] parameterNames = extractConstructorParameters(factoryKey, 
+          implementation, constructor, paramList, errors, dependencies);
 
       TypeLiteral<?> methodDeclaringType = factoryType.getSupertype(method.getDeclaringClass());
       assistData.add(new AssistData(implementation, MethodLiteral.get(constructor, implementation),
@@ -202,17 +204,15 @@ public class FactoryBinding implements Binding {
     }
 
     errors.throwConfigurationExceptionIfErrorsExist();
-
-    this.requiredKeys = new RequiredKeys(requiredKeys);
   }
 
   /**
    * Matches constructor parameters to method parameters for injection and
    * records remaining parameters as required keys.
    */
-  private String[] extractConstructorParameters(TypeLiteral<?> implementation,
+  private String[] extractConstructorParameters(Key<?> factoryKey, TypeLiteral<?> implementation,
       Constructor constructor, List<Key<?>> methodParams, Errors errors,
-      Set<Key<?>> requiredKeyCollector) throws ErrorsException {
+      Set<Dependency> dependencyCollector) throws ErrorsException {
 
     // Get parameters with annotations.
     List<TypeLiteral<?>> ctorParams = implementation.getParameterTypes(constructor);
@@ -232,7 +232,7 @@ public class FactoryBinding implements Binding {
 
         parameterNames[p] = ReflectUtil.formatParameterName(location);
       } else {
-        requiredKeyCollector.add(ctorParamKey);
+        dependencyCollector.add(new Dependency(factoryKey, ctorParamKey, false, true));
       }
 
       p++;

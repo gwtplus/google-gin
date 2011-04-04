@@ -17,8 +17,8 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.Injectable;
-import com.google.gwt.inject.rebind.binding.RequiredKeys;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
 import com.google.gwt.inject.rebind.reflect.MemberLiteral;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
@@ -31,6 +31,7 @@ import com.google.inject.TypeLiteral;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -126,46 +127,37 @@ public class GuiceUtil {
   /**
    * Collects and returns all keys required to member-inject the given class.
    *
+   * @param typeKey key causing member injection
    * @param type class for which required keys are calculated
    * @return keys required to inject given class
    */
-  public RequiredKeys getMemberInjectionRequiredKeys(TypeLiteral<?> type) {
-    Set<Key<?>> required = new HashSet<Key<?>>();
-    Set<Key<?>> optional = new HashSet<Key<?>>();
+  public Collection<Dependency> getMemberInjectionDependencies(
+      Key<?> typeKey, TypeLiteral<?> type) {
+    Set<Dependency> required = new HashSet<Dependency>();
     for (MethodLiteral<?, Method> method : memberCollector.getMethods(type)) {
-      RequiredKeys requiredKeys = getRequiredKeys(method);
-      required.addAll(requiredKeys.getRequiredKeys());
-      optional.addAll(requiredKeys.getOptionalKeys());
+      required.addAll(getDependencies(typeKey, method));
     }
 
     for (FieldLiteral<?> field : memberCollector.getFields(type)) {
       Key<?> key = getKey(field);
-      if (isOptional(field)) {
-        optional.add(key);
-      } else {
-        required.add(key);
-      }
+      required.add(new Dependency(typeKey, key, isOptional(field), false));
     }
-    return new RequiredKeys(required, optional);
+    return required;
   }
 
   /**
    * Collects and returns all keys required to inject the given method.
    *
+   * @param typeKey the key that depends on injecting the arguments of method
    * @param method method for which required keys are calculated
    * @return required keys
    */
-  public RequiredKeys getRequiredKeys(MethodLiteral<?, ?> method) {
-    Set<Key<?>> required = new HashSet<Key<?>>();
-    Set<Key<?>> optional = new HashSet<Key<?>>();
+  public Collection<Dependency> getDependencies(Key<?> typeKey, MethodLiteral<?, ?> method) {
+    Set<Dependency> required = new HashSet<Dependency>();
     for (Key<?> key : method.getParameterKeys()) {
-      if (isOptional(method)) {
-        optional.add(key);
-      } else {
-        required.add(key);
-      }
+      required.add(new Dependency(typeKey, key, isOptional(method), false));
     }
-    return new RequiredKeys(required, optional);
+    return required;
   }
 
   /**

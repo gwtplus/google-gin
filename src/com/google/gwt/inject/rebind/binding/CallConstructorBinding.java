@@ -52,6 +52,7 @@ public class CallConstructorBinding extends CreatorBinding {
       NameGenerator nameGenerator) throws NoSourceNameException {
     Preconditions.checkNotNull(constructor);
     sb.append(getTypeName()).append(" result = ")
-        .append(sourceWriteUtil.createConstructorInjection(sourceWriter, constructor, nameGenerator));
+        .append(sourceWriteUtil.createConstructorInjection(
+            sourceWriter, constructor, nameGenerator));
   }
 }

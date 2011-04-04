@@ -16,19 +16,21 @@
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
-import com.google.gwt.inject.rebind.BindingResolver.BindingResolverFactory;
+import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
+import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
-import com.google.gwt.inject.rebind.binding.RequiredKeys;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.resolution.BindingResolver;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
@@ -42,8 +44,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,30 +88,25 @@ public class GinjectorBindings implements BindingIndex {
   private final NameGenerator nameGenerator;
 
   /**
-   * Map from key to binding for all types we already have a binding for.
+   * Map from key to binding for all types we already have a binding for.  We use a LinkedHashMap
+   * so that error reporting (and tests) will be deterministic.
    */
-  private final Map<Key<?>, BindingEntry> bindings = new HashMap<Key<?>, BindingEntry>();
+  private final Map<Key<?>, BindingEntry> bindings = new LinkedHashMap<Key<?>, BindingEntry>(); 
+  
+  /**
+   * Set of all Dependency edges that this Ginjector is aware of.  This includes dependecies that
+   * have been satisfied by bindings that are already available.  Some examples:
+   * bind(Foo.class); adds the dependency GINJECTOR -> Foo
+   * bind(Foo.class).to(FooImpl.class); adds the dependencies GINJECTOR -> Foo and Foo -> FooImpl
+   * 
+   * <p>We use a LinkedHashSet so that error reporting (and tests) will be deterministic.
+   */
+  private final Set<Dependency> dependencies = new LinkedHashSet<Dependency>();
 
   /**
    * Map from key to scope for all types we have a binding for.
    */
   private final Map<Key<?>, GinScope> scopes = new HashMap<Key<?>, GinScope>();
-
-  /**
-   * Set of keys for classes that we still need to resolve. Every time a binding
-   * is added to {@code bindings}, the key is removed from this set. When this
-   * set and {@code unresolvedOptional} becomes empty, we know we've satisfied
-   * all dependencies.
-   */
-  private final Set<Key<?>> unresolved = new HashSet<Key<?>>();
-
-  /**
-   * Set of keys for classes that we still need to resolve but that are
-   * optionally bound. Every time a binding is added to {@code bindings}, the
-   * key is removed from this set. When this set and {@code unresolved} becomes
-   * empty, we know we've satisfied all dependencies.
-   */
-  private final Set<Key<?>> unresolvedOptional = new HashSet<Key<?>>();
 
   /**
    * Collection of keys for which the ginjector interface provides member inject
@@ -179,11 +180,11 @@ public class GinjectorBindings implements BindingIndex {
       Provider<GinjectorBindings> ginjectorBindingsProvider,
       MemberCollector collector,
       ErrorManager errorManager,
-      BindingResolverFactory bindingResolverFactory) {
+      BindingResolver bindingResolver) {
     this.nameGenerator = nameGenerator;
     this.logger = logger;
     this.guiceUtil = guiceUtil;
-    this.bindingResolver = bindingResolverFactory.create(this);
+    this.bindingResolver = bindingResolver;
     this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
     this.ginjectorBindingsProvider = ginjectorBindingsProvider;
     this.errorManager = errorManager;
@@ -218,68 +219,37 @@ public class GinjectorBindings implements BindingIndex {
     return child;
   }
 
-  public void resolveBindings() {
+  public void resolveBindings() throws UnableToCompleteException {
     assertNotFinalized();
-    if (!unresolved.isEmpty() || !unresolvedOptional.isEmpty()) {
-      // Sanity check to make sure we never let bound things into the unresolved
-      // sets
-      Preconditions.checkState(!unresolved.removeAll(bindings.keySet()),
-          "There shouldn't be any unresolved bindings in the bindings set");
-      Preconditions.checkState(!unresolvedOptional.removeAll(bindings.keySet()),
-          "There shouldn't be any unresolved bindings in the bindings set");
-
-      // Iterate through copies because we will modify sets during iteration
-      for (Key<?> key : new ArrayList<Key<?>>(unresolved)) {
-        // TODO(bchambers,dburrows): Figure out a better initial context for
-        // these.
-        BindingContext context = BindingContext.forText("Implicit binding for unresolved " + key);
-        bindingResolver.resolveAndInherit(key, false, context);
-      }
-
-      for (Key<?> key : new ArrayList<Key<?>>(unresolvedOptional)) {
-        BindingContext context =
-            BindingContext.forText("Implicit binding for unresolved optional " + key);
-        if (bindingResolver.resolveAndInherit(key, true, context) == null) {
-          unresolvedOptional.remove(key);
-        }
-      }
-    }
-
-    // After one pass, all bindings should be resolved.
-    Preconditions.checkState(unresolved.isEmpty(),
-        "Expected all unresolved bindings to be resolved, but still contains: %s", unresolved);
-    Preconditions.checkState(unresolvedOptional.isEmpty(),
-        "Expected all unresolved optional bindings to be resolved, but still contains: %s",
-        unresolvedOptional);
+    
+    bindingResolver.resolveBindings(this);
+    errorManager.checkForError();
 
     // Mark this collection as finalized, so that no new bindings or unresolved
     // dependencies
     // can be added.
     finalized = true;
   }
-
-  public Map<Key<?>, BindingEntry> getBindings() {
-    return bindings;
+  
+  public Iterable<Dependency> getDependencies() {
+    assertNotFinalized();
+    return Collections.unmodifiableCollection(dependencies);
   }
 
-  public BindingEntry getBinding(Key<?> key) {
-    return bindings.get(key);
+  public Iterable<Map.Entry<Key<?>, BindingEntry>> getBindings() {
+    return Collections.unmodifiableCollection(bindings.entrySet());
   }
 
-  public Map<Key<?>, GinScope> getScopes() {
-    return scopes;
-  }
-
-  public Set<Class<?>> getStaticInjectionRequests() {
-    return staticInjectionRequests;
+  public Iterable<Class<?>> getStaticInjectionRequests() {
+    return Collections.unmodifiableCollection(staticInjectionRequests);
   }
 
   public void addMemberInjectRequests(Set<Key<?>> implementations) {
     memberInjectRequests.addAll(implementations);
   }
 
-  public Set<Key<?>> getMemberInjectRequests() {
-    return memberInjectRequests;
+  public Iterable<Key<?>> getMemberInjectRequests() {
+    return Collections.unmodifiableCollection(memberInjectRequests);
   }
 
   void putScope(Key<?> key, GinScope scope) {
@@ -298,13 +268,21 @@ public class GinjectorBindings implements BindingIndex {
   public Class<?> getModule() {
     return module;
   }
+  
+  public String getModuleName() {
+    return getModule().getSimpleName();
+  }
 
   public void setModule(Class<?> module) {
     this.module = module;
   }
 
   public Iterable<GinjectorBindings> getChildren() {
-    return children;
+    return Collections.unmodifiableCollection(children);
+  }
+  
+  public Iterable<FactoryModule<?>> getFactoryModules() {
+    return Collections.unmodifiableCollection(factoryModules);
   }
 
   public NameGenerator getNameGenerator() {
@@ -312,13 +290,9 @@ public class GinjectorBindings implements BindingIndex {
     return nameGenerator;
   }
 
-  public Set<FactoryModule<?>> getFactoryModules() {
-    return factoryModules;
-  }
-
   public GinScope determineScope(Key<?> key) {
     assertFinalized();
-    GinScope scope = getScopes().get(key);
+    GinScope scope = scopes.get(key);
     if (scope == null) {
       Class<?> raw = key.getTypeLiteral().getRawType();
       BindingEntry binding = bindings.get(key);
@@ -349,12 +323,14 @@ public class GinjectorBindings implements BindingIndex {
     return bindings.containsKey(key);
   }
 
-  public void addUnresolved(Key<?> key) {
+  public void addDependency(Dependency dependency) {
     assertNotFinalized();
-    if (!bindings.containsKey(key)) {
-      logger.log(TreeLogger.TRACE, "Add unresolved key: " + key);
-      unresolved.add(key);
-    }
+    dependencies.add(dependency);
+  }
+  
+  public void addDependencies(Collection<Dependency> dependencies) {
+    assertNotFinalized();
+    this.dependencies.addAll(dependencies);
   }
 
   void addUnresolvedEntriesForInjectorInterface() {
@@ -367,24 +343,22 @@ public class GinjectorBindings implements BindingIndex {
       // Member inject types do not need to be gin-creatable themselves but we
       // need to provide all dependencies.
       if (guiceUtil.isMemberInject(method)) {
-        if (!unresolved.contains(key)) {
-          memberInjectRequests.add(key);
-          RequiredKeys requiredKeys =
-              guiceUtil.getMemberInjectionRequiredKeys(key.getTypeLiteral());
-          addRequiredKeys(key, requiredKeys);
-        }
-      } else if (!bindings.containsKey(key)) {
-        unresolved.add(key);
+        memberInjectRequests.add(key);
+        addDependencies(guiceUtil.getMemberInjectionDependencies(
+            Dependency.GINJECTOR, key.getTypeLiteral()));
+      } else {
+        addDependency(new Dependency(Dependency.GINJECTOR, key));
       }
     }
   }
-
-  void addBinding(Key<?> key, BindingEntry bindingEntry) {
+  
+  public void addBinding(Key<?> key, Binding binding, BindingContext context) {
     assertNotFinalized();
+    BindingEntry bindingEntry = new BindingEntry(binding, context);
     if (bindings.containsKey(key)) {
       BindingEntry keyEntry = bindings.get(key);
-      errorManager.logError("Double-bound: " + key + ". " + keyEntry.getBindingContext() + ", "
-          + bindingEntry.getBindingContext());
+      errorManager.logError(String.format("Double-bound: %s.  Bound at %s and %s", key, 
+          keyEntry.getBindingContext(), context));
       return;
     }
 
@@ -394,16 +368,13 @@ public class GinjectorBindings implements BindingIndex {
     }
 
     bindings.put(key, bindingEntry);
-    unresolved.remove(key);
-    unresolvedOptional.remove(key);
     memberInjectRequests.remove(key);
     if (parent != null) {      
       parent.registerChildBinding(key);
     }
 
-    addRequiredKeys(key, bindingEntry.getBinding().getRequiredKeys());
-
     logger.log(TreeLogger.TRACE, "bound " + key + " to " + bindingEntry);
+    dependencies.addAll(binding.getDependencies());
   }
   
   /**
@@ -420,28 +391,6 @@ public class GinjectorBindings implements BindingIndex {
   public boolean isBoundInChild(Key<?> key) {
     return boundInChildren.contains(key);
   }
-  
-  private void addRequiredKeys(Key<?> key, RequiredKeys requiredKeys) {
-    // Resolve optional keys.
-    // Clone the returned set so we can safely mutate it
-    Set<Key<?>> optionalKeys = new HashSet<Key<?>>(requiredKeys.getOptionalKeys());
-    optionalKeys.removeAll(bindings.keySet());
-    if (!optionalKeys.isEmpty()) {
-      logger.log(TreeLogger.TRACE,
-          "Add optional unresolved as dep from binding to " + key + ": " + optionalKeys);
-      unresolvedOptional.addAll(optionalKeys);
-    }
-
-    // Resolve required keys.
-    // Clone the returned set so we can safely mutate it
-    Set<Key<?>> nowUnresolved = new HashSet<Key<?>>(requiredKeys.getRequiredKeys());
-    nowUnresolved.removeAll(bindings.keySet());
-    if (!nowUnresolved.isEmpty()) {
-      logger.log(
-          TreeLogger.TRACE, "Add unresolved as dep from binding to " + key + ": " + nowUnresolved);
-      unresolved.addAll(nowUnresolved);
-    }
-  }
 
   private boolean isClassAccessibleFromGinjector(TypeLiteral<?> type) {
     if (ReflectUtil.isPublic(type)) {
@@ -457,28 +406,20 @@ public class GinjectorBindings implements BindingIndex {
     assertNotFinalized();
     staticInjectionRequests.add(type);
 
-    // Calculate required bindings and add to unresolved.
-    Set<Key<?>> unresolved = new HashSet<Key<?>>();
-    Set<Key<?>> unresolvedOptional = new HashSet<Key<?>>();
+    // Calculate required bindings and add to dependencies
     for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(type)) {
       Member member = injectionPoint.getMember();
       if (member instanceof Method) {
-        RequiredKeys keys = guiceUtil.getRequiredKeys(
-            MethodLiteral.get((Method) member, TypeLiteral.get(member.getDeclaringClass())));
-        unresolved.addAll(keys.getRequiredKeys());
-        unresolvedOptional.addAll(keys.getOptionalKeys());
+        addDependencies(guiceUtil.getDependencies(Dependency.GINJECTOR,
+            MethodLiteral.get((Method) member, TypeLiteral.get(member.getDeclaringClass()))));
       } else if (member instanceof Field) {
         FieldLiteral<?> field =
             FieldLiteral.get((Field) member, TypeLiteral.get(member.getDeclaringClass()));
         Key<?> key = guiceUtil.getKey(field);
-        if (guiceUtil.isOptional(field)) {
-          unresolvedOptional.add(key);
-        } else {
-          unresolved.add(key);
-        }
+        addDependency(new Dependency(
+            Dependency.GINJECTOR, key, guiceUtil.isOptional(field), false));
       }
     }
-    addRequiredKeys(Key.get(type), new RequiredKeys(unresolved, unresolvedOptional));
   }
 
   public void addFactoryModule(FactoryModule<?> install) {

@@ -141,9 +141,7 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
       childBinding.setChild(childCollection);
       childBinding.setKey(key);
       logger.log(TreeLogger.TRACE, "Child binding for " + key + ": " + childBinding);
-      BindingEntry entry =
-          new BindingEntry(childBinding, BindingContext.forElement(privateElements));
-      bindings.addBinding(key, entry);
+      bindings.addBinding(key, childBinding, BindingContext.forElement(privateElements));
     }
     return null;
   }

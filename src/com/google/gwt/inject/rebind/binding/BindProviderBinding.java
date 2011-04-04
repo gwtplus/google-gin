@@ -22,7 +22,8 @@ import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.inject.Provider;
 
@@ -35,13 +36,19 @@ public class BindProviderBinding implements Binding {
 
   private Key<? extends Provider<?>> providerKey;
 
+  private Key<?> sourceKey;
+
   @Inject
   public BindProviderBinding(SourceWriteUtil sourceWriteUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
   }
-
+  
   public void setProviderKey(Key<? extends Provider<?>> providerKey) {
     this.providerKey = providerKey;
+  }
+  
+  public void setSourceKey(Key<?> sourceKey) {
+    this.sourceKey = sourceKey;
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
@@ -51,8 +58,12 @@ public class BindProviderBinding implements Binding {
         "return " + nameGenerator.getGetterMethodName(providerKey) + "().get();");
   }
 
-  public RequiredKeys getRequiredKeys() {
-    Preconditions.checkNotNull(providerKey);
-    return new RequiredKeys(Collections.<Key<?>>singleton(providerKey));
+  public Collection<Dependency> getDependencies() {
+    Preconditions.checkNotNull(sourceKey, "Must call setSourceKey before resolution");
+    Preconditions.checkNotNull(providerKey, "Must call setProviderKey before resolution");
+    Collection<Dependency> dependencies = new ArrayList<Dependency>();
+    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceKey));
+    dependencies.add(new Dependency(sourceKey, providerKey));
+    return dependencies;
   }
 }

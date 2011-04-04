@@ -15,7 +15,6 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.inject.Key;
 import com.google.inject.spi.Element;
 
 /**
@@ -44,16 +43,11 @@ public class BindingContext {
 
   /**
    * Create a {@code BindingContext} storing the given text as its context.
+   * 
+   * @param contextFmt format string, as with {@link String#format(String, Object...)}
+   * @param args arguments for the format string, as with {@link String#format(String, Object...)}
    */
-  public static BindingContext forText(String context) {
-    return new BindingContext(context);
-  }
-  
-  /**
-   * Create a {@code BindingContext} storing the given key as the "key" that
-   * required it.
-   */
-  public static BindingContext forDependency(Key<?> dependency, Key<?> key) {
-    return new BindingContext(dependency + " is dependency of binding for " + key);
+  public static BindingContext forText(String contextFmt, Object... args) {
+    return new BindingContext(String.format(contextFmt, args));
   }
 }

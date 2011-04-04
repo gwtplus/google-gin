@@ -183,7 +183,7 @@ class GinjectorOutputter {
     outputStaticInjections(bindings);
 
     // Output the actual bindings
-    for (Map.Entry<Key<?>, BindingEntry> entry : bindings.getBindings().entrySet()) {
+    for (Map.Entry<Key<?>, BindingEntry> entry : bindings.getBindings()) {
       outputBinding(bindings.getNameGenerator(), entry.getKey(), entry.getValue(),
           bindings.determineScope(entry.getKey()));
     }

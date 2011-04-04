@@ -19,6 +19,8 @@ import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.user.rebind.SourceWriter;
 
+import java.util.Collection;
+
 /**
  * Interface used by {@code InjectorGeneratorImpl} to represent different kinds
  * of bindings.
@@ -39,9 +41,9 @@ public interface Binding {
       NameGenerator nameGenerator) throws NoSourceNameException;
 
   /**
-   * @return A tuple of two sets:  One set of keys that this binding requires.
-   *     This set is used to find more classes that need to be bound. The
-   *     second set contains all keys that have been optionally requested.
+   * Returns the set of dependencies that this binding produces.  This contains edges coming into
+   * the key that this type binds (from {@link Dependency#GINJECTOR}) as well as dependencies that
+   * this binding needs.
    */
-  RequiredKeys getRequiredKeys();
+  Collection<Dependency> getDependencies();
 }

@@ -34,7 +34,7 @@ import java.util.Set;
  * A module to tell Guice about implicit bindings Gin has invented.
  */
 @Singleton
-class LieToGuiceModule extends AbstractModule {
+public class LieToGuiceModule extends AbstractModule {
   private final List<Module> lies = new ArrayList<Module>();
   private final Set<Key<?>> blacklist = new HashSet<Key<?>>();
   private final TreeLogger logger;
@@ -58,7 +58,7 @@ class LieToGuiceModule extends AbstractModule {
    *
    * @param key Key to bind
    */
-  <T> void registerImplicitBinding(Key<T> key) {
+  public <T> void registerImplicitBinding(Key<T> key) {
     if (!blacklist.contains(key)) {
       logger.log(TreeLogger.Type.TRACE, "Implicit binding registered with Guice for " + key);
       lies.add(new ImplicitBindingModule<T>(key));

@@ -22,7 +22,8 @@ import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Binding implementation that replaces one type with another.
@@ -31,11 +32,16 @@ public class BindClassBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
 
+  private Key<?> sourceClassKey;
   private Key<?> boundClassKey;
 
   @Inject
   public BindClassBinding(SourceWriteUtil sourceWriteUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
+  }
+  
+  public void setSourceClassKey(Key<?> sourceClassKey) {
+    this.sourceClassKey = sourceClassKey;
   }
 
   public void setBoundClassKey(Key<?> boundClassKey) {
@@ -49,8 +55,12 @@ public class BindClassBinding implements Binding {
         "return " + nameGenerator.getGetterMethodName(boundClassKey) + "();");
   }
 
-  public RequiredKeys getRequiredKeys() {
+  public Collection<Dependency> getDependencies() {
     Preconditions.checkNotNull(boundClassKey);
-    return new RequiredKeys(Collections.<Key<?>>singleton(boundClassKey));
+    Preconditions.checkNotNull(sourceClassKey);
+    Collection<Dependency> dependencies = new ArrayList<Dependency>();
+    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceClassKey));
+    dependencies.add(new Dependency(sourceClassKey, boundClassKey));
+    return dependencies;
   }
 }

@@ -24,6 +24,7 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -32,6 +33,8 @@ import java.util.Collections;
 public class BindConstantBinding implements Binding {
 
   private String valueToOutput;
+  private final SourceWriteUtil sourceWriteUtil;
+  private Key<?> key;
 
   /**
    * Returns true if the provided key is a valid constant key, i.e. if a
@@ -53,8 +56,6 @@ public class BindConstantBinding implements Binding {
         || clazz.isEnum();
   }
 
-  private final SourceWriteUtil sourceWriteUtil;
-
   @Inject
   public BindConstantBinding(SourceWriteUtil sourceWriteUtil) {
     this.sourceWriteUtil = sourceWriteUtil;
@@ -68,6 +69,7 @@ public class BindConstantBinding implements Binding {
    * @param instance value to bind  to
    */
   public <T> void setKeyAndInstance(Key<T> key, T instance) {
+    this.key = key;
     Type type = key.getTypeLiteral().getType();
 
     if (type == String.class) {
@@ -105,11 +107,11 @@ public class BindConstantBinding implements Binding {
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) {
     Preconditions.checkNotNull(valueToOutput);
-
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return " + valueToOutput + ";");
   }
 
-  public RequiredKeys getRequiredKeys() {
-    return new RequiredKeys(Collections.<Key<?>>emptySet());
+  public Collection<Dependency> getDependencies() {
+    Preconditions.checkNotNull(key, "Must call setKeyAndInstance before getDependencies");
+    return Collections.<Dependency>singletonList(new Dependency(Dependency.GINJECTOR, key));
   }
 }

@@ -28,6 +28,7 @@ import com.google.inject.Key;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -55,6 +56,7 @@ public class AsyncProviderBinding implements Binding {
   private final SourceWriteUtil sourceWriteUtil;
 
   private ParameterizedType providerType;
+  private Key<?> providerKey;
   private Key<?> targetKey;
 
   @Inject
@@ -63,6 +65,7 @@ public class AsyncProviderBinding implements Binding {
   }
 
   public void setProviderKey(Key<?> providerKey) {
+    this.providerKey = providerKey;
     providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
 
     // Pass any binding annotation on the Provider to the thing we create
@@ -100,9 +103,9 @@ public class AsyncProviderBinding implements Binding {
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, methodCode.toString());
   }
 
-  public RequiredKeys getRequiredKeys() {
+  public Collection<Dependency> getDependencies() {    
     Preconditions.checkNotNull(targetKey);
-    return new RequiredKeys(Collections.<Key<?>>singleton(targetKey));
+    return Collections.singleton(new Dependency(providerKey, targetKey, false, true));
   }
 
   private Key<?> getKeyWithSameAnnotation(Type keyType, Key<?> baseKey) {

@@ -13,9 +13,11 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.rebind;
+package com.google.gwt.inject.rebind.resolution;
 
 import com.google.gwt.inject.client.AsyncProvider;
+import com.google.gwt.inject.rebind.ErrorManager;
+import com.google.gwt.inject.rebind.LieToGuiceModule;
 import com.google.gwt.inject.rebind.binding.AsyncProviderBinding;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
@@ -48,6 +50,20 @@ import javax.inject.Provider;
  */
 public class ImplicitBindingCreator {
   
+  /**
+   * Exception thrown to indicate an error occurred during binding creation.
+   */
+  public static class BindingCreationException extends Exception {
+    
+    /**
+     * Create a new BindingCreationException using the given format string and arguments.  Will
+     * create an exception with a message constructed with {@code String.format(msgFmt, args)}.
+     */
+    public BindingCreationException(String msgFmt, Object... args) {
+      super(String.format(msgFmt, args));
+    }
+  }
+  
   private final Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider;
   private final Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider;
   private final Provider<CallConstructorBinding> callConstructorBinding;
@@ -56,7 +72,6 @@ public class ImplicitBindingCreator {
   private final Provider<ImplicitProviderBinding> implicitProviderBindingProvider;
   private final Provider<AsyncProviderBinding> asyncProviderBindingProvider;
 
-  private final ErrorManager errorManager;
   private final LieToGuiceModule lieToGuiceModule;
   
   @Inject
@@ -79,27 +94,24 @@ public class ImplicitBindingCreator {
     this.bindProviderBindingProvider = bindProviderBindingProvider;
     this.lieToGuiceModule = lieToGuiceModule;
     this.remoteServiceProxyBindingProvider = remoteServiceProxyBindingProvider;
-    this.errorManager = errorManager;
   }
   
   /**
    * Creates the implicit binding and registers with the {@link LieToGuiceModule} if
    * necessary (and appropriate)
    */
-  public Binding create(Key<?> key, boolean optional) {
-    Binding binding = internalCreate(key, optional);
-    if (binding != null 
-        && (binding instanceof CallGwtDotCreateBinding 
-            || binding instanceof AsyncProviderBinding)) {
-        // Need to lie to Guice about any implicit GWT.create bindings and
-        // async provider bindings we install that Guice would otherwise not see.
-        // http://code.google.com/p/google-gin/issues/detail?id=13
-        lieToGuiceModule.registerImplicitBinding(key);
+  public Binding create(Key<?> key) throws BindingCreationException {
+    Binding binding = internalCreate(key);
+    if (binding instanceof CallGwtDotCreateBinding || binding instanceof AsyncProviderBinding) {
+      // Need to lie to Guice about any implicit GWT.create bindings and
+      // async provider bindings we install that Guice would otherwise not see.
+      // http://code.google.com/p/google-gin/issues/detail?id=13
+      lieToGuiceModule.registerImplicitBinding(key);
     }
     return binding;
   }
   
-  private Binding internalCreate(Key<?> key, boolean optional) {
+  private Binding internalCreate(Key<?> key) throws BindingCreationException {
     TypeLiteral<?> type = key.getTypeLiteral();
     
     // All steps per:
@@ -129,22 +141,14 @@ public class ImplicitBindingCreator {
     // 5. Convert constants.
     // Already covered by resolving explicit bindings.
     if (BindConstantBinding.isConstantKey(key)) {
-      if (!optional) {
-        errorManager.logError("Binding requested for constant key " + key
-            + " but no explicit binding was found.");
-      }
-
-      return null;
+      throw new BindingCreationException(
+          "Binding requested for constant key '%s' but no explicit binding was found", key);
     }
 
     // 6. If the dependency has a binding annotation, give up.
     if (key.getAnnotation() != null || key.getAnnotationType() != null) {
-      if (!optional) {
-        errorManager.logError("No implementation bound for \"" + key
-            + "\" and an implicit binding cannot be created because the type is annotated.");
-      }
-
-      return null;
+      throw new BindingCreationException("No implementation bound for '%s' and an implicit binding"
+          + " cannot be created because the type is annotated.", key);
     }
 
     // 7. If the dependency is an array or enum, give up.
@@ -156,12 +160,12 @@ public class ImplicitBindingCreator {
     // 9. Use resolution annotations (@ImplementedBy, @ProvidedBy)
     ImplementedBy implementedBy = type.getRawType().getAnnotation(ImplementedBy.class);
     if (implementedBy != null) {
-      return createImplementedByBinding(key, implementedBy, optional);
+      return createImplementedByBinding(key, implementedBy);
     }
 
     ProvidedBy providedBy = type.getRawType().getAnnotation(ProvidedBy.class);
     if (providedBy != null) {
-      return createProvidedByBinding(key, providedBy, optional);
+      return createProvidedByBinding(key, providedBy);
     }
 
     // 10. If the dependency is abstract or a non-static inner class, give up.
@@ -169,10 +173,11 @@ public class ImplicitBindingCreator {
     // TODO(schmitt): Introduce check.
 
     // 11. Use a single @Inject or public no-arguments constructor.
-    return createImplicitBindingForClass(type, optional);
+    return createImplicitBindingForClass(type);
   }
   
-  private Binding createImplicitBindingForClass(TypeLiteral<?> type, boolean optional) {
+  private Binding createImplicitBindingForClass(TypeLiteral<?> type) 
+      throws BindingCreationException {
     // Either call the @Inject constructor or use GWT.create
     MethodLiteral<?, Constructor<?>> injectConstructor = getInjectConstructor(type);
 
@@ -194,11 +199,7 @@ public class ImplicitBindingCreator {
       }
     }
 
-    if (!optional) {
-      errorManager.logError("No @Inject or default constructor found for " + type);
-    }
-
-    return null;
+    throw new BindingCreationException("No @Inject or default constructor found for %s", type);
   }
   
   /**
@@ -226,40 +227,41 @@ public class ImplicitBindingCreator {
     return !ReflectUtil.isPrivate(constructor) || ReflectUtil.isPrivate(typeLiteral);
   }
   
-  private BindClassBinding createImplementedByBinding(Key<?> key, ImplementedBy implementedBy,
-      boolean optional) {
+  private BindClassBinding createImplementedByBinding(Key<?> key, ImplementedBy implementedBy)
+      throws BindingCreationException {
     Class<?> rawType = key.getTypeLiteral().getRawType();
     Class<?> implementationType = implementedBy.value();
 
     if (implementationType == rawType) {
-      errorManager.logError("@ImplementedBy points to the same class it annotates: " + rawType);
-      return null;
+      throw new BindingCreationException(
+          "@ImplementedBy points to the same class it annotates: %s", rawType);
     }
 
     if (!rawType.isAssignableFrom(implementationType)) {
-      errorManager.logError(implementationType + " doesn't extend " + rawType
-        + " (while resolving @ImplementedBy)");
-      return null;
+      throw new BindingCreationException("%s doesn't extend %s (while resolving @ImplementedBy)",
+          implementationType, rawType);
     }
 
     BindClassBinding implementedByBinding = bindClassBindingProvider.get();
+    implementedByBinding.setSourceClassKey(key);
     implementedByBinding.setBoundClassKey(Key.get(implementationType));
 
     return implementedByBinding;
   }
 
-  private BindProviderBinding createProvidedByBinding(Key<?> key, ProvidedBy providedBy,
-      boolean optional) {
+  private BindProviderBinding createProvidedByBinding(Key<?> key, ProvidedBy providedBy) 
+      throws BindingCreationException {
     Class<?> rawType = key.getTypeLiteral().getRawType();
     Class<? extends Provider<?>> providerType = providedBy.value();
 
     if (providerType == rawType) {
-      errorManager.logError("@ProvidedBy points to the same class it annotates: " + rawType);
-      return null;
+      throw new BindingCreationException(
+          "@ProvidedBy points to the same class it annotates: %s", rawType);
     }
 
     BindProviderBinding implementedByBinding = bindProviderBindingProvider.get();
     implementedByBinding.setProviderKey(Key.get(providerType));
+    implementedByBinding.setSourceKey(key);
 
     return implementedByBinding;
   }
@@ -277,17 +279,17 @@ public class ImplicitBindingCreator {
     ((ParameterizedType) keyType).getRawType() == AsyncProvider.class;
   }
   
-  private MethodLiteral<?, Constructor<?>> getInjectConstructor(TypeLiteral<?> type) {
+  private MethodLiteral<?, Constructor<?>> getInjectConstructor(TypeLiteral<?> type) 
+      throws BindingCreationException {
     Constructor<?>[] constructors = type.getRawType().getDeclaredConstructors();
     MethodLiteral<?, Constructor<?>> injectConstructor = null;
     for (Constructor<?> constructor : constructors) {
       MethodLiteral<?, Constructor<?>> constructorLiteral = MethodLiteral.get(constructor, type);
       if (GuiceUtil.hasInject(constructorLiteral)) {
         if (injectConstructor != null) {
-          errorManager.logError(String.format(
-              "More than one @Inject constructor found for %s; %s, %s", type,
-              injectConstructor, constructor));
-          return null;
+          throw new BindingCreationException(
+              "More than one @Inject constructor found for %s; %s, %s",
+              type, injectConstructor, constructor);
         }
         injectConstructor = constructorLiteral;
       }

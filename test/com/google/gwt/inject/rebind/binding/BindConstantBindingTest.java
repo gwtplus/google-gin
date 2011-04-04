@@ -42,7 +42,8 @@ public class BindConstantBindingTest extends TestCase {
     BindConstantBinding binding = new BindConstantBinding(utilMock);
     binding.setKeyAndInstance(colorKey, Color.Green);
 
-    assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
+    assertEquals(1, binding.getDependencies().size());
+    assertTrue(binding.getDependencies().contains(new Dependency(Dependency.GINJECTOR, colorKey)));
 
     binding.writeCreatorMethods(writerMock, signature, null);
 
@@ -99,7 +100,8 @@ public class BindConstantBindingTest extends TestCase {
     BindConstantBinding binding = new BindConstantBinding(utilMock);
     binding.setKeyAndInstance(charKey, value);
 
-    assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
+    assertEquals(1, binding.getDependencies().size());
+    assertTrue(binding.getDependencies().contains(new Dependency(Dependency.GINJECTOR, charKey)));
 
     binding.writeCreatorMethods(writerMock, signature, null);
 
@@ -120,7 +122,8 @@ public class BindConstantBindingTest extends TestCase {
     BindConstantBinding binding = new BindConstantBinding(utilMock);
     binding.setKeyAndInstance(charKey, value);
 
-    assertTrue(binding.getRequiredKeys().getRequiredKeys().isEmpty());
+    assertEquals(1, binding.getDependencies().size());
+    assertTrue(binding.getDependencies().contains(new Dependency(Dependency.GINJECTOR, charKey)));
 
     binding.writeCreatorMethods(writerMock, signature, null);
 

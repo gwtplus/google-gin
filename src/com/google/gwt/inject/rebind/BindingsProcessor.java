@@ -131,9 +131,10 @@ class BindingsProcessor {
    */
   private void registerGinjectorBinding() {
     GinjectorBinding ginjectorBinding = ginjectorBindingProvider.get();
-    rootGinjectorBindings.addBinding(Key.get(ginjectorInterface), 
-        new BindingEntry(ginjectorBinding, BindingContext.forText("Binding for ginjector")));
-    lieToGuiceModule.registerImplicitBinding(Key.get(ginjectorInterface));
+    Key<? extends Ginjector> ginjectorKey = Key.get(ginjectorInterface);
+    rootGinjectorBindings.addBinding(ginjectorKey, ginjectorBinding, 
+        BindingContext.forText("Binding for ginjector"));
+    lieToGuiceModule.registerImplicitBinding(ginjectorKey);
   }
   
   /**
@@ -147,8 +148,10 @@ class BindingsProcessor {
    * process each set once.
    * 
    * @param collection {@link GinjectorBindings} to resolve bindings for
+   * @throws UnableToCompleteException if binding failed
    */
-  private void resolveAllUnresolvedBindings(GinjectorBindings collection) {
+  private void resolveAllUnresolvedBindings(GinjectorBindings collection) 
+      throws UnableToCompleteException {
     for (GinjectorBindings child : collection.getChildren()) {
       resolveAllUnresolvedBindings(child);
     }
@@ -171,8 +174,8 @@ class BindingsProcessor {
 
       // TODO(dburrows): store appropriate contextual information for the
       // factory and use it here.
-      bindings.addBinding(factoryModule.getFactoryType(), new BindingEntry(binding,
-          BindingContext.forText("Bound using factory in " + bindings.getModule().getName())));
+      bindings.addBinding(factoryModule.getFactoryType(), binding,
+          BindingContext.forText("Bound using factory in " + bindings.getModule().getName()));
 
       // All implementations that are created by the factory are also member-
       // injected. To ensure that implementations created by multiple factories

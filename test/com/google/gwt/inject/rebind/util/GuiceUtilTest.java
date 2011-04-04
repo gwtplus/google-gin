@@ -16,12 +16,16 @@
 
 package com.google.gwt.inject.rebind.util;
 
+import static org.easymock.EasyMock.expect;
+import static org.easymock.classextension.EasyMock.createMock;
+import static org.easymock.classextension.EasyMock.replay;
+
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.MyBindingAnnotation;
 import com.google.gwt.inject.client.MyOtherAnnotation;
-import com.google.gwt.inject.rebind.binding.RequiredKeys;
+import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.inject.Inject;
@@ -33,12 +37,9 @@ import com.google.inject.name.Named;
 import junit.framework.TestCase;
 
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-
-import static org.easymock.EasyMock.expect;
-import static org.easymock.classextension.EasyMock.createMock;
-import static org.easymock.classextension.EasyMock.replay;
 
 /**
  * Unit tests for {@link JType} to {@link Key} translation.
@@ -154,42 +155,57 @@ public class GuiceUtilTest extends TestCase {
     assertTrue(guiceUtil.isOptional(getField("optionalInject")));
     assertFalse(guiceUtil.isOptional(getField("javaxInject")));
   }
+  
+  private Set<Key<?>> extractKeys(Collection<Dependency> requiredKeys, boolean optional) {
+    Set<Key<?>> keySet = new HashSet<Key<?>>();
+    for (Dependency key : requiredKeys) {
+      if (key.isOptional() == optional) {
+        keySet.add(key.getTarget());
+      }
+    }
+    return keySet;
+  }
 
   public void testGetRequiredKeys_method() throws NoSuchMethodException {
     GuiceUtil guiceUtil = new GuiceUtil(createInjectableCollector());
-    RequiredKeys keys =
-        guiceUtil.getRequiredKeys(getMethod("nonOptionalKeys", String.class, Foo.class));
-    assertTrue(keys.getOptionalKeys().isEmpty());
-    assertEquals(2, keys.getRequiredKeys().size());
-    assertTrue(keys.getRequiredKeys().contains(Key.get(String.class)));
-    assertTrue(keys.getRequiredKeys().contains(Key.get(Foo.class)));
+    Collection<Dependency> keys = guiceUtil.getDependencies(
+        Dependency.GINJECTOR, getMethod("nonOptionalKeys", String.class, Foo.class));
+    Set<Key<?>> optionalKeys = extractKeys(keys, true);
+    Set<Key<?>> requiredKeys = extractKeys(keys, false);
+    assertTrue(optionalKeys.isEmpty());
+    assertEquals(2, requiredKeys.size());
+    assertTrue(requiredKeys.contains(Key.get(String.class)));
+    assertTrue(requiredKeys.contains(Key.get(Foo.class)));
   }
 
   public void testGetRequiredKeys_optionalMethod() throws NoSuchMethodException {
     GuiceUtil guiceUtil = new GuiceUtil(createInjectableCollector());
-    RequiredKeys keys =
-        guiceUtil.getRequiredKeys(getMethod("optionalKeys", String.class, Foo.class));
-    assertTrue(keys.getRequiredKeys().isEmpty());
-    assertEquals(2, keys.getOptionalKeys().size());
-    assertTrue(keys.getOptionalKeys().contains(Key.get(String.class)));
-    assertTrue(keys.getOptionalKeys().contains(Key.get(Foo.class)));
+    Collection<Dependency> keys = guiceUtil.getDependencies(
+        Dependency.GINJECTOR, getMethod("optionalKeys", String.class, Foo.class));
+    Set<Key<?>> optionalKeys = extractKeys(keys, true);
+    Set<Key<?>> requiredKeys = extractKeys(keys, false);
+    assertTrue(requiredKeys.isEmpty());
+    assertEquals(2, optionalKeys.size());
+    assertTrue(optionalKeys.contains(Key.get(String.class)));
+    assertTrue(optionalKeys.contains(Key.get(Foo.class)));
   }
 
   public void testGetRequiredKeys_noKeyMethod() throws NoSuchMethodException {
     GuiceUtil guiceUtil = new GuiceUtil(createInjectableCollector());
-    RequiredKeys keys =
-        guiceUtil.getRequiredKeys(getMethod("noKeys"));
-    assertTrue(keys.getOptionalKeys().isEmpty());
-    assertTrue(keys.getRequiredKeys().isEmpty());
+    Collection<Dependency> keys =
+        guiceUtil.getDependencies(Dependency.GINJECTOR, getMethod("noKeys"));
+    assertTrue(keys.isEmpty());
   }
 
   public void testGetRequiredKeys_annotatedKeysMethod() throws NoSuchMethodException {
     GuiceUtil guiceUtil = new GuiceUtil(createInjectableCollector());
-    RequiredKeys keys =
-        guiceUtil.getRequiredKeys(getMethod("annotatedKeys", Foo.class));
-    assertTrue(keys.getOptionalKeys().isEmpty());
-    assertEquals(1, keys.getRequiredKeys().size());
-    assertTrue(keys.getRequiredKeys().contains(Key.get(Foo.class, MyBindingAnnotation.class)));
+    Collection<Dependency> keys =
+        guiceUtil.getDependencies(Dependency.GINJECTOR, getMethod("annotatedKeys", Foo.class));
+    Set<Key<?>> optionalKeys = extractKeys(keys, true);
+    Set<Key<?>> requiredKeys = extractKeys(keys, false);
+    assertTrue(optionalKeys.isEmpty());
+    assertEquals(1, requiredKeys.size());
+    assertTrue(requiredKeys.contains(Key.get(Foo.class, MyBindingAnnotation.class)));
   }
 
   public void testGetRequiredKeys_type() throws NoSuchMethodException, NoSuchFieldException {
@@ -206,17 +222,20 @@ public class GuiceUtilTest extends TestCase {
     replay(memberCollector);
 
     GuiceUtil guiceUtil = new GuiceUtil(memberCollector);
-    RequiredKeys keys = guiceUtil.getMemberInjectionRequiredKeys(TypeLiteral.get(TestData.class));
+    Collection<Dependency> keys = guiceUtil.getMemberInjectionDependencies(
+        Dependency.GINJECTOR, TypeLiteral.get(TestData.class));
+    Set<Key<?>> optionalKeys = extractKeys(keys, true);
+    Set<Key<?>> requiredKeys = extractKeys(keys, false);
 
-    assertEquals(1, keys.getOptionalKeys().size());
-    assertEquals(5, keys.getRequiredKeys().size());
+    assertEquals(1, optionalKeys.size());
+    assertEquals(5, requiredKeys.size());
 
-    assertTrue(keys.getOptionalKeys().contains(Key.get(Bar.class)));
-    assertTrue(keys.getRequiredKeys().contains(Key.get(Baz.class)));
-    assertTrue(keys.getRequiredKeys().contains(Key.get(Baz.class, MyBindingAnnotation.class)));
-    assertTrue(keys.getRequiredKeys().contains(Key.get(String.class)));
-    assertTrue(keys.getRequiredKeys().contains(Key.get(Foo.class)));
-    assertTrue(keys.getRequiredKeys().contains(Key.get(Foo.class, MyBindingAnnotation.class)));
+    assertTrue(optionalKeys.contains(Key.get(Bar.class)));
+    assertTrue(requiredKeys.contains(Key.get(Baz.class)));
+    assertTrue(requiredKeys.contains(Key.get(Baz.class, MyBindingAnnotation.class)));
+    assertTrue(requiredKeys.contains(Key.get(String.class)));
+    assertTrue(requiredKeys.contains(Key.get(Foo.class)));
+    assertTrue(requiredKeys.contains(Key.get(Foo.class, MyBindingAnnotation.class)));
   }
 
   // TODO(schmitt): same collector as in the guice module, centralize.
