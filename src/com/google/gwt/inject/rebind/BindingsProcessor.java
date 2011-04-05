@@ -133,7 +133,8 @@ class BindingsProcessor {
     GinjectorBinding ginjectorBinding = ginjectorBindingProvider.get();
     Key<? extends Ginjector> ginjectorKey = Key.get(ginjectorInterface);
     rootGinjectorBindings.addBinding(ginjectorKey, ginjectorBinding, 
-        BindingContext.forText("Binding for ginjector"));
+        BindingContext.forText("Default binding added by Gin for the Ginjector.  There shouldn't be"
+            + " anything in the module(s) bound to " + ginjectorKey));
     lieToGuiceModule.registerImplicitBinding(ginjectorKey);
   }
   
