@@ -16,8 +16,12 @@
 package com.google.gwt.inject.client.generics;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.inject.client.AbstractGinModule;
+import com.google.gwt.inject.client.GinModules;
+import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.generics.GenericsGinModule.InjectedWithGenerics;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.inject.Inject;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -96,7 +100,65 @@ public class GenericsTest extends GWTTestCase {
     ginjector.getInjectedWithGeneric();
   }
 
+  public void testWildcardParametrized() {
+    WildcardGinjector ginjector = GWT.create(WildcardGinjector.class);
+    ginjector.getBusinessObject();
+  }
+
+  // This is illegal in Guice (as it should be) but for that reason difficult to test here.
+  public void testWildcardParametrized_injectType() {
+//    FancyWildcardGinjector ginjector = GWT.create(FancyWildcardGinjector.class);
+//    ginjector.getBusinessObject();
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
+  }
+
+  static class ValueObject<T> {
+
+    private T value;
+
+    public T getValue() {
+      return value;
+    }
+
+    public void setValue(T value) {
+      this.value = value;
+    }
+  }
+
+  static class InjectedValueObject<T> extends ValueObject<T> {
+
+    @Override
+    @Inject
+    public void setValue(T value) {
+      super.setValue(value);
+    }
+  }
+
+  static class BusinessObject {
+
+    final ValueObject<?> value;
+
+    @Inject
+    public BusinessObject(ValueObject<?> value) {
+      this.value = value;
+    }
+  }
+
+  interface WildcardGinjector extends Ginjector {
+    BusinessObject getBusinessObject();
+  }
+
+  @GinModules(FancyWildcardModule.class)
+  interface FancyWildcardGinjector extends WildcardGinjector {}
+
+  static class FancyWildcardModule extends AbstractGinModule {
+
+    @Override
+    protected void configure() {
+      bind(ValueObject.class).to(InjectedValueObject.class);
+    }
   }
 }

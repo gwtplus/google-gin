@@ -140,6 +140,13 @@ class GinBridgeClassLoader extends ClassLoader {
     if (compiledClass == null) {
       throw new ClassNotFoundException(name);
     }
+
+    // Make sure the class's package is present.
+    String pkg = compiledClass.getPackageName();
+    if (getPackage(pkg) == null) {
+      definePackage(pkg, null, null, null, null, null, null, null);
+    }
+
     byte[] bytes = compiledClass.getBytes();
     return defineClass(name, bytes, 0, bytes.length);
   }

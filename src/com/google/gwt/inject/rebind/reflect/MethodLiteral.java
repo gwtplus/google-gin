@@ -17,8 +17,11 @@
 package com.google.gwt.inject.rebind.reflect;
 
 import com.google.gwt.dev.util.Preconditions;
+import com.google.gwt.dev.util.collect.Lists;
+import com.google.gwt.user.client.rpc.core.java.util.Collections;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
+import com.google.inject.internal.MoreTypes;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -189,9 +192,9 @@ public abstract class MethodLiteral<T, M extends Member & AnnotatedElement & Gen
     sb.append(getName()).append("(");
 
     List<String> parameters = new ArrayList<String>();
-    for (TypeLiteral<?> parameterType : getParameterTypes()) {
+    for (Type parameterType : getRawParameterTypes()) {
       // TODO(schmitt): We are not respecting varargs here.
-      parameters.add(parameterType.toString());
+      parameters.add(MoreTypes.typeToString(parameterType));
     }
     sb.append(join(", ", parameters)).append(")");
 
@@ -256,5 +259,6 @@ public abstract class MethodLiteral<T, M extends Member & AnnotatedElement & Gen
     public List<Type> getRawParameterTypes() {
       return Arrays.asList(getMember().getGenericParameterTypes());
     }
+
   }
 }
