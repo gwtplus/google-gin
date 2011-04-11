@@ -12,4 +12,9 @@
   <!-- Though the default, without this seems not to work. Perhaps due to super-src? -->
   <source path="client"/>
 
+  <!-- Configuration property controlling Gin class loading. If a package is added to this
+       property's values, classes in that package will never be loaded through Gin's class loader,
+       i.e. they will have to be present in compiled bytecode. -->
+  <define-configuration-property name="gin.classloading.exceptedPackages"
+      is-multi-valued="true" />
 </module>

@@ -17,6 +17,7 @@
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.BadPropertyValueException;
+import com.google.gwt.core.ext.ConfigurationProperty;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.PropertyOracle;
@@ -31,6 +32,7 @@ import com.google.inject.Module;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -41,28 +43,35 @@ public class GinjectorGenerator extends Generator {
   // Visible for testing.
   ClassLoader classLoader;
 
+  private PropertyOracle propertyOracle;
+
+  private TreeLogger logger;
+
   @Override
   public String generate(TreeLogger logger, GeneratorContext context, String typeName)
       throws UnableToCompleteException {
 
+    propertyOracle = context.getPropertyOracle();
+    this.logger = logger;
+    
     classLoader = createGinClassLoader(logger, context);
 
     Class<? extends Ginjector> ginjectorInterface;
     try {
       ginjectorInterface = getGinjectorType(typeName);
     } catch (ClassNotFoundException e) {
-      logger.log(TreeLogger.ERROR, String.format("Unable to load ginjector type [%s], "
+      this.logger.log(TreeLogger.ERROR, String.format("Unable to load ginjector type [%s], "
           + "maybe you haven't compiled your client java sources?", typeName), e);
       throw new UnableToCompleteException();
     } catch (IllegalArgumentException e) {
-      logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
+      this.logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
       throw new UnableToCompleteException();
     }
 
     // This is the Injector we use for the Generator internally,
     // it has nothing to do with user code.
     Module module = new GinjectorGeneratorModule(logger, context, ginjectorInterface,
-        getConfigurationModules(context.getPropertyOracle(), logger, ginjectorInterface));
+        getConfigurationModules(ginjectorInterface));
     return Guice.createInjector(module).getInstance(GinjectorGeneratorImpl.class).generate();
   }
 
@@ -80,6 +89,9 @@ public class GinjectorGenerator extends Generator {
     exceptions.add("com.google.inject"); // Need the non-super-source version during generation.
     exceptions.add("javax.inject"); // Need the non-super-source version during generation.
     exceptions.add("com.google.gwt.inject.client"); // Excluded to allow class-literal comparison.
+
+    // Add any excepted packages or classes registered by other developers.
+    exceptions.addAll(getValuesForProperty("gin.classloading.exceptedPackages"));
     return new GinBridgeClassLoader(context, logger, exceptions);
   }
 
@@ -102,16 +114,15 @@ public class GinjectorGenerator extends Generator {
 
   @SuppressWarnings("unchecked")
   // We check that the class is a GinModule before casting it.
-  private Set<Class<? extends GinModule>> getConfigurationModules(PropertyOracle propertyOracle,
-      TreeLogger logger, Class<? extends Ginjector> ginjectorInterface)
-      throws UnableToCompleteException {
+  private Set<Class<? extends GinModule>> getConfigurationModules(
+      Class<? extends Ginjector> ginjectorInterface) throws UnableToCompleteException {
 
     Set<String> propertyNames = new HashSet<String>();
     getPropertyNamesFromInjectorInterface(ginjectorInterface, propertyNames);
 
     Set<String> configurationModuleNames = new HashSet<String>();
     for (String propertyName : propertyNames) {
-      Set<String> moduleNames = getModuleNamesFromPropertyName(propertyName, propertyOracle);
+      Set<String> moduleNames = getValuesForProperty(propertyName);
       if (moduleNames.isEmpty()) {
         logger.log(TreeLogger.Type.ERROR, String.format("The GinModules annotation requests "
             + "property %s, but this property cannot be found in the GWT module.", propertyName));
@@ -143,12 +154,10 @@ public class GinjectorGenerator extends Generator {
     return ginModules;
   }
 
-  private Set<String> getModuleNamesFromPropertyName(String propertyName,
-      PropertyOracle propertyOracle) {
+  private Set<String> getValuesForProperty(String propertyName) {
     try {
       // Result of getConfigurationProperty can never be null.
-      return new HashSet<String>(
-          propertyOracle.getConfigurationProperty(propertyName).getValues());
+      return new HashSet<String>(propertyOracle.getConfigurationProperty(propertyName).getValues());
     } catch (BadPropertyValueException e) {
       // Thrown when the configuration property is not defined.
       return Collections.emptySet();
