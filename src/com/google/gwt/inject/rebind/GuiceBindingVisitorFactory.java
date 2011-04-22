@@ -15,17 +15,12 @@
  */
 package com.google.gwt.inject.rebind;
 
-import com.google.gwt.inject.rebind.binding.BindClassBinding;
-import com.google.gwt.inject.rebind.binding.BindConstantBinding;
-import com.google.gwt.inject.rebind.binding.BindProviderBinding;
-import com.google.gwt.inject.rebind.binding.ProviderMethodBinding;
+import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.spi.Message;
 
 import java.util.List;
-
-import javax.inject.Provider;
 
 /**
  * Factory for creating {@link GuiceBindingVisitor}s.  We can't use assisted
@@ -33,24 +28,14 @@ import javax.inject.Provider;
  * Guice unhappy.
  */
 public class GuiceBindingVisitorFactory {
-  private final Provider<BindProviderBinding> bindProviderBindingProvider;
-  private final Provider<ProviderMethodBinding> providerMethodBindingProvider;
-  private final Provider<BindClassBinding> bindClassBindingProvider;
-  private final Provider<BindConstantBinding> bindConstantBindingProvider;
-  private LieToGuiceModule lieToGuiceModule;
+  private final BindingFactory bindingFactory;
+  private final LieToGuiceModule lieToGuiceModule;
 
   @Inject
-  public GuiceBindingVisitorFactory(
-      Provider<BindProviderBinding> bindProviderBindingProvider,
-      Provider<ProviderMethodBinding> providerMethodBindingProvider,
-      Provider<BindClassBinding> bindClassBindingProvider,
-      Provider<BindConstantBinding> bindConstantBindingProvider,
-      LieToGuiceModule lieToGuiceModule) {
-    this.bindProviderBindingProvider = bindProviderBindingProvider;
-    this.providerMethodBindingProvider = providerMethodBindingProvider;
-    this.bindClassBindingProvider = bindClassBindingProvider;
-    this.bindConstantBindingProvider = bindConstantBindingProvider;
+  public GuiceBindingVisitorFactory(LieToGuiceModule lieToGuiceModule,
+      BindingFactory bindingFactory) {
     this.lieToGuiceModule = lieToGuiceModule;
+    this.bindingFactory = bindingFactory;
   }
 
   /**
@@ -63,8 +48,7 @@ public class GuiceBindingVisitorFactory {
    */
   <T> GuiceBindingVisitor<T> create(Key<T> targetKey, List<Message> messages,
       GinjectorBindings ginjectorBindings) {
-    return new GuiceBindingVisitor<T>(bindProviderBindingProvider,
-        providerMethodBindingProvider, bindClassBindingProvider, bindConstantBindingProvider,
-        lieToGuiceModule, targetKey, messages, ginjectorBindings);
+    return new GuiceBindingVisitor<T>(lieToGuiceModule, targetKey, messages, ginjectorBindings,
+        bindingFactory);
   }
 }

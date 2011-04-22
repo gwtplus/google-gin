@@ -18,12 +18,12 @@ package com.google.gwt.inject.rebind.resolution;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingContext;
+import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
 import com.google.inject.Inject;
 import com.google.inject.Key;
-import com.google.inject.Provider;
 
 import java.util.Map;
 
@@ -47,14 +47,13 @@ import java.util.Map;
  */
 class BindingInstaller {
   
-  private final Provider<ParentBinding> parentBindingProvider;
   private final BindingPositioner positions;
+  private final BindingFactory bindingFactory;
 
   @Inject
-  public BindingInstaller(Provider<ParentBinding> parentBindingProvider,
-      BindingPositioner positions) {
-    this.parentBindingProvider = parentBindingProvider;
+  public BindingInstaller(BindingPositioner positions, BindingFactory bindingFactory) {
     this.positions = positions;
+    this.bindingFactory = bindingFactory;
   }
   
   /**
@@ -110,14 +109,11 @@ class BindingInstaller {
   private void ensureAccessible(Key<?> key, GinjectorBindings parent, GinjectorBindings child) {
     // Parent will be null if it is was an optional dependency and it couldn't be created.
     if (parent != null && !child.equals(parent) && !child.isBound(key)) {
-      ParentBinding parentBinding = parentBindingProvider.get();
-      parentBinding.setKey(key);
-      parentBinding.setParent(parent);
       BindingContext context = BindingContext.forText("Inheriting " + key + " from parent");
       
       // We don't strictly need all the extra checks in addBinding, but it can't hurt.  We know, for
       // example, that there will not be any unresolved bindings for this key.
-      child.addBinding(key, parentBinding, context);
+      child.addBinding(key, bindingFactory.getParentBinding(key, parent), context);
     }
   }
 }

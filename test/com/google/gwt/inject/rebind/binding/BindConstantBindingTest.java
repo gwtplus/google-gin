@@ -15,15 +15,14 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Key;
-
-import junit.framework.TestCase;
-
 import static org.easymock.classextension.EasyMock.createMock;
 import static org.easymock.classextension.EasyMock.replay;
 import static org.easymock.classextension.EasyMock.verify;
+
+import com.google.gwt.inject.rebind.util.SourceWriteUtil;
+import com.google.gwt.user.rebind.SourceWriter;
+import com.google.inject.Key;
+import junit.framework.TestCase;
 
 public class BindConstantBindingTest extends TestCase {
 
@@ -39,8 +38,8 @@ public class BindConstantBindingTest extends TestCase {
         "return com.google.gwt.inject.rebind.binding.Color.Green;");
     replay(utilMock);
 
-    BindConstantBinding binding = new BindConstantBinding(utilMock);
-    binding.setKeyAndInstance(colorKey, Color.Green);
+    BindConstantBinding<Color> binding =
+        new BindConstantBinding<Color>(utilMock, colorKey, Color.Green);
 
     assertEquals(1, binding.getDependencies().size());
     assertTrue(binding.getDependencies().contains(new Dependency(Dependency.GINJECTOR, colorKey)));
@@ -60,8 +59,8 @@ public class BindConstantBindingTest extends TestCase {
         "return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Verdana;");
     replay(utilMock);
 
-    BindConstantBinding binding = new BindConstantBinding(utilMock);
-    binding.setKeyAndInstance(fontKey, Font.Verdana);
+    BindConstantBinding<Font> binding =
+        new BindConstantBinding<Font>(utilMock, fontKey, Font.Verdana);
 
     binding.writeCreatorMethods(writerMock, signature, null);
 
@@ -78,8 +77,8 @@ public class BindConstantBindingTest extends TestCase {
         "return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Arial;");
     replay(utilMock);
 
-    BindConstantBinding binding = new BindConstantBinding(utilMock);
-    binding.setKeyAndInstance(fontKey, Font.Arial);
+    BindConstantBinding<Font> binding =
+        new BindConstantBinding<Font>(utilMock, fontKey, Font.Arial);
 
     binding.writeCreatorMethods(writerMock, signature, null);
 
@@ -97,8 +96,8 @@ public class BindConstantBindingTest extends TestCase {
     utilMock.writeMethod(writerMock, signature, "return '" + value + "';");
     replay(utilMock);
 
-    BindConstantBinding binding = new BindConstantBinding(utilMock);
-    binding.setKeyAndInstance(charKey, value);
+    BindConstantBinding<Character> binding =
+        new BindConstantBinding<Character>(utilMock, charKey, value);
 
     assertEquals(1, binding.getDependencies().size());
     assertTrue(binding.getDependencies().contains(new Dependency(Dependency.GINJECTOR, charKey)));
@@ -119,8 +118,8 @@ public class BindConstantBindingTest extends TestCase {
     utilMock.writeMethod(writerMock, signature, "return '\\'';");
     replay(utilMock);
 
-    BindConstantBinding binding = new BindConstantBinding(utilMock);
-    binding.setKeyAndInstance(charKey, value);
+    BindConstantBinding<Character> binding =
+        new BindConstantBinding<Character>(utilMock, charKey, value);
 
     assertEquals(1, binding.getDependencies().size());
     assertTrue(binding.getDependencies().contains(new Dependency(Dependency.GINJECTOR, charKey)));

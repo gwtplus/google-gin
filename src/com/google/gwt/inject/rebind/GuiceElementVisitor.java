@@ -17,6 +17,7 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.binding.BindingContext;
+import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -32,8 +33,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.inject.Provider;
-
 /**
  * Gathers elements and adds them to a {@link GinjectorBindings}.
  */
@@ -48,26 +47,25 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
 
   private final List<Message> messages = new ArrayList<Message>();
   private final TreeLogger logger;
-  private GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory;
-  private GuiceBindingVisitorFactory bindingVisitorFactory;
-  private Provider<ExposedChildBinding> exposedChildBindingProvider;
-  private GinjectorBindings bindings;
-  private Iterator<GinjectorBindings> children;
+  private final GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory;
+  private final GinjectorBindings bindings;
   private final ErrorManager errorManager;
+  private final BindingFactory bindingFactory;
+  private Iterator<GinjectorBindings> children;
+  private GuiceBindingVisitorFactory bindingVisitorFactory;
 
   @Inject
   public GuiceElementVisitor(TreeLogger logger,
-      GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory,
+      GuiceElementVisitorFactory guiceElementVisitorFactory,
       GuiceBindingVisitorFactory bindingVisitorFactory,
-      Provider<ExposedChildBinding> exposedChildBindingProvider,
       ErrorManager errorManager,
-      @Assisted GinjectorBindings bindings) {
+      @Assisted GinjectorBindings bindings, BindingFactory bindingFactory) {
     this.logger = logger;
     this.guiceElementVisitorFactory = guiceElementVisitorFactory;
     this.bindingVisitorFactory = bindingVisitorFactory;
-    this.exposedChildBindingProvider = exposedChildBindingProvider;
     this.errorManager = errorManager;
     this.bindings = bindings;
+    this.bindingFactory = bindingFactory;
   }
   
   public void visitElementsAndReportErrors(List<Element> elements) {
@@ -137,9 +135,8 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
     
     // Add information about the exposed elements in child to the current binding collection
     for (Key<?> key : privateElements.getExposedKeys()) {
-      ExposedChildBinding childBinding = exposedChildBindingProvider.get();
-      childBinding.setChild(childCollection);
-      childBinding.setKey(key);
+      ExposedChildBinding childBinding =
+          bindingFactory.getExposedChildBinding(key, childCollection);
       logger.log(TreeLogger.TRACE, "Child binding for " + key + ": " + childBinding);
       bindings.addBinding(key, childBinding, BindingContext.forElement(privateElements));
     }

@@ -19,13 +19,12 @@ import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 import com.google.inject.Key;
+
+import javax.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import javax.inject.Provider;
 
 /**
  * A binding to call the requested {@link com.google.inject.Provider}.
@@ -33,34 +32,23 @@ import javax.inject.Provider;
 public class BindProviderBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
+  private final Key<? extends Provider<?>> providerKey;
+  private final Key<?> sourceKey;
 
-  private Key<? extends Provider<?>> providerKey;
-
-  private Key<?> sourceKey;
-
-  @Inject
-  public BindProviderBinding(SourceWriteUtil sourceWriteUtil) {
+  BindProviderBinding(SourceWriteUtil sourceWriteUtil, Key<? extends Provider<?>> providerKey,
+      Key<?> sourceKey) {
     this.sourceWriteUtil = sourceWriteUtil;
-  }
-  
-  public void setProviderKey(Key<? extends Provider<?>> providerKey) {
-    this.providerKey = providerKey;
-  }
-  
-  public void setSourceKey(Key<?> sourceKey) {
-    this.sourceKey = sourceKey;
+    this.providerKey = Preconditions.checkNotNull(providerKey);
+    this.sourceKey = Preconditions.checkNotNull(sourceKey);
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
       NameGenerator nameGenerator) {
-    Preconditions.checkNotNull(providerKey);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + nameGenerator.getGetterMethodName(providerKey) + "().get();");
   }
 
   public Collection<Dependency> getDependencies() {
-    Preconditions.checkNotNull(sourceKey, "Must call setSourceKey before resolution");
-    Preconditions.checkNotNull(providerKey, "Must call setProviderKey before resolution");
     Collection<Dependency> dependencies = new ArrayList<Dependency>();
     dependencies.add(new Dependency(Dependency.GINJECTOR, sourceKey));
     dependencies.add(new Dependency(sourceKey, providerKey));

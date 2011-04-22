@@ -42,23 +42,20 @@ abstract class CreatorBinding implements Binding {
   private final SourceWriteUtil sourceWriteUtil;
   private final GuiceUtil guiceUtil;
   private final Set<Dependency> dependencies = new HashSet<Dependency>();
-  private TypeLiteral<?> type;
+  private final TypeLiteral<?> type;
 
-  protected CreatorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil) {
+  protected CreatorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
+      TypeLiteral<?> type) {
     this.sourceWriteUtil = sourceWriteUtil;
     this.guiceUtil = guiceUtil;
-  }
 
-  public void setType(TypeLiteral<?> type) {
-    this.type = type;
+    this.type = Preconditions.checkNotNull(type);
     dependencies.add(new Dependency(Dependency.GINJECTOR, Key.get(type)));
     dependencies.addAll(guiceUtil.getMemberInjectionDependencies(Key.get(type), type));
   }
 
   public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) throws NoSourceNameException {
-    Preconditions.checkNotNull(type);
-
     String memberInjectMethodName = sourceWriteUtil.appendMemberInjection(writer, Key.get(type),
         nameGenerator);
 
@@ -77,7 +74,6 @@ abstract class CreatorBinding implements Binding {
   }
 
   public TypeLiteral<?> getType() {
-    Preconditions.checkNotNull(type);
     return type;
   }
 
@@ -85,7 +81,6 @@ abstract class CreatorBinding implements Binding {
       NameGenerator nameGenerator) throws NoSourceNameException;
 
   protected String getTypeName() throws NoSourceNameException {
-    Preconditions.checkNotNull(type);
     return ReflectUtil.getSourceName(type);
   }
 

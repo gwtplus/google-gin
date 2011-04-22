@@ -16,16 +16,14 @@
 package com.google.gwt.inject.rebind.resolution;
 
 import com.google.gwt.inject.client.AsyncProvider;
-import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.LieToGuiceModule;
 import com.google.gwt.inject.rebind.binding.AsyncProviderBinding;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
 import com.google.gwt.inject.rebind.binding.Binding;
-import com.google.gwt.inject.rebind.binding.CallConstructorBinding;
+import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
-import com.google.gwt.inject.rebind.binding.ImplicitProviderBinding;
 import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
@@ -36,11 +34,11 @@ import com.google.inject.Key;
 import com.google.inject.ProvidedBy;
 import com.google.inject.TypeLiteral;
 
+import javax.inject.Provider;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-
-import javax.inject.Provider;
 
 /**
  * Class responsible for creating implicit bindings.  This returns the binding entry
@@ -64,36 +62,14 @@ public class ImplicitBindingCreator {
     }
   }
   
-  private final Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider;
-  private final Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider;
-  private final Provider<CallConstructorBinding> callConstructorBinding;
-  private final Provider<BindClassBinding> bindClassBindingProvider;
-  private final Provider<BindProviderBinding> bindProviderBindingProvider;
-  private final Provider<ImplicitProviderBinding> implicitProviderBindingProvider;
-  private final Provider<AsyncProviderBinding> asyncProviderBindingProvider;
+  private final BindingFactory bindingFactory;
 
   private final LieToGuiceModule lieToGuiceModule;
   
   @Inject
-  public ImplicitBindingCreator(
-      Provider<CallGwtDotCreateBinding> callGwtDotCreateBindingProvider,
-      Provider<CallConstructorBinding> callConstructorBinding,
-      GuiceUtil guiceUtil,
-      Provider<BindClassBinding> bindClassBindingProvider,
-      Provider<BindProviderBinding> bindProviderBindingProvider,
-      Provider<ImplicitProviderBinding> implicitProviderBindingProvider,
-      Provider<AsyncProviderBinding> asyncProviderBindingProvider,
-      LieToGuiceModule lieToGuiceModule,
-      Provider<RemoteServiceProxyBinding> remoteServiceProxyBindingProvider,
-      ErrorManager errorManager) {
-    this.callGwtDotCreateBindingProvider = callGwtDotCreateBindingProvider;
-    this.callConstructorBinding = callConstructorBinding;
-    this.bindClassBindingProvider = bindClassBindingProvider;
-    this.implicitProviderBindingProvider = implicitProviderBindingProvider;
-    this.asyncProviderBindingProvider = asyncProviderBindingProvider;
-    this.bindProviderBindingProvider = bindProviderBindingProvider;
+  public ImplicitBindingCreator(LieToGuiceModule lieToGuiceModule, BindingFactory bindingFactory) {
+    this.bindingFactory = bindingFactory;
     this.lieToGuiceModule = lieToGuiceModule;
-    this.remoteServiceProxyBindingProvider = remoteServiceProxyBindingProvider;
   }
   
   /**
@@ -125,17 +101,13 @@ public class ImplicitBindingCreator {
     
     // 4. Provider injections.
     if (isProviderKey(key)) {
-      ImplicitProviderBinding binding = implicitProviderBindingProvider.get();
-      binding.setProviderKey(key);
-      return binding;
+      return bindingFactory.getImplicitProviderBinding(key);
       // TODO(bstoler): Scope the provider binding like the thing being provided?
     }
     
     // 4b. AsyncProvider injections.
     if (isAsyncProviderKey(key)) {
-      AsyncProviderBinding binding = asyncProviderBindingProvider.get();
-      binding.setProviderKey(key);
-      return binding;
+      return bindingFactory.getAsyncProviderBinding(key);
     }
 
     // 5. Convert constants.
@@ -182,20 +154,14 @@ public class ImplicitBindingCreator {
     MethodLiteral<?, Constructor<?>> injectConstructor = getInjectConstructor(type);
 
     if (injectConstructor != null) {
-      CallConstructorBinding binding = callConstructorBinding.get();
-      binding.setConstructor(injectConstructor);
-      return binding;
+      return bindingFactory.getCallConstructorBinding(injectConstructor);
     }
 
     if (hasAccessibleZeroArgConstructor(type)) {
       if (RemoteServiceProxyBinding.isRemoteServiceProxy(type)) {
-        RemoteServiceProxyBinding binding = remoteServiceProxyBindingProvider.get();
-        binding.setType(type);
-        return binding;
+        return bindingFactory.getRemoteServiceProxyBinding(type);
       } else {
-        CallGwtDotCreateBinding binding = callGwtDotCreateBindingProvider.get();
-        binding.setType(type);
-        return binding;
+        return bindingFactory.getCallGwtDotCreateBinding(type);
       }
     }
 
@@ -242,11 +208,7 @@ public class ImplicitBindingCreator {
           implementationType, rawType);
     }
 
-    BindClassBinding implementedByBinding = bindClassBindingProvider.get();
-    implementedByBinding.setSourceClassKey(key);
-    implementedByBinding.setBoundClassKey(Key.get(implementationType));
-
-    return implementedByBinding;
+    return bindingFactory.getBindClassBinding(Key.get(implementationType), key);
   }
 
   private BindProviderBinding createProvidedByBinding(Key<?> key, ProvidedBy providedBy) 
@@ -259,11 +221,7 @@ public class ImplicitBindingCreator {
           "@ProvidedBy points to the same class it annotates: %s", rawType);
     }
 
-    BindProviderBinding implementedByBinding = bindProviderBindingProvider.get();
-    implementedByBinding.setProviderKey(Key.get(providerType));
-    implementedByBinding.setSourceKey(key);
-
-    return implementedByBinding;
+    return bindingFactory.getBindProviderBinding(Key.get(providerType), key);
   }
 
   private boolean isProviderKey(Key<?> key) {
@@ -297,3 +255,4 @@ public class ImplicitBindingCreator {
     return injectConstructor;
   }
 }
+

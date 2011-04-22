@@ -21,7 +21,7 @@ import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
+import com.google.inject.TypeLiteral;
 
 /**
  * A binding that just calls {@code GWT.create()} for the requested type.
@@ -30,9 +30,9 @@ import com.google.inject.Inject;
  */
 public class CallGwtDotCreateBinding extends CreatorBinding {
 
-  @Inject
-  public CallGwtDotCreateBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil) {
-    super(sourceWriteUtil, guiceUtil);
+  CallGwtDotCreateBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
+      TypeLiteral<?> type) {
+    super(sourceWriteUtil, guiceUtil, type);
   }
 
   @Override protected final void appendCreationStatement(SourceWriter sourceWriter,

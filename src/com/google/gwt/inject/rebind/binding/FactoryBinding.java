@@ -90,29 +90,24 @@ public class FactoryBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
   private final List<AssistData> assistData = new ArrayList<AssistData>();
-
-  private Map<Key<?>, TypeLiteral<?>> collector;
-  private TypeLiteral<?> factoryType;
-  private Set<Dependency> dependencies;
+  private final Map<Key<?>, TypeLiteral<?>> collector;
+  private final TypeLiteral<?> factoryType;
+  private final Set<Dependency> dependencies = new LinkedHashSet<Dependency>();
 
   /**
    * Collection of all implementations produced by this factory, each annotated
    * with @Assisted. This is used to gather all required member-inject methods.
    */
-  private Set<Key<?>> implementations;
+  private final Set<Key<?>> implementations = new HashSet<Key<?>>();
 
-  @Inject
-  public FactoryBinding(SourceWriteUtil sourceWriteUtil) {
+  FactoryBinding(SourceWriteUtil sourceWriteUtil, Map<Key<?>, TypeLiteral<?>> collector,
+      Key<?> factoryKey) {
     this.sourceWriteUtil = sourceWriteUtil;
-  }
-
-  public void setKeyAndCollector(Key<?> factoryKey, Map<Key<?>, TypeLiteral<?>> bindings) {
-    factoryType = factoryKey.getTypeLiteral();
-    this.implementations = new HashSet<Key<?>>();
-    this.collector = bindings;
+    this.collector = Preconditions.checkNotNull(collector);
+    this.factoryType = factoryKey.getTypeLiteral();
 
     try {
-      matchMethods(factoryKey);
+      matchMethods(Preconditions.checkNotNull(factoryKey));
     } catch (ErrorsException e) {
       e.getErrors().throwConfigurationExceptionIfErrorsExist();
     }
@@ -120,8 +115,6 @@ public class FactoryBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
       NameGenerator nameGenerator) throws NoSourceNameException {
-    Preconditions.checkNotNull(factoryType);
-
     String factoryTypeName = ReflectUtil.getSourceName(factoryType);
     StringBuilder sb = new StringBuilder();
 
@@ -151,7 +144,6 @@ public class FactoryBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
-    Preconditions.checkNotNull(factoryType);
     return dependencies;
   }
 
@@ -161,7 +153,6 @@ public class FactoryBinding implements Binding {
 
   private void matchMethods(Key<?> factoryKey) throws ErrorsException {
     Errors errors = new Errors();
-    dependencies = new LinkedHashSet<Dependency>();
     dependencies.add(new Dependency(Dependency.GINJECTOR, factoryKey));
     Class<?> factoryRawType = factoryType.getRawType();
 

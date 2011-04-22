@@ -22,7 +22,6 @@ import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 
 import java.lang.reflect.Constructor;
 
@@ -33,22 +32,17 @@ import java.lang.reflect.Constructor;
 public class CallConstructorBinding extends CreatorBinding {
 
   private final SourceWriteUtil sourceWriteUtil;
+  private final MethodLiteral<?, Constructor<?>> constructor;
 
-  private MethodLiteral<?, Constructor<?>> constructor;
-
-  @Inject
-  public CallConstructorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil) {
-    super(sourceWriteUtil, guiceUtil);
+  CallConstructorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
+      MethodLiteral<?, Constructor<?>> constructor) {
+    super(sourceWriteUtil, guiceUtil, constructor.getDeclaringType());
     this.sourceWriteUtil = sourceWriteUtil;
-  }
-
-  public void setConstructor(MethodLiteral<?, Constructor<?>> constructor) {
-    this.constructor = constructor;
-    setType(constructor.getDeclaringType());
+    this.constructor = Preconditions.checkNotNull(constructor);
     addParamTypes(constructor);
   }
 
-  @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb, 
+  @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb,
       NameGenerator nameGenerator) throws NoSourceNameException {
     Preconditions.checkNotNull(constructor);
     sb.append(getTypeName()).append(" result = ")

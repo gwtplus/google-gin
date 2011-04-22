@@ -21,7 +21,6 @@ import com.google.gwt.inject.rebind.GinjectorNameGenerator;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.util.Collection;
@@ -35,29 +34,21 @@ import java.util.Collections;
  */
 public class ExposedChildBinding implements Binding {
 
-  private Key<?> key;
-  private GinjectorBindings childBindings;
+  private final Key<?> key;
+  private final GinjectorBindings childBindings;
   private final SourceWriteUtil sourceWriteUtil;
   private final GinjectorNameGenerator ginjectorNameGenerator;
 
-  @Inject
-  public ExposedChildBinding(SourceWriteUtil sourceWriteUtil, 
-      GinjectorNameGenerator ginjectorNameGenerator) {
+  ExposedChildBinding(SourceWriteUtil sourceWriteUtil,
+      GinjectorNameGenerator ginjectorNameGenerator, Key<?> key, GinjectorBindings childBindings) {
     this.sourceWriteUtil = sourceWriteUtil;
     this.ginjectorNameGenerator = ginjectorNameGenerator;
-  }
-
-  public void setKey(Key<?> key) {
-    this.key = key;
-  }
-
-  public void setChild(GinjectorBindings childBindings) {
-    this.childBindings = childBindings;
+    this.key = Preconditions.checkNotNull(key);
+    this.childBindings = Preconditions.checkNotNull(childBindings);
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) {
-    Preconditions.checkNotNull(childBindings);
     String childMethodName = childBindings.getNameGenerator().getGetterMethodName(key);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, String.format("return %s.%s();",
         ginjectorNameGenerator.getFieldName(childBindings), childMethodName));
@@ -65,6 +56,6 @@ public class ExposedChildBinding implements Binding {
 
   public Collection<Dependency> getDependencies() {
     // Don't need to do anything.  The binding is positioned in an earlier stage of resolution.
-    return Collections.<Dependency>emptySet();
+    return Collections.emptySet();
   }
 }

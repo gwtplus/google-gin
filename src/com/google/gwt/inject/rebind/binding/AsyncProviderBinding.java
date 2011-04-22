@@ -22,7 +22,6 @@ import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.lang.annotation.Annotation;
@@ -56,16 +55,12 @@ public class AsyncProviderBinding implements Binding {
   private final SourceWriteUtil sourceWriteUtil;
 
   private ParameterizedType providerType;
-  private Key<?> providerKey;
-  private Key<?> targetKey;
+  private final Key<?> providerKey;
+  private final Key<?> targetKey;
 
-  @Inject
-  public AsyncProviderBinding(SourceWriteUtil sourceWriteUtil) {
-    this.sourceWriteUtil = sourceWriteUtil;
-  }
-
-  public void setProviderKey(Key<?> providerKey) {
-    this.providerKey = providerKey;
+  AsyncProviderBinding(SourceWriteUtil sourceWriteUtil, Key<?> providerKey) {
+    this.sourceWriteUtil = Preconditions.checkNotNull(sourceWriteUtil);
+    this.providerKey = Preconditions.checkNotNull(providerKey);
     providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
 
     // Pass any binding annotation on the Provider to the thing we create
@@ -75,8 +70,6 @@ public class AsyncProviderBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
       NameGenerator nameGenerator) throws NoSourceNameException {
-    Preconditions.checkNotNull(providerType);
-
     String providerTypeName = ReflectUtil.getSourceName(providerType);
     String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
 
@@ -104,7 +97,6 @@ public class AsyncProviderBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {    
-    Preconditions.checkNotNull(targetKey);
     return Collections.singleton(new Dependency(providerKey, targetKey, false, true));
   }
 

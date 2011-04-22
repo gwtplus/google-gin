@@ -15,7 +15,6 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
@@ -23,7 +22,6 @@ import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.ProviderMethod;
@@ -42,17 +40,15 @@ public class ProviderMethodBinding implements Binding {
   private final SourceWriteUtil sourceWriteUtil;
 
   private MethodLiteral<?, Method> providerMethod;
-  private Class<?> moduleType;
-  private Key<?> targetKey;
+  private final Class<?> moduleType;
+  private final Key<?> targetKey;
   
-  @Inject
-  public ProviderMethodBinding(GuiceUtil guiceUtil, SourceWriteUtil sourceWriteUtil) {
+  ProviderMethodBinding(GuiceUtil guiceUtil, SourceWriteUtil sourceWriteUtil,
+      ProviderMethod<?> providerMethod) {
     this.guiceUtil = guiceUtil;
     this.sourceWriteUtil = sourceWriteUtil;
-  }
 
-  public void setProviderMethod(ProviderMethod providerMethod) {
-    moduleType = providerMethod.getInstance().getClass();
+    this.moduleType = providerMethod.getInstance().getClass();
     Method method = providerMethod.getMethod();
     this.providerMethod = MethodLiteral.get(method, TypeLiteral.get(method.getDeclaringClass()));
     this.targetKey = providerMethod.getKey();
@@ -72,8 +68,6 @@ public class ProviderMethodBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
-    Preconditions.checkNotNull(providerMethod, 
-        "Must call setProviderMethod after creating ProviderMethodBinding");
     Collection<Dependency> dependencies = guiceUtil.getDependencies(targetKey, providerMethod);
     dependencies.add(new Dependency(Dependency.GINJECTOR, targetKey));
     return dependencies;

@@ -48,7 +48,7 @@ public class GinjectorBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
-    return Collections.<Dependency>singletonList(
+    return Collections.singletonList(
         new Dependency(Dependency.GINJECTOR, Key.get(ginjectorInterface)));
   }
 }

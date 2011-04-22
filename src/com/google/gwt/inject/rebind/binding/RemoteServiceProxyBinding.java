@@ -20,7 +20,6 @@ import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.client.rpc.RemoteService;
-import com.google.inject.Inject;
 import com.google.inject.TypeLiteral;
 
 /**
@@ -42,9 +41,9 @@ public class RemoteServiceProxyBinding extends CallGwtDotCreateBinding {
         && hasSynchronousServiceInterface(type);
   }
 
-  @Inject
-  public RemoteServiceProxyBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil) {
-    super(sourceWriteUtil, guiceUtil);
+  RemoteServiceProxyBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
+      TypeLiteral<?> type) {
+    super(sourceWriteUtil, guiceUtil, type);
   }
 
   @Override

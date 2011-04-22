@@ -19,7 +19,6 @@ import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.util.ArrayList;
@@ -32,32 +31,22 @@ public class BindClassBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
 
-  private Key<?> sourceClassKey;
-  private Key<?> boundClassKey;
+  private final Key<?> sourceClassKey;
+  private final Key<?> boundClassKey;
 
-  @Inject
-  public BindClassBinding(SourceWriteUtil sourceWriteUtil) {
+  BindClassBinding(SourceWriteUtil sourceWriteUtil, Key<?> boundClassKey, Key<?> sourceClassKey) {
     this.sourceWriteUtil = sourceWriteUtil;
-  }
-  
-  public void setSourceClassKey(Key<?> sourceClassKey) {
-    this.sourceClassKey = sourceClassKey;
-  }
-
-  public void setBoundClassKey(Key<?> boundClassKey) {
-    this.boundClassKey = boundClassKey;
+    this.boundClassKey = Preconditions.checkNotNull(boundClassKey);
+    this.sourceClassKey = Preconditions.checkNotNull(sourceClassKey);
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
       NameGenerator nameGenerator) {
-    Preconditions.checkNotNull(boundClassKey);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
         "return " + nameGenerator.getGetterMethodName(boundClassKey) + "();");
   }
 
   public Collection<Dependency> getDependencies() {
-    Preconditions.checkNotNull(boundClassKey);
-    Preconditions.checkNotNull(sourceClassKey);
     Collection<Dependency> dependencies = new ArrayList<Dependency>();
     dependencies.add(new Dependency(Dependency.GINJECTOR, sourceClassKey));
     dependencies.add(new Dependency(sourceClassKey, boundClassKey));

@@ -24,8 +24,8 @@ import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
 import com.google.gwt.inject.rebind.adapter.PrivateGinModuleAdapter;
 import com.google.gwt.inject.rebind.binding.BindingContext;
+import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.FactoryBinding;
-import com.google.gwt.inject.rebind.binding.GinjectorBinding;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
@@ -40,6 +40,8 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.spi.Elements;
 import com.google.inject.util.Modules;
 
+import javax.inject.Provider;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -48,8 +50,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import javax.inject.Provider;
 
 /**
  * Builds up the bindings and scopes for this {@code Ginjector}.  This uses
@@ -63,8 +63,7 @@ class BindingsProcessor {
    */
   private final MemberCollector completeCollector;
 
-  private final Provider<FactoryBinding> factoryBindingProvider;
-  private final Provider<GinjectorBinding> ginjectorBindingProvider;
+  private final BindingFactory bindingFactory;
 
   /**
    * Interface of the injector that this class is implementing.
@@ -78,10 +77,9 @@ class BindingsProcessor {
   private final LieToGuiceModule lieToGuiceModule;
 
   private final ErrorManager errorManager;
-
   private final GinjectorBindings rootGinjectorBindings;
-
   private final GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory;
+
   /**
    * Modules specified via a GWT configuration property
    */
@@ -91,16 +89,14 @@ class BindingsProcessor {
   BindingsProcessor(Provider<MemberCollector> collectorProvider,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
       LieToGuiceModule lieToGuiceModule,
-      Provider<FactoryBinding> factoryBindingProvider,
-      Provider<GinjectorBinding> ginjectorBindingProvider,
       ErrorManager errorManager,
       @RootBindings GinjectorBindings rootGinjectorBindings,
       GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory,
-      @ConfigurationModuleTypes Set<Class<? extends GinModule>> configurationModules) {
-    this.ginjectorBindingProvider = ginjectorBindingProvider;
+      @ConfigurationModuleTypes Set<Class<? extends GinModule>> configurationModules,
+      BindingFactory bindingFactory) {
+    this.bindingFactory = bindingFactory;
     this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
     this.lieToGuiceModule = lieToGuiceModule;
-    this.factoryBindingProvider = factoryBindingProvider;
     this.errorManager = errorManager;
     this.rootGinjectorBindings = rootGinjectorBindings;
     this.guiceElementVisitorFactory = guiceElementVisitorFactory;
@@ -130,9 +126,8 @@ class BindingsProcessor {
    * Create an explicit binding for the Ginjector.
    */
   private void registerGinjectorBinding() {
-    GinjectorBinding ginjectorBinding = ginjectorBindingProvider.get();
     Key<? extends Ginjector> ginjectorKey = Key.get(ginjectorInterface);
-    rootGinjectorBindings.addBinding(ginjectorKey, ginjectorBinding, 
+    rootGinjectorBindings.addBinding(ginjectorKey, bindingFactory.getGinjectorBinding(),
         BindingContext.forText("Default binding added by Gin for the Ginjector.  There shouldn't be"
             + " anything in the module(s) bound to " + ginjectorKey));
     lieToGuiceModule.registerImplicitBinding(ginjectorKey);
@@ -164,9 +159,10 @@ class BindingsProcessor {
     for (final FactoryModule<?> factoryModule : bindings.getFactoryModules()) {
       lieToGuiceModule.registerImplicitBinding(factoryModule.getFactoryType());
 
-      FactoryBinding binding = factoryBindingProvider.get();
+      FactoryBinding binding;
       try {
-        binding.setKeyAndCollector(factoryModule.getFactoryType(), factoryModule.getBindings());
+        binding = bindingFactory.getFactoryBinding(factoryModule.getBindings(),
+            factoryModule.getFactoryType());
       } catch (ConfigurationException e) {
         errorManager.logError("Factory " + factoryModule.getFactoryType()
             + " could not be created: ", e);

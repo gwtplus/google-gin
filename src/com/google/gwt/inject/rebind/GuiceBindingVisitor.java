@@ -16,12 +16,10 @@
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.inject.rebind.adapter.GwtDotCreateProvider;
-import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
-import com.google.gwt.inject.rebind.binding.BindProviderBinding;
 import com.google.gwt.inject.rebind.binding.BindingContext;
+import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.Dependency;
-import com.google.gwt.inject.rebind.binding.ProviderMethodBinding;
 import com.google.inject.Key;
 import com.google.inject.Scope;
 import com.google.inject.Singleton;
@@ -36,10 +34,10 @@ import com.google.inject.spi.ProviderInstanceBinding;
 import com.google.inject.spi.ProviderKeyBinding;
 import com.google.inject.spi.UntargettedBinding;
 
+import javax.inject.Provider;
+
 import java.lang.annotation.Annotation;
 import java.util.List;
-
-import javax.inject.Provider;
 
 /**
  * Gathers information about Guice Bindings and adds the information to a {@link GinjectorBindings}.
@@ -49,36 +47,23 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
 
   private final Key<T> targetKey;
   private final List<Message> messages;
-  private final Provider<BindProviderBinding> bindProviderBindingProvider;
-  private final Provider<ProviderMethodBinding> providerMethodBindingProvider;
-  private final Provider<BindClassBinding> bindClassBindingProvider;
-  private final Provider<BindConstantBinding> bindConstantBindingProvider;
   private final GinjectorBindings bindingsCollection;
   private final LieToGuiceModule lieToGuiceModule;
+  private final BindingFactory bindingFactory;
 
-  public GuiceBindingVisitor(
-      Provider<BindProviderBinding> bindProviderBindingProvider,
-      Provider<ProviderMethodBinding> providerMethodBindingProvider,
-      Provider<BindClassBinding> bindClassBindingProvider,
-      Provider<BindConstantBinding> bindConstantBindingProvider,
-      LieToGuiceModule lieToGuiceModule,
-      Key<T> targetKey, List<Message> messages,
-      GinjectorBindings bindingsCollection) {
-    this.bindProviderBindingProvider = bindProviderBindingProvider;
-    this.providerMethodBindingProvider = providerMethodBindingProvider;
-    this.bindClassBindingProvider = bindClassBindingProvider;
-    this.bindConstantBindingProvider = bindConstantBindingProvider;
+  public GuiceBindingVisitor(LieToGuiceModule lieToGuiceModule, Key<T> targetKey,
+      List<Message> messages, GinjectorBindings bindingsCollection, BindingFactory bindingFactory) {
     this.lieToGuiceModule = lieToGuiceModule;
     this.targetKey = targetKey;
     this.messages = messages;
     this.bindingsCollection = bindingsCollection;
+    this.bindingFactory = bindingFactory;
   }
 
   public Void visit(ProviderKeyBinding<? extends T> providerKeyBinding) {
-    BindProviderBinding binding = bindProviderBindingProvider.get();
-    binding.setProviderKey(providerKeyBinding.getProviderKey());
-    binding.setSourceKey(providerKeyBinding.getKey());
-    bindingsCollection.addBinding(targetKey, binding, 
+    bindingsCollection.addBinding(targetKey,
+        bindingFactory.getBindProviderBinding(
+            providerKeyBinding.getProviderKey(), providerKeyBinding.getKey()),
         BindingContext.forElement(providerKeyBinding));
 
     return null;
@@ -90,9 +75,8 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
     // provider methods
     Provider<? extends T> provider = providerInstanceBinding.getProviderInstance();
     if (provider instanceof ProviderMethod) {
-      ProviderMethodBinding binding = providerMethodBindingProvider.get();
-      binding.setProviderMethod((ProviderMethod<?>) provider);
-      bindingsCollection.addBinding(targetKey, binding, 
+      bindingsCollection.addBinding(targetKey,
+          bindingFactory.getProviderMethodBinding((ProviderMethod) provider),
           BindingContext.forElement(providerInstanceBinding));
       return null;
     }
@@ -107,20 +91,18 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   }
 
   public Void visit(LinkedKeyBinding<? extends T> linkedKeyBinding) {
-    BindClassBinding binding = bindClassBindingProvider.get();
-    binding.setSourceClassKey(targetKey);
-    binding.setBoundClassKey(linkedKeyBinding.getLinkedKey());
-    bindingsCollection.addBinding(targetKey, 
-        binding, BindingContext.forElement(linkedKeyBinding));
+    bindingsCollection.addBinding(targetKey,
+        bindingFactory.getBindClassBinding(linkedKeyBinding.getLinkedKey(), targetKey),
+        BindingContext.forElement(linkedKeyBinding));
     return null;
   }
 
   public Void visit(InstanceBinding<? extends T> instanceBinding) {
     T instance = instanceBinding.getInstance();
     if (BindConstantBinding.isConstantKey(targetKey)) {
-      BindConstantBinding binding = bindConstantBindingProvider.get();
-      binding.setKeyAndInstance(targetKey, instance);
-      bindingsCollection.addBinding(targetKey, binding, BindingContext.forElement(instanceBinding));
+      bindingsCollection.addBinding(targetKey,
+          bindingFactory.getBindConstantBinding(targetKey, instance),
+          BindingContext.forElement(instanceBinding));
     } else {
       messages.add(new Message(instanceBinding.getSource(),
           "Instance binding not supported; key=" + targetKey + " inst=" + instance));

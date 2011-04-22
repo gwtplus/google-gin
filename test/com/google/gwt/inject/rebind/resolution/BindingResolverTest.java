@@ -34,15 +34,14 @@ import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingContext;
+import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCreationException;
 import com.google.inject.Key;
 import com.google.inject.util.Providers;
-
 import junit.framework.TestCase;
-
 import org.easymock.Capture;
 import org.easymock.classextension.EasyMock;
 import org.easymock.classextension.IMocksControl;
@@ -67,7 +66,9 @@ public class BindingResolverTest extends TestCase {
   private IMocksControl control;
   private BindingResolver bindingResolver;
   private TreeLogger treeLogger;
-  
+
+  private BindingFactory bindingFactory;
+
   private void replay() {
     control.replay();
   }
@@ -83,12 +84,13 @@ public class BindingResolverTest extends TestCase {
     parentBinding = control.createMock("parentBinding", ParentBinding.class);
     bindingCreator = control.createMock("bindingCreator", ImplicitBindingCreator.class);
     errorManager = control.createMock("errorManager", ErrorManager.class);
-    
+    bindingFactory = control.createMock("bindingFactory", BindingFactory.class);
+
     bindingResolver = new BindingResolver(
         Providers.of(new DependencyExplorer(bindingCreator, treeLogger)), 
         Providers.of(new UnresolvedBindingValidator(
             new EagerCycleFinder(errorManager), errorManager)), 
-        Providers.of(new BindingInstaller(Providers.of(parentBinding), new BindingPositioner())));
+        Providers.of(new BindingInstaller(new BindingPositioner(), bindingFactory)));
   }
   
   private GinjectorBindings createInjectorNode(String name) {
@@ -158,8 +160,7 @@ public class BindingResolverTest extends TestCase {
   }
   
   private void expectParentBinding(Key<?> key, GinjectorBindings parent, GinjectorBindings dest) {
-    parentBinding.setKey(key);
-    parentBinding.setParent(parent);
+    expect(bindingFactory.getParentBinding(key, parent)).andReturn(parentBinding);
     dest.addBinding(eq(key), eq(parentBinding), isA(BindingContext.class));
   }
   

@@ -22,7 +22,6 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
-
 import junit.framework.TestCase;
 
 import java.util.Collections;
@@ -31,11 +30,10 @@ import java.util.List;
 public class FactoryBindingTest extends TestCase {
 
   public void testTooManyParams() {
-    FactoryBinding binding = new FactoryBinding(null);
 
     try {
-      binding.setKeyAndCollector(Key.get(BrokenBeetleFactory.class),
-          Collections.<Key<?>, TypeLiteral<?>>emptyMap());
+      new FactoryBinding(null, Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
+          Key.get(BrokenBeetleFactory.class));
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("no constructors"));
@@ -43,11 +41,10 @@ public class FactoryBindingTest extends TestCase {
   }
 
   public void testMismatchingParams() {
-    FactoryBinding binding = new FactoryBinding(null);
 
     try {
-      binding.setKeyAndCollector(Key.get(BrokenGolfFactory.class),
-          Collections.<Key<?>, TypeLiteral<?>>emptyMap());
+      new FactoryBinding(null, Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
+          Key.get(BrokenGolfFactory.class));
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("has @AssistedInject constructors"));

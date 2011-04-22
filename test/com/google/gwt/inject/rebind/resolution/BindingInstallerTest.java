@@ -25,14 +25,12 @@ import static org.easymock.EasyMock.isA;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingContext;
+import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
 import com.google.inject.Key;
-import com.google.inject.Provider;
-
 import junit.framework.TestCase;
-
 import org.easymock.classextension.EasyMock;
 import org.easymock.classextension.IMocksControl;
 
@@ -52,7 +50,7 @@ public class BindingInstallerTest extends TestCase {
   private GinjectorBindings root;
   private GinjectorBindings child;
   
-  private Provider<ParentBinding> parentBindingProvider;
+  private BindingFactory bindingFactory;
   private BindingInstaller installer;
   
   @SuppressWarnings("unchecked")
@@ -66,11 +64,11 @@ public class BindingInstallerTest extends TestCase {
     root = control.createMock("root", GinjectorBindings.class);
     child = control.createMock("child", GinjectorBindings.class);
     
-    parentBindingProvider = control.createMock(Provider.class);
+    bindingFactory = control.createMock(BindingFactory.class);
 
     expect(output.getGraph()).andStubReturn(graph);
     positions.position(output);
-    installer = new BindingInstaller(parentBindingProvider, positions);
+    installer = new BindingInstaller(positions, bindingFactory);
     expect(graph.getOrigin()).andStubReturn(child);
   }
   
@@ -96,10 +94,8 @@ public class BindingInstallerTest extends TestCase {
     
     // Parent Binding to make bar available to child
     ParentBinding barBinding = control.createMock("barBinding", ParentBinding.class);
-    barBinding.setKey(bar());
-    barBinding.setParent(root);
     expect(child.isBound(bar())).andReturn(false);
-    expect(parentBindingProvider.get()).andReturn(barBinding);
+    expect(bindingFactory.getParentBinding(bar(), root)).andReturn(barBinding);
     
     // Implicit binding for Foo
     Binding fooBinding = control.createMock("fooBinding", Binding.class);
@@ -131,10 +127,8 @@ public class BindingInstallerTest extends TestCase {
     
     // Parent Binding to make bar available to child
     ParentBinding barBinding = control.createMock("barBinding", ParentBinding.class);
-    barBinding.setKey(bar());
-    barBinding.setParent(root);
     expect(child.isBound(bar())).andReturn(false);
-    expect(parentBindingProvider.get()).andReturn(barBinding);
+    expect(bindingFactory.getParentBinding(bar(), root)).andReturn(barBinding);
 
     // Implicit binding for Bar
     Binding bazBinding = control.createMock("bazBinding", Binding.class);

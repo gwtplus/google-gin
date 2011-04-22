@@ -21,7 +21,6 @@ import com.google.gwt.inject.rebind.GinjectorNameGenerator;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.util.Collection;
@@ -36,24 +35,17 @@ import java.util.Collections;
  */
 public class ParentBinding implements Binding {
 
-  private Key<?> key;
-  private GinjectorBindings parentBindings;
+  private final Key<?> key;
+  private final GinjectorBindings parentBindings;
   private SourceWriteUtil sourceWriteUtil;
   private GinjectorNameGenerator ginjectorNameGenerator;
 
-  @Inject
-  public ParentBinding(SourceWriteUtil sourceWriteUtil,
-      GinjectorNameGenerator ginjectorNameGenerator) {
+  ParentBinding(SourceWriteUtil sourceWriteUtil, GinjectorNameGenerator ginjectorNameGenerator,
+      Key<?> key, GinjectorBindings parentBindings) {
     this.sourceWriteUtil = sourceWriteUtil;
     this.ginjectorNameGenerator = ginjectorNameGenerator;
-  }
-
-  public void setKey(Key<?> key) {
-    this.key = key;
-  }
-
-  public void setParent(GinjectorBindings parentBindings) {
-    this.parentBindings = parentBindings;
+    this.key = Preconditions.checkNotNull(key);
+    this.parentBindings = Preconditions.checkNotNull(parentBindings);
   }
   
   public GinjectorBindings getParentBindings() {
@@ -62,7 +54,6 @@ public class ParentBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) {
-    Preconditions.checkNotNull(parentBindings);
     String parentMethodName = parentBindings.getNameGenerator().getGetterMethodName(key);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, 
         String.format("return %s.this.%s();", ginjectorNameGenerator.getClassName(parentBindings),
@@ -72,6 +63,6 @@ public class ParentBinding implements Binding {
   public Collection<Dependency> getDependencies() {
     // ParentBindings are only added *after* resolution has happened, so their dependencies don't
     // matter
-    return Collections.<Dependency>emptyList();
+    return Collections.emptyList();
   }
 }

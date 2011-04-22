@@ -19,6 +19,8 @@ import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.rebind.binding.BindingFactory;
+import com.google.gwt.inject.rebind.binding.BindingFactoryImpl;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
@@ -74,6 +76,7 @@ class GinjectorGeneratorModule extends AbstractModule {
     bind(new TypeLiteral<Set<Class<? extends GinModule>>>(){})
         .annotatedWith(ConfigurationModuleTypes.class)
         .toInstance(configurationModules);
+    bind(BindingFactory.class).to(BindingFactoryImpl.class);
   }
 
   @Provides

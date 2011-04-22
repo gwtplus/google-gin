@@ -21,7 +21,6 @@ import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.lang.annotation.Annotation;
@@ -37,28 +36,22 @@ import java.util.Collections;
 public class ImplicitProviderBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
+  private final ParameterizedType providerType;
+  private final Key<?> targetKey;
+  private final Key<?> providerKey;
 
-  private ParameterizedType providerType;
-  private Key<?> targetKey;
-  private Key<?> providerKey;
-
-  @Inject
-  public ImplicitProviderBinding(SourceWriteUtil sourceWriteUtil) {
+  ImplicitProviderBinding(SourceWriteUtil sourceWriteUtil, Key<?> providerKey) {
     this.sourceWriteUtil = sourceWriteUtil;
-  }
-
-  public void setProviderKey(Key<?> providerKey) {
-    this.providerKey = providerKey;
-    providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
+    this.providerKey = Preconditions.checkNotNull(providerKey);
+    this.providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
 
     // Pass any binding annotation on the Provider to the thing we create
     Type targetType = providerType.getActualTypeArguments()[0];
-    targetKey = getKeyWithSameAnnotation(targetType, providerKey);
+    this.targetKey = getKeyWithSameAnnotation(targetType, providerKey);
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) throws NoSourceNameException {
-    Preconditions.checkNotNull(providerType);
     String providerTypeName = ReflectUtil.getSourceName(providerType);
     String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
@@ -70,8 +63,7 @@ public class ImplicitProviderBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
-    Preconditions.checkNotNull(targetKey, "Must call setProviderKey before resolution");
-    return Collections.<Dependency>singleton(new Dependency(providerKey, targetKey, false, true));
+    return Collections.singleton(new Dependency(providerKey, targetKey, false, true));
   }
 
   // TODO(schmitt): Remove duplication with AsyncProviderBinding.

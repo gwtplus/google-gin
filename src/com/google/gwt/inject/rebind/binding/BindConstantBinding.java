@@ -20,7 +20,6 @@ import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 
 import java.lang.reflect.Type;
@@ -30,11 +29,11 @@ import java.util.Collections;
 /**
  * Binding for a constant value.
  */
-public class BindConstantBinding implements Binding {
+public class BindConstantBinding<T> implements Binding {
 
-  private String valueToOutput;
   private final SourceWriteUtil sourceWriteUtil;
-  private Key<?> key;
+  private final String valueToOutput;
+  private final Key<?> key;
 
   /**
    * Returns true if the provided key is a valid constant key, i.e. if a
@@ -56,34 +55,27 @@ public class BindConstantBinding implements Binding {
         || clazz.isEnum();
   }
 
-  @Inject
-  public BindConstantBinding(SourceWriteUtil sourceWriteUtil) {
+  BindConstantBinding(SourceWriteUtil sourceWriteUtil, Key<T> key, T instance) {
     this.sourceWriteUtil = sourceWriteUtil;
+    this.key = Preconditions.checkNotNull(key);
+    this.valueToOutput = getValueToOutput(key, Preconditions.checkNotNull(instance));
   }
 
-  /**
-   * Sets this binding's key and instance.  Must be called before
-   * writeCreatorMethod is invoked.
-   *
-   * @param key key to bind to
-   * @param instance value to bind  to
-   */
-  public <T> void setKeyAndInstance(Key<T> key, T instance) {
-    this.key = key;
+  private static <T> String getValueToOutput(Key<T> key, T instance) {
     Type type = key.getTypeLiteral().getType();
 
     if (type == String.class) {
-      valueToOutput = "\"" + Generator.escape(instance.toString()) + "\"";
+      return "\"" + Generator.escape(instance.toString()) + "\"";
     } else if (type == Character.class) {
-      valueToOutput = "'" + (Character.valueOf('\'').equals(instance) ? "\\" : "") + instance + "'";
+      return "'" + (Character.valueOf('\'').equals(instance) ? "\\" : "") + instance + "'";
     } else if (type == Float.class) {
-      valueToOutput = instance.toString() + "f";
+      return instance.toString() + "f";
     } else if (type == Long.class) {
-      valueToOutput = instance.toString() + "L";
+      return instance.toString() + "L";
     } else if (type == Double.class) {
-      valueToOutput = instance.toString() + "d";
+      return instance.toString() + "d";
     } else if (instance instanceof Number || instance instanceof Boolean) {
-      valueToOutput = instance.toString(); // Includes int & short.
+      return instance.toString(); // Includes int & short.
     } else if (instance instanceof Enum) {
       Class<?> clazz = instance.getClass();
 
@@ -97,7 +89,7 @@ public class BindConstantBinding implements Binding {
       }
       String className = clazz.getCanonicalName();
 
-      valueToOutput = className + "." + ((Enum) instance).name();
+      return className + "." + ((Enum) instance).name();
     } else {
       throw new IllegalArgumentException("Attempted to create a constant binding with a "
           + "non-constant type: " + type);
@@ -106,12 +98,10 @@ public class BindConstantBinding implements Binding {
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) {
-    Preconditions.checkNotNull(valueToOutput);
     sourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return " + valueToOutput + ";");
   }
 
   public Collection<Dependency> getDependencies() {
-    Preconditions.checkNotNull(key, "Must call setKeyAndInstance before getDependencies");
-    return Collections.<Dependency>singletonList(new Dependency(Dependency.GINJECTOR, key));
+    return Collections.singletonList(new Dependency(Dependency.GINJECTOR, key));
   }
 }
