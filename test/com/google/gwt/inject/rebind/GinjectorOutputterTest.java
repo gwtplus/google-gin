@@ -69,8 +69,9 @@ public class GinjectorOutputterTest extends TestCase {
 
     replay(bindings, sourceWriteUtil);
 
-    new GinjectorOutputter(TreeLogger.NULL, collectorProvider, sourceWriteUtil, null, null, null,
-        FakeGinjector.class, null, null).outputStaticInjections(bindings);
+    GinjectorOutputter ginjectorOutputter = new GinjectorOutputter(TreeLogger.NULL,
+        collectorProvider, sourceWriteUtil, null, null, null, FakeGinjector.class, null, null);
+    ginjectorOutputter.outputStaticInjections(bindings, new StringBuilder());
 
     verify(sourceWriteUtil);
 

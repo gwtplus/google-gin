@@ -86,12 +86,7 @@ class GinjectorOutputter {
    * Writer to append Java code for our implementation class.
    */
   private SourceWriter writer;
-
-  /**
-   * Body for the Ginjector's constructor.
-   */
-  private StringBuilder constructorBody = new StringBuilder();
-
+  
   private final ErrorManager errorManager;
   private final GinjectorNameGenerator ginjectorNameGenerator;
   
@@ -147,8 +142,6 @@ class GinjectorOutputter {
       logger.log(TreeLogger.Type.ERROR, e.getMessage(), e);
     }
 
-    writeConstructor(implClassName);
-
     writer.commit(logger);
   }
 
@@ -178,22 +171,26 @@ class GinjectorOutputter {
       writer.endJavaDocComment();
       writer.println("private final %1$s %2$s = new %1$s();", className, fieldName);
     }
+
+    StringBuilder constructorBody = new StringBuilder();
     
     outputMemberInjections(bindings);
-    outputStaticInjections(bindings);
+    outputStaticInjections(bindings, constructorBody);
 
     // Output the actual bindings
     for (Map.Entry<Key<?>, BindingEntry> entry : bindings.getBindings()) {
       outputBinding(bindings.getNameGenerator(), entry.getKey(), entry.getValue(),
-          bindings.determineScope(entry.getKey()));
+          bindings.determineScope(entry.getKey()), constructorBody);
     }
+
+    writeConstructor(ginjectorNameGenerator.getClassName(bindings), constructorBody);
   }
 
   /**
    * Output the the creator/getter methods for the given binding.
    */
   private void outputBinding(NameGenerator nameGenerator, Key<?> key, BindingEntry bindingEntry,
-      GinScope scope) {
+      GinScope scope, StringBuilder constructorBody) {
     Binding binding = bindingEntry.getBinding();
     BindingContext bindingContext = bindingEntry.getBindingContext();
 
@@ -221,7 +218,7 @@ class GinjectorOutputter {
     switch (scope) {
       case EAGER_SINGLETON:
         constructorBody.append("// Eager singleton bound at:\n");
-        appendBindingContextCommentToConstructor(bindingContext);
+        appendBindingContextCommentToConstructor(bindingContext, constructorBody);
         constructorBody.append(getter).append("();\n");
         // $FALL-THROUGH$
       case SINGLETON:
@@ -255,7 +252,8 @@ class GinjectorOutputter {
     writer.println();
   }
 
-  private void appendBindingContextCommentToConstructor(BindingContext bindingContext) {
+  private void appendBindingContextCommentToConstructor(BindingContext bindingContext,
+      StringBuilder constructorBody) {
     for(String line : bindingContext.toString().split("\n")) {
       constructorBody.append("//   ").append(line).append("\n");
     }
@@ -289,7 +287,7 @@ class GinjectorOutputter {
   }
 
   // Visible for tests.
-  void outputStaticInjections(GinjectorBindings bindings) {
+  void outputStaticInjections(GinjectorBindings bindings, StringBuilder constructorBody) {
     NameGenerator nameGenerator = bindings.getNameGenerator();
 
     for (Class<?> type : bindings.getStaticInjectionRequests()) {
@@ -329,7 +327,7 @@ class GinjectorOutputter {
     }
   }
 
-  private void writeConstructor(String implClassName) {
+  private void writeConstructor(String implClassName, StringBuilder constructorBody) {
     sourceWriteUtil.writeMethod(writer, "public " + implClassName + "()",
         constructorBody.toString());
   }

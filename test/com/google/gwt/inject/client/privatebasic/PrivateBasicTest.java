@@ -25,6 +25,7 @@ import com.google.gwt.inject.client.privatebasic.PrivateBasicTest.GameModule.Val
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Exposed;
+import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 
@@ -49,6 +50,10 @@ public class PrivateBasicTest extends GWTTestCase {
     assertNotNull(card);
     assertEquals("Spade", card.suit);
     assertEquals("2", card.value);
+  }
+
+  public void testEagerInjection() {
+    GWT.create(Injector.class);
   }
 
   @Override
@@ -124,4 +129,25 @@ public class PrivateBasicTest extends GWTTestCase {
       return cards;
     }
   }
+
+  @GinModules({TestGinModule.class})
+  public interface Injector extends Ginjector {
+  }
+
+  public static class TestGinModule extends PrivateGinModule {
+
+    @Override
+    protected void configure() {
+      bind(Implementation.class).asEagerSingleton();
+      bind(SubInterface.class).to(SubImplementation.class);
+    }
+  }
+
+  public static class Implementation {
+    @Inject Implementation(SubInterface subInterface) {}
+  }
+
+  public interface SubInterface {}
+
+  public static class SubImplementation implements SubInterface {}
 }
