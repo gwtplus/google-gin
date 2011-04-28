@@ -50,7 +50,6 @@ abstract class CreatorBinding implements Binding {
     this.guiceUtil = guiceUtil;
 
     this.type = Preconditions.checkNotNull(type);
-    dependencies.add(new Dependency(Dependency.GINJECTOR, Key.get(type)));
     dependencies.addAll(guiceUtil.getMemberInjectionDependencies(Key.get(type), type));
   }
 
