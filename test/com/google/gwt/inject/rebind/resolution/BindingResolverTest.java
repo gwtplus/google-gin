@@ -55,6 +55,8 @@ import java.util.Set;
 
 public class BindingResolverTest extends TestCase {
 
+  private static final String SOURCE = "source";
+
   // List to record binding collections that we mock so that they don't get GC'd and have
   // false failures due to finalize being called
   private List<GinjectorBindings> nodes = new ArrayList<GinjectorBindings>();
@@ -160,8 +162,9 @@ public class BindingResolverTest extends TestCase {
   }
   
   private void expectParentBinding(Key<?> key, GinjectorBindings parent, GinjectorBindings dest) {
-    expect(bindingFactory.getParentBinding(key, parent)).andReturn(parentBinding);
-    dest.addBinding(eq(key), eq(parentBinding), isA(BindingContext.class));
+    expect(bindingFactory.getParentBinding(eq(key), eq(parent), isA(BindingContext.class)))
+        .andReturn(parentBinding);
+    dest.addBinding(key, parentBinding);
   }
   
   private void replayAndResolve(GinjectorBindings origin, Dependency... unresolved) {
@@ -188,7 +191,7 @@ public class BindingResolverTest extends TestCase {
     bind(bar(), tree.root);
     bind(baz(), tree.root);
     
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), tree.root, tree.childLL);
     
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -204,7 +207,7 @@ public class BindingResolverTest extends TestCase {
     bind(baz(), tree.root);
     
 
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), tree.root, tree.childLL);
     
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -218,7 +221,7 @@ public class BindingResolverTest extends TestCase {
     bind(baz(), tree.root);
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
 
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), tree.root, tree.childLL);
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -231,7 +234,7 @@ public class BindingResolverTest extends TestCase {
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
     
     expectParentBinding(bar(), tree.root, tree.childL); // childL gets Bar from root
-    tree.childL.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    tree.childL.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), tree.childL, tree.childLL); // childLL gets foo from childL
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -252,7 +255,7 @@ public class BindingResolverTest extends TestCase {
     expect(bindingCreator.create(baz())).andThrow(new BindingCreationException("Unable to create"));
     bind(bar(), tree.root);
 
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), tree.root, tree.childLL); // childLL gets foo from childL
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -266,7 +269,7 @@ public class BindingResolverTest extends TestCase {
     Binding fooBinding = expectCreateBinding(foo(), optional(foo(), bar()));
     expectCreateBinding(bar(), required(bar(), baz()));
     expect(bindingCreator.create(baz())).andThrow(new BindingCreationException("Unable to create"));
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), tree.root, tree.childLL);
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -283,7 +286,7 @@ public class BindingResolverTest extends TestCase {
     bind(baz(), tree.childLL);
     expect(tree.childL.isBoundInChild(baz())).andReturn(true);
 
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), tree.root, tree.childL);
     replayAndResolve(tree.childL, required(Dependency.GINJECTOR, foo()));
   }
@@ -339,7 +342,7 @@ public class BindingResolverTest extends TestCase {
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
     bind(bar(), root);
     bind(baz(), root);
-    root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    root.addBinding(foo(), fooBinding);
         
     replayAndResolve(root, required(Dependency.GINJECTOR, foo()));
   }
@@ -360,9 +363,9 @@ public class BindingResolverTest extends TestCase {
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
     Binding barBinding = expectCreateBinding(bar());
     
-    childR.addBinding(eq(bar()), eq(barBinding), isA(BindingContext.class));
+    childR.addBinding(bar(), barBinding);
     expectParentBinding(baz(), root, childR);
-    childR.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    childR.addBinding(foo(), fooBinding);
         
     replayAndResolve(childR, required(Dependency.GINJECTOR, foo()));
   }
@@ -395,7 +398,7 @@ public class BindingResolverTest extends TestCase {
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), baz()), optional(foo(), bar()));
     expectCreateBinding(bar());
 
-    root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    root.addBinding(foo(), fooBinding);
         
     replayAndResolve(root, required(Dependency.GINJECTOR, foo()));
   }
@@ -413,7 +416,7 @@ public class BindingResolverTest extends TestCase {
     bindChild(baz(), root);
     
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
-    root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    root.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), root, child3);
         
     replayAndResolve(child3, required(Dependency.GINJECTOR, foo()));
@@ -429,10 +432,9 @@ public class BindingResolverTest extends TestCase {
     Binding providerFooBinding = expectCreateBinding(providerFoo(), 
         requiredLazy(providerFoo(), foo()));
     
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
-    tree.root.addBinding(eq(bar()), eq(barBinding), isA(BindingContext.class));
-    tree.root.addBinding(eq(providerFoo()), eq(providerFooBinding),
-        isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
+    tree.root.addBinding(bar(), barBinding);
+    tree.root.addBinding(providerFoo(), providerFooBinding);
     expectParentBinding(foo(), tree.root, tree.childLL);
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -448,9 +450,8 @@ public class BindingResolverTest extends TestCase {
     Binding providerFooBinding = expectCreateBinding(
         asyncProviderFoo(), requiredLazy(asyncProviderFoo(), foo()));
     
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
-    tree.root.addBinding(eq(asyncProviderFoo()), eq(providerFooBinding), 
-        isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
+    tree.root.addBinding(asyncProviderFoo(), providerFooBinding);
     expectParentBinding(foo(), tree.root, tree.childLL);
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -468,10 +469,9 @@ public class BindingResolverTest extends TestCase {
     Binding barBinding = expectCreateBinding(bar(), required(bar(), foo()), required(bar(), baz()));
     bind(baz(), tree.childL);
     
-    tree.childL.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
-    tree.childL.addBinding(eq(providerBar()), eq(providerBarBinding), 
-        isA(BindingContext.class));
-    tree.childL.addBinding(eq(bar()), eq(barBinding), isA(BindingContext.class));
+    tree.childL.addBinding(foo(), fooBinding);
+    tree.childL.addBinding(providerBar(), providerBarBinding);
+    tree.childL.addBinding(bar(), barBinding);
     expectParentBinding(foo(), tree.childL, tree.childLL);
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -491,10 +491,9 @@ public class BindingResolverTest extends TestCase {
     Binding barBinding = expectCreateBinding(bar(), required(bar(), foo()));
     bind(baz(), tree.childL);
     
-    tree.childL.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
-    tree.childL.addBinding(
-        eq(providerBar()), eq(providerBarBinding), isA(BindingContext.class));
-    tree.childL.addBinding(eq(bar()), eq(barBinding), isA(BindingContext.class));
+    tree.childL.addBinding(foo(), fooBinding);
+    tree.childL.addBinding(providerBar(), providerBarBinding);
+    tree.childL.addBinding(bar(), barBinding);
     expectParentBinding(foo(), tree.childL, tree.childLL);
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -510,11 +509,10 @@ public class BindingResolverTest extends TestCase {
         providerBar(), requiredLazy(providerBar(), bar()));
     Binding barBinding = expectCreateBinding(bar(), required(bar(), foo()));
     
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
-    tree.root.addBinding(eq(providerBar()), eq(providerBarBinding), 
-        isA(BindingContext.class));
-    tree.root.addBinding(eq(bar()), eq(barBinding), isA(BindingContext.class));
-    tree.root.addBinding(eq(baz()), eq(bazBinding), isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
+    tree.root.addBinding(providerBar(), providerBarBinding);
+    tree.root.addBinding(bar(), barBinding);
+    tree.root.addBinding(baz(), bazBinding);
     expectParentBinding(foo(), tree.root, tree.childLL);
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
@@ -536,30 +534,27 @@ public class BindingResolverTest extends TestCase {
     Binding providerBarBinding = expectCreateBinding(
         providerBar(), requiredLazy(providerBar(), bar()));
 
-    tree.root.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
-    tree.root.addBinding(eq(providerBar()), eq(providerBarBinding), 
-        isA(BindingContext.class));
-    tree.root.addBinding(eq(providerFoo()), eq(providerFooBinding), 
-        isA(BindingContext.class));
-    tree.root.addBinding(eq(providerBaz()), eq(providerBazBinding), 
-        isA(BindingContext.class));
-    tree.root.addBinding(eq(bar()), eq(barBinding), isA(BindingContext.class));
-    tree.root.addBinding(eq(baz()), eq(bazBinding), isA(BindingContext.class));
+    tree.root.addBinding(foo(), fooBinding);
+    tree.root.addBinding(providerBar(), providerBarBinding);
+    tree.root.addBinding(providerFoo(), providerFooBinding);
+    tree.root.addBinding(providerBaz(), providerBazBinding);
+    tree.root.addBinding(bar(), barBinding);
+    tree.root.addBinding(baz(), bazBinding);
     expectParentBinding(foo(), tree.root, tree.childLL);
         
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
   }
     
   private Dependency required(Key<?> source, Key<?> key) {
-    return new Dependency(source, key);
+    return new Dependency(source, key, SOURCE);
   }
   
   private Dependency optional(Key<?> source, Key<?> key) {
-    return new Dependency(source, key, true, false);
+    return new Dependency(source, key, true, false, SOURCE);
   }
   
   private Dependency requiredLazy(Key<?> source, Key<?> key) {
-    return new Dependency(source, key, false, true);
+    return new Dependency(source, key, false, true, SOURCE);
   }
   
   private Binding expectCreateBinding(Key<?> key, Dependency... keys) throws Exception {

@@ -28,6 +28,9 @@ import org.easymock.classextension.EasyMock;
 import org.easymock.classextension.IMocksControl;
 
 public class PathFinderTest extends TestCase {
+
+  private static final String SOURCE = "dummy";
+
   private IMocksControl control;
   private GinjectorBindings origin;
   
@@ -39,15 +42,16 @@ public class PathFinderTest extends TestCase {
   
   public void testFindAnyPath() throws Exception {
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(bar(), baz()))
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(bar(), baz(), SOURCE))
         .build();
     control.replay();
-    assertEquals(TestUtils.dependencyList(
-            new Dependency(Dependency.GINJECTOR, foo()),
-            new Dependency(foo(), bar()), 
-            new Dependency(bar(), baz())),
+    assertEquals(
+        TestUtils.dependencyList(
+            new Dependency(Dependency.GINJECTOR, foo(), SOURCE),
+            new Dependency(foo(), bar(), SOURCE),
+            new Dependency(bar(), baz(), SOURCE)),
         new PathFinder().onGraph(graph)
             .addRoots(Dependency.GINJECTOR)
             .addDestinations(baz()).findShortestPath());
@@ -56,15 +60,16 @@ public class PathFinderTest extends TestCase {
   
   public void testFindShortestPath() throws Exception {
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(bar(), baz()))
-        .addEdge(new Dependency(foo(), baz())) // we should use the "shortcut" to baz
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(bar(), baz(), SOURCE))
+        .addEdge(new Dependency(foo(), baz(), SOURCE)) // we should use the "shortcut" to baz
         .build();
     control.replay();
-    assertEquals(TestUtils.dependencyList(
-            new Dependency(Dependency.GINJECTOR, foo()),
-            new Dependency(foo(), baz())),
+    assertEquals(
+        TestUtils.dependencyList(
+            new Dependency(Dependency.GINJECTOR, foo(), SOURCE),
+            new Dependency(foo(), baz(), SOURCE)),
         new PathFinder().onGraph(graph)
             .addRoots(Dependency.GINJECTOR)
             .addDestinations(baz()).findShortestPath());
@@ -73,14 +78,15 @@ public class PathFinderTest extends TestCase {
   
   public void testFindShortestPath_MultipleDestinations() throws Exception {
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(bar(), baz()))
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(bar(), baz(), SOURCE))
         .build();
     control.replay();
-    assertEquals(TestUtils.dependencyList(
-            new Dependency(Dependency.GINJECTOR, foo()),
-            new Dependency(foo(), bar())),
+    assertEquals(
+        TestUtils.dependencyList(
+            new Dependency(Dependency.GINJECTOR, foo(), SOURCE),
+            new Dependency(foo(), bar(), SOURCE)),
         new PathFinder().onGraph(graph)
             .addRoots(Dependency.GINJECTOR)
             .addDestinations(baz(), bar()).findShortestPath());
@@ -89,15 +95,16 @@ public class PathFinderTest extends TestCase {
   
   public void testPathInUnresolved() throws Exception {
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(Dependency.GINJECTOR, baz()))
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(bar(), baz()))
-        .addEdge(new Dependency(foo(), baz()))
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(Dependency.GINJECTOR, baz(), SOURCE))
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(bar(), baz(), SOURCE))
+        .addEdge(new Dependency(foo(), baz(), SOURCE))
         .build();
     control.replay();
-    assertEquals(TestUtils.dependencyList(
-            new Dependency(Dependency.GINJECTOR, baz())),
+    assertEquals(
+        TestUtils.dependencyList(
+            new Dependency(Dependency.GINJECTOR, baz(), SOURCE)),
         new PathFinder().onGraph(graph)
             .addRoots(Dependency.GINJECTOR)
             .addDestinations(baz()).findShortestPath());
@@ -106,16 +113,17 @@ public class PathFinderTest extends TestCase {
   
   public void testRequiredPath_OptionalInPath() throws Exception {
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(bar(), baz()))
-        .addEdge(new Dependency(foo(), baz(), true, false)) // avoid optional short-cut
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(bar(), baz(), SOURCE))
+        .addEdge(new Dependency(foo(), baz(), true, false, SOURCE)) // avoid optional short-cut
         .build();
     control.replay();
-    assertEquals(TestUtils.dependencyList(
-            new Dependency(Dependency.GINJECTOR, foo()),
-            new Dependency(foo(), bar()),
-            new Dependency(bar(), baz())),
+    assertEquals(
+        TestUtils.dependencyList(
+            new Dependency(Dependency.GINJECTOR, foo(), SOURCE),
+            new Dependency(foo(), bar(), SOURCE),
+            new Dependency(bar(), baz(), SOURCE)),
         new PathFinder().onGraph(graph)
             .addRoots(Dependency.GINJECTOR)
             .addDestinations(baz())
@@ -125,16 +133,17 @@ public class PathFinderTest extends TestCase {
   
   public void testRequiredPath_OptionalInUnresolved() throws Exception {
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(Dependency.GINJECTOR, baz(), true, false))
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(bar(), baz()))
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(Dependency.GINJECTOR, baz(), true, false, SOURCE))
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(bar(), baz(), SOURCE))
         .build();
     control.replay();
-    assertEquals(TestUtils.dependencyList(
-            new Dependency(Dependency.GINJECTOR, foo()),
-            new Dependency(foo(), bar()),
-            new Dependency(bar(), baz())),
+    assertEquals(
+        TestUtils.dependencyList(
+            new Dependency(Dependency.GINJECTOR, foo(), SOURCE),
+            new Dependency(foo(), bar(), SOURCE),
+            new Dependency(bar(), baz(), SOURCE)),
         new PathFinder().onGraph(graph)
             .addRoots(Dependency.GINJECTOR)
             .addDestinations(baz())

@@ -23,6 +23,12 @@ import com.google.inject.Provider;
 /**
  * Representation of a dependency edge.  Contains information about the source and target 
  * {@code Key<?>}s, as well as the properties of the edge (optional/requried, lazy/eager).
+ *
+ * <p>Dependencies also store the context in which the dependency arose.  This
+ * is not part of the dependency's identity from the point of view of equals()
+ * and hashCode(), which ultimately means that if the same dependency arises in
+ * several different contexts, we will pick an arbitrary instance (specifically,
+ * the first one encountered, see {@link DependencyGraph}).
  */
 public class Dependency {
   
@@ -39,6 +45,7 @@ public class Dependency {
   private final Key<?> target;
   private final boolean optional;
   private final boolean lazy;
+  private final String context;
   
   /**
    * Construct a dependency edge from the given source to target keys.  Creates a required, eager 
@@ -47,9 +54,10 @@ public class Dependency {
    * @param source The key that depends on target.  Can use {@link Dependency#GINJECTOR} as 
    *     described above.
    * @param target the key that is depended on
+   * @param context a brief description of the context of the dependency (e.g., Foo.java:123)
    */
-  public Dependency(Key<?> source, Key<?> target) {
-    this(source, target, false, false);
+  public Dependency(Key<?> source, Key<?> target, String context) {
+    this(source, target, false, false, context);
   }
   
   /**
@@ -62,16 +70,25 @@ public class Dependency {
    *     the target is unavailable.
    * @param lazy {@code true} iff the dependency is only needed on-demand (eg, by calling 
    *     {@link Provider#get}).  A cycle is only a problem if none of the edges are lazy.
+   * @param context a brief description of the context of the dependency (e.g., Foo.java:123)
    */
-  public Dependency(Key<?> source, Key<?> target, boolean optional, boolean lazy) {
+  public Dependency(Key<?> source, Key<?> target, boolean optional, boolean lazy, String context) {
     Preconditions.checkArgument(source != null, "null is not supported as the source");
     Preconditions.checkArgument(target != null && !target.equals(GINJECTOR),
         "null and GINJECTOR are not supported as the target.");
+    Preconditions.checkArgument(context != null, "dependency context must not be null");
+    Preconditions.checkArgument(!context.isEmpty(), "dependency context must not be empty");
     this.source = source;
     this.target = target;
     this.optional = optional;
     this.lazy = lazy;
+    this.context = context;
   }
+
+  public String getContext() {
+    return context;
+  }
+
   
   public Key<?> getTarget() {
     return target;
@@ -91,10 +108,8 @@ public class Dependency {
   
   @Override
   public String toString() {
-    // TODO(bchambers,dburrows): Add a BindingContext to the Dependency, and include it in the
-    // toString.  Also, make sure we really want optional/lazy showing up on the Dependency.
-    return String.format("%s -> %s [optional: %s, lazy: %s]",
-        source, target, optional, lazy);
+    return String.format("%s -> %s [context: %s, optional: %s, lazy: %s]",
+        source, target, context, optional, lazy);
   }
   
   @Override

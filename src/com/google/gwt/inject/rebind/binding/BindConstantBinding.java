@@ -29,7 +29,7 @@ import java.util.Collections;
 /**
  * Binding for a constant value.
  */
-public class BindConstantBinding<T> implements Binding {
+public class BindConstantBinding<T> extends AbstractBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
   private final String valueToOutput;
@@ -55,7 +55,10 @@ public class BindConstantBinding<T> implements Binding {
         || clazz.isEnum();
   }
 
-  BindConstantBinding(SourceWriteUtil sourceWriteUtil, Key<T> key, T instance) {
+  BindConstantBinding(SourceWriteUtil sourceWriteUtil, Key<T> key, T instance,
+      BindingContext context) {
+    super(context);
+
     this.sourceWriteUtil = sourceWriteUtil;
     this.key = Preconditions.checkNotNull(key);
     this.valueToOutput = getValueToOutput(key, Preconditions.checkNotNull(instance));
@@ -102,6 +105,7 @@ public class BindConstantBinding<T> implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
-    return Collections.singletonList(new Dependency(Dependency.GINJECTOR, key));
+    return Collections.singletonList(
+        new Dependency(Dependency.GINJECTOR, key, getContext().toString()));
   }
 }

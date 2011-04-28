@@ -33,7 +33,7 @@ import java.util.Collections;
  * Binding implementation for {@code Provider<T>} that just uses the binding
  * to {@code T}.
  */
-public class ImplicitProviderBinding implements Binding {
+public class ImplicitProviderBinding extends AbstractBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
   private final ParameterizedType providerType;
@@ -41,6 +41,8 @@ public class ImplicitProviderBinding implements Binding {
   private final Key<?> providerKey;
 
   ImplicitProviderBinding(SourceWriteUtil sourceWriteUtil, Key<?> providerKey) {
+    super(BindingContext.forText("Implicit provider for " + providerKey));
+
     this.sourceWriteUtil = sourceWriteUtil;
     this.providerKey = Preconditions.checkNotNull(providerKey);
     this.providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
@@ -63,7 +65,8 @@ public class ImplicitProviderBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
-    return Collections.singleton(new Dependency(providerKey, targetKey, false, true));
+    return Collections.singleton(new Dependency(providerKey, targetKey, false, true,
+        getContext().toString()));
   }
 
   // TODO(schmitt): Remove duplication with AsyncProviderBinding.

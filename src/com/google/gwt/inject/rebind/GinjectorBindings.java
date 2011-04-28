@@ -91,7 +91,7 @@ public class GinjectorBindings implements BindingIndex {
    * Map from key to binding for all types we already have a binding for.  We use a LinkedHashMap
    * so that error reporting (and tests) will be deterministic.
    */
-  private final Map<Key<?>, BindingEntry> bindings = new LinkedHashMap<Key<?>, BindingEntry>(); 
+  private final Map<Key<?>, Binding> bindings = new LinkedHashMap<Key<?>, Binding>(); 
   
   /**
    * Set of all Dependency edges that this Ginjector is aware of.  This includes dependecies that
@@ -236,7 +236,7 @@ public class GinjectorBindings implements BindingIndex {
     return Collections.unmodifiableCollection(dependencies);
   }
 
-  public Iterable<Map.Entry<Key<?>, BindingEntry>> getBindings() {
+  public Iterable<Map.Entry<Key<?>, Binding>> getBindings() {
     return Collections.unmodifiableCollection(bindings.entrySet());
   }
 
@@ -295,10 +295,10 @@ public class GinjectorBindings implements BindingIndex {
     GinScope scope = scopes.get(key);
     if (scope == null) {
       Class<?> raw = key.getTypeLiteral().getRawType();
-      BindingEntry binding = bindings.get(key);
+      Binding binding = bindings.get(key);
       if (binding != null 
-          && (binding.getBinding() instanceof ExposedChildBinding
-              || binding.getBinding() instanceof ParentBinding)) {
+          && (binding instanceof ExposedChildBinding
+              || binding instanceof ParentBinding)) {
         // If this is just a "copy" of a binding higher/lower in the injector
         // tree, we prefer to treat the binding like it's unscoped, and refer to
         // the "real" binding every time we need the value.
@@ -347,18 +347,16 @@ public class GinjectorBindings implements BindingIndex {
         addDependencies(guiceUtil.getMemberInjectionDependencies(
             Dependency.GINJECTOR, key.getTypeLiteral()));
       } else {
-        addDependency(new Dependency(Dependency.GINJECTOR, key));
+        addDependency(new Dependency(Dependency.GINJECTOR, key, method.toString()));
       }
     }
   }
   
-  public void addBinding(Key<?> key, Binding binding, BindingContext context) {
+  public void addBinding(Key<?> key, Binding binding) {
     assertNotFinalized();
-    BindingEntry bindingEntry = new BindingEntry(binding, context);
     if (bindings.containsKey(key)) {
-      BindingEntry keyEntry = bindings.get(key);
       errorManager.logError(String.format("Double-bound: %s.  Bound at %s and %s", key, 
-          keyEntry.getBindingContext(), context));
+          bindings.get(key).getContext(), binding.getContext()));
       return;
     }
 
@@ -367,13 +365,13 @@ public class GinjectorBindings implements BindingIndex {
       return;
     }
 
-    bindings.put(key, bindingEntry);
+    bindings.put(key, binding);
     memberInjectRequests.remove(key);
     if (parent != null) {      
       parent.registerChildBinding(key);
     }
 
-    logger.log(TreeLogger.TRACE, "bound " + key + " to " + bindingEntry);
+    logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
     dependencies.addAll(binding.getDependencies());
   }
   
@@ -402,7 +400,7 @@ public class GinjectorBindings implements BindingIndex {
     return classPackage == ginjectorPackage;
   }
 
-  void addStaticInjectionRequest(Class<?> type) {
+  void addStaticInjectionRequest(Class<?> type, Object source) {
     assertNotFinalized();
     staticInjectionRequests.add(type);
 
@@ -417,7 +415,8 @@ public class GinjectorBindings implements BindingIndex {
             FieldLiteral.get((Field) member, TypeLiteral.get(member.getDeclaringClass()));
         Key<?> key = guiceUtil.getKey(field);
         addDependency(new Dependency(
-            Dependency.GINJECTOR, key, guiceUtil.isOptional(field), false));
+            Dependency.GINJECTOR, key, guiceUtil.isOptional(field), false,
+            source.toString()));
       }
     }
   }

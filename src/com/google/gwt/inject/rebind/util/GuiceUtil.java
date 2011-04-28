@@ -140,7 +140,8 @@ public class GuiceUtil {
 
     for (FieldLiteral<?> field : memberCollector.getFields(type)) {
       Key<?> key = getKey(field);
-      required.add(new Dependency(typeKey, key, isOptional(field), false));
+      required.add(new Dependency(typeKey, key, isOptional(field), false,
+          "member injection of " + field));
     }
     return required;
   }
@@ -153,9 +154,19 @@ public class GuiceUtil {
    * @return required keys
    */
   public Collection<Dependency> getDependencies(Key<?> typeKey, MethodLiteral<?, ?> method) {
+    String context;
+
+    if (method.isConstructor()) {
+      context = "@Inject constructor of " + method.getDeclaringType();
+    } else if (typeKey == Dependency.GINJECTOR) {
+      context = "Member injector " + method;
+    } else {
+      context = "Member injection via " + method;
+    }
+
     Set<Dependency> required = new HashSet<Dependency>();
     for (Key<?> key : method.getParameterKeys()) {
-      required.add(new Dependency(typeKey, key, isOptional(method), false));
+      required.add(new Dependency(typeKey, key, isOptional(method), false, context));
     }
     return required;
   }

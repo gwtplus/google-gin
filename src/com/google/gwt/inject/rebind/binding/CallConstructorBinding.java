@@ -36,7 +36,8 @@ public class CallConstructorBinding extends CreatorBinding {
 
   CallConstructorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
       MethodLiteral<?, Constructor<?>> constructor) {
-    super(sourceWriteUtil, guiceUtil, constructor.getDeclaringType());
+    super(sourceWriteUtil, guiceUtil, constructor.getDeclaringType(),
+        BindingContext.forText("Implicit binding for " + constructor.getDeclaringType()));
     this.sourceWriteUtil = sourceWriteUtil;
     this.constructor = Preconditions.checkNotNull(constructor);
     addParamTypes(constructor);

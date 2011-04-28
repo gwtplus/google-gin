@@ -29,11 +29,13 @@ import java.util.List;
 
 public class FactoryBindingTest extends TestCase {
 
+  private static final BindingContext CONTEXT = BindingContext.forText("dummy");
+
   public void testTooManyParams() {
 
     try {
       new FactoryBinding(null, Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
-          Key.get(BrokenBeetleFactory.class));
+          Key.get(BrokenBeetleFactory.class), CONTEXT);
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("no constructors"));
@@ -44,7 +46,7 @@ public class FactoryBindingTest extends TestCase {
 
     try {
       new FactoryBinding(null, Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
-          Key.get(BrokenGolfFactory.class));
+          Key.get(BrokenGolfFactory.class), CONTEXT);
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("has @AssistedInject constructors"));

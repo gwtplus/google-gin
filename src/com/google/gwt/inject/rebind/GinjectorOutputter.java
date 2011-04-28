@@ -178,7 +178,7 @@ class GinjectorOutputter {
     outputStaticInjections(bindings, constructorBody);
 
     // Output the actual bindings
-    for (Map.Entry<Key<?>, BindingEntry> entry : bindings.getBindings()) {
+    for (Map.Entry<Key<?>, Binding> entry : bindings.getBindings()) {
       outputBinding(bindings.getNameGenerator(), entry.getKey(), entry.getValue(),
           bindings.determineScope(entry.getKey()), constructorBody);
     }
@@ -189,10 +189,9 @@ class GinjectorOutputter {
   /**
    * Output the the creator/getter methods for the given binding.
    */
-  private void outputBinding(NameGenerator nameGenerator, Key<?> key, BindingEntry bindingEntry,
+  private void outputBinding(NameGenerator nameGenerator, Key<?> key, Binding binding,
       GinScope scope, StringBuilder constructorBody) {
-    Binding binding = bindingEntry.getBinding();
-    BindingContext bindingContext = bindingEntry.getBindingContext();
+    BindingContext bindingContext = binding.getContext();
 
     String getter = nameGenerator.getGetterMethodName(key);
     String creator = nameGenerator.getCreatorMethodName(key);

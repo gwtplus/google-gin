@@ -185,14 +185,29 @@ public class UnresolvedBindingValidator {
   }
   
   private void reportError(DependencyExplorerOutput output, Key<?> key, String error) {
-    // TODO(bchambers,dburrows): Add better formatting for the pathToError.  Specifically,
-    // we probably want either 1 key or 1 edge per line (with explanation).  We may also want
-    // to investigate ways of prettier-printing keys.
-    PathFinder pathFinder = new PathFinder()
-        .onGraph(output.getGraph()).withOnlyRequiredEdges(true)
-        .addRoots(Dependency.GINJECTOR).addDestinations(key);
+    // TODO(dburrows, bchambers): consider better approaches to pretty-printing keys.
+    Collection<Dependency> path = new PathFinder()
+        .onGraph(output.getGraph())
+        .withOnlyRequiredEdges(true)
+        .addRoots(Dependency.GINJECTOR)
+        .addDestinations(key)
+        .findShortestPath();
+
+    // Note that the first dependency always comes from GINJECTOR and no other
+    // dependencies do; we use this fact to get reasonable formatting.
+    StringBuilder errorPathBuilder = new StringBuilder();
+    for (Dependency dependency : path) {
+      Key<?> target = dependency.getTarget();
+
+      if (dependency.getSource() == Dependency.GINJECTOR) {
+        errorPathBuilder.append(String.format("%s [%s]%n", target, dependency.getContext()));
+      } else {
+        errorPathBuilder.append(String.format(" -> %s [%s]%n", target, dependency.getContext()));
+      }
+    }
+
     errorManager.logError(String.format("Error injecting %s: %s.%n  Path to required node: %s",
-        key, error, pathFinder.findShortestPath()));
+        key, error, errorPathBuilder));
   }
   
   /**

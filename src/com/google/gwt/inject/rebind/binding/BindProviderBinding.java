@@ -29,14 +29,16 @@ import java.util.Collection;
 /**
  * A binding to call the requested {@link com.google.inject.Provider}.
  */
-public class BindProviderBinding implements Binding {
+public class BindProviderBinding extends AbstractBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
   private final Key<? extends Provider<?>> providerKey;
   private final Key<?> sourceKey;
 
   BindProviderBinding(SourceWriteUtil sourceWriteUtil, Key<? extends Provider<?>> providerKey,
-      Key<?> sourceKey) {
+      Key<?> sourceKey, BindingContext context) {
+    super(context);
+
     this.sourceWriteUtil = sourceWriteUtil;
     this.providerKey = Preconditions.checkNotNull(providerKey);
     this.sourceKey = Preconditions.checkNotNull(sourceKey);
@@ -49,9 +51,11 @@ public class BindProviderBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
+    String source = getContext().toString();
+
     Collection<Dependency> dependencies = new ArrayList<Dependency>();
-    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceKey));
-    dependencies.add(new Dependency(sourceKey, providerKey));
+    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceKey, source));
+    dependencies.add(new Dependency(sourceKey, providerKey, source));
     return dependencies;
   }
 }

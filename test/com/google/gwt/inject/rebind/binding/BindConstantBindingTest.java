@@ -26,6 +26,9 @@ import junit.framework.TestCase;
 
 public class BindConstantBindingTest extends TestCase {
 
+  private static final String SOURCE = "dummy";
+  private static final BindingContext CONTEXT = BindingContext.forText(SOURCE);
+
   // TODO(schmitt):  Add tests for other constant types.
 
   public void testEnum() {
@@ -39,10 +42,13 @@ public class BindConstantBindingTest extends TestCase {
     replay(utilMock);
 
     BindConstantBinding<Color> binding =
-        new BindConstantBinding<Color>(utilMock, colorKey, Color.Green);
+        new BindConstantBinding<Color>(utilMock, colorKey, Color.Green, CONTEXT);
 
     assertEquals(1, binding.getDependencies().size());
-    assertTrue(binding.getDependencies().contains(new Dependency(Dependency.GINJECTOR, colorKey)));
+    // This doesn't actually check that the source is passed along, due to
+    // dependency sources being excluded from equals().
+    assertTrue(binding.getDependencies().contains(
+        new Dependency(Dependency.GINJECTOR, colorKey, SOURCE)));
 
     binding.writeCreatorMethods(writerMock, signature, null);
 
@@ -60,7 +66,7 @@ public class BindConstantBindingTest extends TestCase {
     replay(utilMock);
 
     BindConstantBinding<Font> binding =
-        new BindConstantBinding<Font>(utilMock, fontKey, Font.Verdana);
+        new BindConstantBinding<Font>(utilMock, fontKey, Font.Verdana, CONTEXT);
 
     binding.writeCreatorMethods(writerMock, signature, null);
 
@@ -78,7 +84,7 @@ public class BindConstantBindingTest extends TestCase {
     replay(utilMock);
 
     BindConstantBinding<Font> binding =
-        new BindConstantBinding<Font>(utilMock, fontKey, Font.Arial);
+        new BindConstantBinding<Font>(utilMock, fontKey, Font.Arial, CONTEXT);
 
     binding.writeCreatorMethods(writerMock, signature, null);
 
@@ -97,10 +103,13 @@ public class BindConstantBindingTest extends TestCase {
     replay(utilMock);
 
     BindConstantBinding<Character> binding =
-        new BindConstantBinding<Character>(utilMock, charKey, value);
+        new BindConstantBinding<Character>(utilMock, charKey, value, CONTEXT);
 
     assertEquals(1, binding.getDependencies().size());
-    assertTrue(binding.getDependencies().contains(new Dependency(Dependency.GINJECTOR, charKey)));
+    // This doesn't actually check that the source is passed along, due to
+    // dependency sources being excluded from equals().
+    assertTrue(binding.getDependencies().contains(
+        new Dependency(Dependency.GINJECTOR, charKey, SOURCE)));
 
     binding.writeCreatorMethods(writerMock, signature, null);
 
@@ -119,10 +128,13 @@ public class BindConstantBindingTest extends TestCase {
     replay(utilMock);
 
     BindConstantBinding<Character> binding =
-        new BindConstantBinding<Character>(utilMock, charKey, value);
+        new BindConstantBinding<Character>(utilMock, charKey, value, CONTEXT);
 
     assertEquals(1, binding.getDependencies().size());
-    assertTrue(binding.getDependencies().contains(new Dependency(Dependency.GINJECTOR, charKey)));
+    // This doesn't actually check that the source is passed along, due to
+    // dependency sources being excluded from equals().
+    assertTrue(binding.getDependencies().contains(
+        new Dependency(Dependency.GINJECTOR, charKey, SOURCE)));
 
     binding.writeCreatorMethods(writerMock, signature, null);
 

@@ -127,9 +127,7 @@ class BindingsProcessor {
    */
   private void registerGinjectorBinding() {
     Key<? extends Ginjector> ginjectorKey = Key.get(ginjectorInterface);
-    rootGinjectorBindings.addBinding(ginjectorKey, bindingFactory.getGinjectorBinding(),
-        BindingContext.forText("Default binding added by Gin for the Ginjector.  There shouldn't be"
-            + " anything in the module(s) bound to " + ginjectorKey));
+    rootGinjectorBindings.addBinding(ginjectorKey, bindingFactory.getGinjectorBinding());
     lieToGuiceModule.registerImplicitBinding(ginjectorKey);
   }
   
@@ -161,18 +159,17 @@ class BindingsProcessor {
 
       FactoryBinding binding;
       try {
-        binding = bindingFactory.getFactoryBinding(factoryModule.getBindings(),
-            factoryModule.getFactoryType());
+        binding = bindingFactory.getFactoryBinding(
+            factoryModule.getBindings(),
+            factoryModule.getFactoryType(),
+            BindingContext.forText(factoryModule.getSource()));
       } catch (ConfigurationException e) {
         errorManager.logError("Factory " + factoryModule.getFactoryType()
             + " could not be created: ", e);
         continue;
       }
 
-      // TODO(dburrows): store appropriate contextual information for the
-      // factory and use it here.
-      bindings.addBinding(factoryModule.getFactoryType(), binding,
-          BindingContext.forText("Bound using factory in " + bindings.getModule().getName()));
+      bindings.addBinding(factoryModule.getFactoryType(), binding);
 
       // All implementations that are created by the factory are also member-
       // injected. To ensure that implementations created by multiple factories

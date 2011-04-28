@@ -32,7 +32,7 @@ import java.util.Collections;
  * TODO(bchambers): As with {@link ParentBinding} it would be nice if this didn't need the
  * no-op creator method.
  */
-public class ExposedChildBinding implements Binding {
+public class ExposedChildBinding extends AbstractBinding implements Binding {
 
   private final Key<?> key;
   private final GinjectorBindings childBindings;
@@ -40,7 +40,10 @@ public class ExposedChildBinding implements Binding {
   private final GinjectorNameGenerator ginjectorNameGenerator;
 
   ExposedChildBinding(SourceWriteUtil sourceWriteUtil,
-      GinjectorNameGenerator ginjectorNameGenerator, Key<?> key, GinjectorBindings childBindings) {
+      GinjectorNameGenerator ginjectorNameGenerator, Key<?> key, GinjectorBindings childBindings,
+      BindingContext context) {
+    super(context);
+
     this.sourceWriteUtil = sourceWriteUtil;
     this.ginjectorNameGenerator = ginjectorNameGenerator;
     this.key = Preconditions.checkNotNull(key);

@@ -116,7 +116,9 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
   }
 
   public Void visit(StaticInjectionRequest staticInjectionRequest) {
-    bindings.addStaticInjectionRequest(staticInjectionRequest.getType());
+    bindings.addStaticInjectionRequest(
+        staticInjectionRequest.getType(),
+        staticInjectionRequest.getSource());
     return null;
   }
   
@@ -136,9 +138,10 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
     // Add information about the exposed elements in child to the current binding collection
     for (Key<?> key : privateElements.getExposedKeys()) {
       ExposedChildBinding childBinding =
-          bindingFactory.getExposedChildBinding(key, childCollection);
+          bindingFactory.getExposedChildBinding(key, childCollection,
+              BindingContext.forElement(privateElements));
       logger.log(TreeLogger.TRACE, "Child binding for " + key + ": " + childBinding);
-      bindings.addBinding(key, childBinding, BindingContext.forElement(privateElements));
+      bindings.addBinding(key, childBinding);
     }
     return null;
   }

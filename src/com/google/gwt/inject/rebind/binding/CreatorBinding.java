@@ -37,7 +37,7 @@ import java.util.Set;
  * retrieve the actual object creation statement (e.g.
  * {@code new MyObject();}).
  */
-abstract class CreatorBinding implements Binding {
+abstract class CreatorBinding extends AbstractBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
   private final GuiceUtil guiceUtil;
@@ -45,7 +45,9 @@ abstract class CreatorBinding implements Binding {
   private final TypeLiteral<?> type;
 
   protected CreatorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
-      TypeLiteral<?> type) {
+        TypeLiteral<?> type, BindingContext context) {
+    super(context);
+
     this.sourceWriteUtil = sourceWriteUtil;
     this.guiceUtil = guiceUtil;
 

@@ -22,6 +22,7 @@ import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
 import com.google.gwt.inject.rebind.binding.Binding;
+import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
@@ -208,7 +209,8 @@ public class ImplicitBindingCreator {
           implementationType, rawType);
     }
 
-    return bindingFactory.getBindClassBinding(Key.get(implementationType), key);
+    return bindingFactory.getBindClassBinding(Key.get(implementationType), key,
+        BindingContext.forText("@ImplementedBy annotation"));
   }
 
   private BindProviderBinding createProvidedByBinding(Key<?> key, ProvidedBy providedBy) 
@@ -221,7 +223,8 @@ public class ImplicitBindingCreator {
           "@ProvidedBy points to the same class it annotates: %s", rawType);
     }
 
-    return bindingFactory.getBindProviderBinding(Key.get(providerType), key);
+    return bindingFactory.getBindProviderBinding(Key.get(providerType), key,
+        BindingContext.forText("@ProvidedBy annotation"));
   }
 
   private boolean isProviderKey(Key<?> key) {

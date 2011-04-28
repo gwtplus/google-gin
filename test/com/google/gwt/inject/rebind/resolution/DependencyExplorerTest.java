@@ -27,6 +27,8 @@ import java.util.Set;
  */
 public class DependencyExplorerTest extends TestCase {
 
+  private static final String SOURCE = "dummy";
+
   private IMocksControl control;
   private ImplicitBindingCreator bindingCreator;
   private GinjectorBindings origin;
@@ -57,7 +59,7 @@ public class DependencyExplorerTest extends TestCase {
   
   public void testAlreadyPositioned() throws Exception {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
-        new Dependency(Dependency.GINJECTOR, foo())));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.getParent()).andReturn(null);
     expect(origin.isBound(foo())).andReturn(true);
     control.replay();
@@ -69,14 +71,14 @@ public class DependencyExplorerTest extends TestCase {
     assertSame(origin, output.getGraph().getOrigin());
     assertEmpty(output.getGraph().getDependenciesOf(foo()));
     assertContentsAnyOrder(output.getGraph().getDependenciesTargeting(foo()),
-        new Dependency(Dependency.GINJECTOR, foo()));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE));
     control.verify();
   }
   
   public void testAlreadyPositionedInParent() throws Exception {
     GinjectorBindings parent = control.createMock("parent", GinjectorBindings.class);
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
-        new Dependency(Dependency.GINJECTOR, foo())));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.getParent()).andReturn(parent);
     expect(parent.getParent()).andReturn(null);
     expect(origin.isBound(foo())).andReturn(false);
@@ -89,13 +91,13 @@ public class DependencyExplorerTest extends TestCase {
   
   public void testImplicitBinding() throws Exception {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
-            new Dependency(Dependency.GINJECTOR, foo())));
+            new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.getParent()).andStubReturn(null);
     expect(origin.isBound(foo())).andReturn(false);
     Binding binding = control.createMock(Binding.class);
     expect(bindingCreator.create(foo())).andReturn(binding);
     expect(binding.getDependencies()).andReturn(TestUtils.dependencyList(
-        new Dependency(foo(), bar())));
+        new Dependency(foo(), bar(), SOURCE)));
     expect(origin.isBound(bar())).andReturn(true);
     control.replay();
     DependencyExplorerOutput output = dependencyExplorer.explore(origin);
@@ -106,15 +108,15 @@ public class DependencyExplorerTest extends TestCase {
     assertEquals(binding, output.getImplicitBindings().iterator().next().getValue());
     DependencyGraph graph = output.getGraph();
     assertContentsAnyOrder(graph.getDependenciesTargeting(foo()),
-        new Dependency(Dependency.GINJECTOR, foo()));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE));
     assertContentsAnyOrder(graph.getDependenciesTargeting(bar()),
-        new Dependency(foo(), bar()));
+        new Dependency(foo(), bar(), SOURCE));
     control.verify();
   }
   
   public void testImplicitBindingFailed() throws Exception {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
-        new Dependency(Dependency.GINJECTOR, foo())));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.getParent()).andStubReturn(null);
     expect(origin.isBound(foo())).andReturn(false);
     expect(bindingCreator.create(foo())).andThrow(new BindingCreationException("failed"));
@@ -128,7 +130,7 @@ public class DependencyExplorerTest extends TestCase {
   
   public void testEdgeInUnresolvedAndOptional() throws Exception {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
-        new Dependency(foo(), bar())));
+        new Dependency(foo(), bar(), SOURCE)));
     expect(origin.getParent()).andStubReturn(null);
     expect(origin.isBound(foo())).andReturn(true);
     expect(origin.isBound(bar())).andReturn(false);
@@ -136,15 +138,16 @@ public class DependencyExplorerTest extends TestCase {
     Binding binding = control.createMock(Binding.class);
     expect(bindingCreator.create(bar())).andReturn(binding);
     expect(binding.getDependencies()).andReturn(TestUtils.dependencyList(
-        new Dependency(bar(), baz(), true, false)));
+        new Dependency(bar(), baz(), true, false, SOURCE)));
     control.replay();
     DependencyExplorerOutput output = dependencyExplorer.explore(origin);
     DependencyGraph graph = output.getGraph();
-    assertContentsAnyOrder(graph.getDependenciesOf(foo()), new Dependency(foo(), bar()));
+    assertContentsAnyOrder(graph.getDependenciesOf(foo()), new Dependency(foo(), bar(), SOURCE));
     assertEmpty(graph.getDependenciesTargeting(foo()));
     assertContentsAnyOrder(graph.getDependenciesOf(bar()),
-        new Dependency(bar(), baz(), true, false));
-    assertContentsAnyOrder(graph.getDependenciesTargeting(bar()), new Dependency(foo(), bar()));
+        new Dependency(bar(), baz(), true, false, SOURCE));
+    assertContentsAnyOrder(graph.getDependenciesTargeting(bar()),
+        new Dependency(foo(), bar(), SOURCE));
     control.verify();
   }
 }

@@ -88,8 +88,7 @@ class BindingInstaller {
     inheritBindingsForDeps(implicitEntryPosition, graph.getDependenciesOf(key));
     
     // Now add the implicit binding to the ginjector
-    implicitEntryPosition.addBinding(key, binding,
-        BindingContext.forText("Implicit binding for key " + key));
+    implicitEntryPosition.addBinding(key, binding);
   }
   
   /**
@@ -113,7 +112,7 @@ class BindingInstaller {
       
       // We don't strictly need all the extra checks in addBinding, but it can't hurt.  We know, for
       // example, that there will not be any unresolved bindings for this key.
-      child.addBinding(key, bindingFactory.getParentBinding(key, parent), context);
+      child.addBinding(key, bindingFactory.getParentBinding(key, parent, context));
     }
   }
 }

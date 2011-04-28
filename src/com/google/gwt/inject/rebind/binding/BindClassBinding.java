@@ -27,14 +27,17 @@ import java.util.Collection;
 /**
  * Binding implementation that replaces one type with another.
  */
-public class BindClassBinding implements Binding {
+public class BindClassBinding extends AbstractBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
 
   private final Key<?> sourceClassKey;
   private final Key<?> boundClassKey;
 
-  BindClassBinding(SourceWriteUtil sourceWriteUtil, Key<?> boundClassKey, Key<?> sourceClassKey) {
+  BindClassBinding(SourceWriteUtil sourceWriteUtil, Key<?> boundClassKey, Key<?> sourceClassKey,
+      BindingContext context) {
+    super(context);
+
     this.sourceWriteUtil = sourceWriteUtil;
     this.boundClassKey = Preconditions.checkNotNull(boundClassKey);
     this.sourceClassKey = Preconditions.checkNotNull(sourceClassKey);
@@ -47,9 +50,11 @@ public class BindClassBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
+    String source = getContext().toString();
+
     Collection<Dependency> dependencies = new ArrayList<Dependency>();
-    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceClassKey));
-    dependencies.add(new Dependency(sourceClassKey, boundClassKey));
+    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceClassKey, source));
+    dependencies.add(new Dependency(sourceClassKey, boundClassKey, source));
     return dependencies;
   }
 }

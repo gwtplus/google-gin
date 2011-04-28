@@ -41,6 +41,8 @@ import java.util.Map;
  * Tests for {@link BindingInstaller}.
  */
 public class BindingInstallerTest extends TestCase {
+
+  private static final String SOURCE = "dummy";
    
   private IMocksControl control;
   private BindingPositioner positions;
@@ -95,7 +97,8 @@ public class BindingInstallerTest extends TestCase {
     // Parent Binding to make bar available to child
     ParentBinding barBinding = control.createMock("barBinding", ParentBinding.class);
     expect(child.isBound(bar())).andReturn(false);
-    expect(bindingFactory.getParentBinding(bar(), root)).andReturn(barBinding);
+    expect(bindingFactory.getParentBinding(eq(bar()), eq(root), isA(BindingContext.class)))
+        .andReturn(barBinding);
     
     // Implicit binding for Foo
     Binding fooBinding = control.createMock("fooBinding", Binding.class);
@@ -104,11 +107,11 @@ public class BindingInstallerTest extends TestCase {
     
     expect(output.getImplicitBindings()).andReturn(implicitBindingMap.entrySet());
     expect(child.getDependencies()).andReturn(TestUtils.dependencyList(
-        new Dependency(Dependency.GINJECTOR, foo()),
-        new Dependency(Dependency.GINJECTOR, bar())));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE),
+        new Dependency(Dependency.GINJECTOR, bar(), SOURCE)));
     
-    child.addBinding(eq(bar()), eq(barBinding), isA(BindingContext.class));
-    child.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    child.addBinding(bar(), barBinding);
+    child.addBinding(foo(), fooBinding);
     control.replay();
     installer.installBindings(output);
     control.verify();
@@ -128,7 +131,8 @@ public class BindingInstallerTest extends TestCase {
     // Parent Binding to make bar available to child
     ParentBinding barBinding = control.createMock("barBinding", ParentBinding.class);
     expect(child.isBound(bar())).andReturn(false);
-    expect(bindingFactory.getParentBinding(bar(), root)).andReturn(barBinding);
+    expect(bindingFactory.getParentBinding(eq(bar()), eq(root), isA(BindingContext.class)))
+        .andReturn(barBinding);
 
     // Implicit binding for Bar
     Binding bazBinding = control.createMock("bazBinding", Binding.class);
@@ -138,17 +142,17 @@ public class BindingInstallerTest extends TestCase {
     // Implicit binding for Foo
     Binding fooBinding = control.createMock("fooBinding", Binding.class);
     expect(graph.getDependenciesOf(foo())).andReturn(TestUtils.dependencyList(
-        new Dependency(foo(), bar()),
-        new Dependency(foo(), baz())));
+        new Dependency(foo(), bar(), SOURCE),
+        new Dependency(foo(), baz(), SOURCE)));
     implicitBindingMap.put(foo(), fooBinding);
     
     expect(output.getImplicitBindings()).andReturn(implicitBindingMap.entrySet());
     expect(child.getDependencies()).andReturn(TestUtils.dependencyList(
-        new Dependency(Dependency.GINJECTOR, foo())));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     
-    child.addBinding(eq(baz()), eq(bazBinding), isA(BindingContext.class));
-    child.addBinding(eq(bar()), eq(barBinding), isA(BindingContext.class));
-    child.addBinding(eq(foo()), eq(fooBinding), isA(BindingContext.class));
+    child.addBinding(baz(), bazBinding);
+    child.addBinding(bar(), barBinding);
+    child.addBinding(foo(), fooBinding);
     control.replay();
     installer.installBindings(output);
     control.verify();

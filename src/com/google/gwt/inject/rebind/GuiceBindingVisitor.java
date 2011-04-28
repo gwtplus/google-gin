@@ -61,10 +61,11 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   }
 
   public Void visit(ProviderKeyBinding<? extends T> providerKeyBinding) {
-    bindingsCollection.addBinding(targetKey,
+    BindingContext context = BindingContext.forElement(providerKeyBinding);
+    bindingsCollection.addBinding(
+        targetKey,
         bindingFactory.getBindProviderBinding(
-            providerKeyBinding.getProviderKey(), providerKeyBinding.getKey()),
-        BindingContext.forElement(providerKeyBinding));
+            providerKeyBinding.getProviderKey(), providerKeyBinding.getKey(), context));
 
     return null;
   }
@@ -75,9 +76,9 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
     // provider methods
     Provider<? extends T> provider = providerInstanceBinding.getProviderInstance();
     if (provider instanceof ProviderMethod) {
+      BindingContext context = BindingContext.forElement(providerInstanceBinding);
       bindingsCollection.addBinding(targetKey,
-          bindingFactory.getProviderMethodBinding((ProviderMethod) provider),
-          BindingContext.forElement(providerInstanceBinding));
+          bindingFactory.getProviderMethodBinding((ProviderMethod) provider, context));
       return null;
     }
 
@@ -91,18 +92,18 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   }
 
   public Void visit(LinkedKeyBinding<? extends T> linkedKeyBinding) {
+    BindingContext context = BindingContext.forElement(linkedKeyBinding);
     bindingsCollection.addBinding(targetKey,
-        bindingFactory.getBindClassBinding(linkedKeyBinding.getLinkedKey(), targetKey),
-        BindingContext.forElement(linkedKeyBinding));
+        bindingFactory.getBindClassBinding(linkedKeyBinding.getLinkedKey(), targetKey, context));
     return null;
   }
 
   public Void visit(InstanceBinding<? extends T> instanceBinding) {
     T instance = instanceBinding.getInstance();
     if (BindConstantBinding.isConstantKey(targetKey)) {
+      BindingContext context = BindingContext.forElement(instanceBinding);
       bindingsCollection.addBinding(targetKey,
-          bindingFactory.getBindConstantBinding(targetKey, instance),
-          BindingContext.forElement(instanceBinding));
+          bindingFactory.getBindConstantBinding(targetKey, instance, context));
     } else {
       messages.add(new Message(instanceBinding.getSource(),
           "Instance binding not supported; key=" + targetKey + " inst=" + instance));
@@ -120,7 +121,8 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
     // Register the target key with the {@link GuiceLiesModule}'s blacklist to avoid
     // adding a binding that Guice will think is double bound.
     lieToGuiceModule.blacklist(targetKey);
-    bindingsCollection.addDependency(new Dependency(Dependency.GINJECTOR, targetKey));
+    bindingsCollection.addDependency(new Dependency(Dependency.GINJECTOR, targetKey,
+        BindingContext.forElement(sourceElement).toString()));
   }
 
   protected Void visitOther(com.google.inject.Binding<? extends T> binding) {

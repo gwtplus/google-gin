@@ -35,7 +35,7 @@ import java.util.Collection;
  * itself to be instantiated at runtime so it can call the provider
  * method.
  */
-public class ProviderMethodBinding implements Binding {
+public class ProviderMethodBinding extends AbstractBinding implements Binding {
   private final GuiceUtil guiceUtil;
   private final SourceWriteUtil sourceWriteUtil;
 
@@ -44,7 +44,9 @@ public class ProviderMethodBinding implements Binding {
   private final Key<?> targetKey;
   
   ProviderMethodBinding(GuiceUtil guiceUtil, SourceWriteUtil sourceWriteUtil,
-      ProviderMethod<?> providerMethod) {
+      ProviderMethod<?> providerMethod, BindingContext context) {
+    super(context);
+
     this.guiceUtil = guiceUtil;
     this.sourceWriteUtil = sourceWriteUtil;
 
@@ -69,7 +71,7 @@ public class ProviderMethodBinding implements Binding {
 
   public Collection<Dependency> getDependencies() {
     Collection<Dependency> dependencies = guiceUtil.getDependencies(targetKey, providerMethod);
-    dependencies.add(new Dependency(Dependency.GINJECTOR, targetKey));
+    dependencies.add(new Dependency(Dependency.GINJECTOR, targetKey, getContext().toString()));
     return dependencies;
   }
 }

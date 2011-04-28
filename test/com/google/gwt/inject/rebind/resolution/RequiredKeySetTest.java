@@ -16,7 +16,9 @@ import org.easymock.classextension.IMocksControl;
  * Tests for {@link RequiredKeySet}.
  */
 public class RequiredKeySetTest extends TestCase {
- 
+
+  private static final String SOURCE = "dummy";
+
   private IMocksControl control;
   private GinjectorBindings origin;
 
@@ -28,12 +30,12 @@ public class RequiredKeySetTest extends TestCase {
   
   public void testChainOfSingleDeps() throws Exception {
     EasyMock.expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
-        new Dependency(Dependency.GINJECTOR, foo())));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     control.replay();
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(bar(), baz())).build();
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(bar(), baz(), SOURCE)).build();
     RequiredKeySet requiredKeys = new RequiredKeySet(graph);
     assertTrue(requiredKeys.isRequired(foo()));
     assertTrue(requiredKeys.isRequired(bar()));
@@ -43,12 +45,12 @@ public class RequiredKeySetTest extends TestCase {
   
   public void testWithMultipleDeps() throws Exception {
     EasyMock.expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
-        new Dependency(Dependency.GINJECTOR, foo())));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     control.replay();
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(foo(), baz())).build();
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(foo(), baz(), SOURCE)).build();
     RequiredKeySet requiredKeys = new RequiredKeySet(graph);
     assertTrue(requiredKeys.isRequired(foo()));
     assertTrue(requiredKeys.isRequired(bar()));
@@ -58,12 +60,12 @@ public class RequiredKeySetTest extends TestCase {
   
   public void testRequiredSkipsOptional() throws Exception {
     EasyMock.expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
-        new Dependency(Dependency.GINJECTOR, foo())));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     control.replay();
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(foo(), bar(), true, false))
-        .addEdge(new Dependency(foo(), baz())).build();
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(foo(), bar(), true, false, SOURCE))
+        .addEdge(new Dependency(foo(), baz(), SOURCE)).build();
     RequiredKeySet requiredKeys = new RequiredKeySet(graph);
     assertTrue(requiredKeys.isRequired(foo()));
     assertFalse(requiredKeys.isRequired(bar()));
@@ -73,13 +75,13 @@ public class RequiredKeySetTest extends TestCase {
   
   public void testRequiredNotHiddenByOptional() throws Exception {
     EasyMock.expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
-        new Dependency(Dependency.GINJECTOR, foo())));
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     control.replay();
     DependencyGraph graph = new DependencyGraph.Builder(origin)
-        .addEdge(new Dependency(Dependency.GINJECTOR, foo()))
-        .addEdge(new Dependency(foo(), bar(), true, false))
-        .addEdge(new Dependency(baz(), bar()))
-        .addEdge(new Dependency(foo(), baz())).build();
+        .addEdge(new Dependency(Dependency.GINJECTOR, foo(), SOURCE))
+        .addEdge(new Dependency(foo(), bar(), true, false, SOURCE))
+        .addEdge(new Dependency(baz(), bar(), SOURCE))
+        .addEdge(new Dependency(foo(), baz(), SOURCE)).build();
     RequiredKeySet requiredKeys = new RequiredKeySet(graph);
     assertTrue(requiredKeys.isRequired(foo()));
     assertTrue(requiredKeys.isRequired(bar()));

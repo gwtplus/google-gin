@@ -50,7 +50,7 @@ import java.util.Collections;
  * 
  * </pre>
  */
-public class AsyncProviderBinding implements Binding {
+public class AsyncProviderBinding extends AbstractBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
 
@@ -59,6 +59,8 @@ public class AsyncProviderBinding implements Binding {
   private final Key<?> targetKey;
 
   AsyncProviderBinding(SourceWriteUtil sourceWriteUtil, Key<?> providerKey) {
+    super(BindingContext.forText("Implicit asynchronous provider for " + providerKey));
+
     this.sourceWriteUtil = Preconditions.checkNotNull(sourceWriteUtil);
     this.providerKey = Preconditions.checkNotNull(providerKey);
     providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
@@ -97,7 +99,8 @@ public class AsyncProviderBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {    
-    return Collections.singleton(new Dependency(providerKey, targetKey, false, true));
+    return Collections.singleton(new Dependency(providerKey, targetKey, false, true,
+        "Implicit asynchronous provider for " + targetKey));
   }
 
   private Key<?> getKeyWithSameAnnotation(Type keyType, Key<?> baseKey) {

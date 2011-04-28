@@ -58,17 +58,19 @@ public class BindingFactoryImpl implements BindingFactory {
     return new AsyncProviderBinding(sourceWriteUtil, providerKey);
   }
 
-  public BindClassBinding getBindClassBinding(Key<?> boundClassKey, Key<?> sourceClassKey) {
-    return new BindClassBinding(sourceWriteUtil, boundClassKey, sourceClassKey);
+  public BindClassBinding getBindClassBinding(Key<?> boundClassKey, Key<?> sourceClassKey,
+      BindingContext context) {
+    return new BindClassBinding(sourceWriteUtil, boundClassKey, sourceClassKey, context);
   }
 
-  public <T> BindConstantBinding getBindConstantBinding(Key<T> key, T instance) {
-    return new BindConstantBinding<T>(sourceWriteUtil, key, instance);
+  public <T> BindConstantBinding getBindConstantBinding(Key<T> key, T instance,
+      BindingContext context) {
+    return new BindConstantBinding<T>(sourceWriteUtil, key, instance, context);
   }
 
   public BindProviderBinding getBindProviderBinding(Key<? extends Provider<?>> providerKey,
-      Key<?> sourceKey) {
-    return new BindProviderBinding(sourceWriteUtil, providerKey, sourceKey);
+      Key<?> sourceKey, BindingContext context) {
+    return new BindProviderBinding(sourceWriteUtil, providerKey, sourceKey, context);
   }
 
   public CallConstructorBinding getCallConstructorBinding(
@@ -77,16 +79,19 @@ public class BindingFactoryImpl implements BindingFactory {
   }
 
   public CallGwtDotCreateBinding getCallGwtDotCreateBinding(TypeLiteral<?> type) {
-    return new CallGwtDotCreateBinding(sourceWriteUtil, guiceUtil, type);
+    return new CallGwtDotCreateBinding(sourceWriteUtil, guiceUtil, type,
+        BindingContext.forText("Implicit GWT.create binding for " + type));
   }
   
-  public ExposedChildBinding getExposedChildBinding(Key<?> key, GinjectorBindings childBindings) {
-    return new ExposedChildBinding(sourceWriteUtil, ginjectorNameGenerator, key, childBindings);
+  public ExposedChildBinding getExposedChildBinding(Key<?> key, GinjectorBindings childBindings,
+      BindingContext context) {
+    return new ExposedChildBinding(sourceWriteUtil, ginjectorNameGenerator, key, childBindings,
+        context);
   }
   
   public FactoryBinding getFactoryBinding(Map<Key<?>, TypeLiteral<?>> collector,
-      Key<?> factoryKey) {
-    return new FactoryBinding(sourceWriteUtil, collector, factoryKey);
+      Key<?> factoryKey, BindingContext context) {
+    return new FactoryBinding(sourceWriteUtil, collector, factoryKey, context);
   }
 
   public GinjectorBinding getGinjectorBinding() {
@@ -97,12 +102,14 @@ public class BindingFactoryImpl implements BindingFactory {
     return new ImplicitProviderBinding(sourceWriteUtil, providerKey);
   }
   
-  public ParentBinding getParentBinding(Key<?> key, GinjectorBindings parentBindings) {
-    return new ParentBinding(sourceWriteUtil, ginjectorNameGenerator, key, parentBindings);
+  public ParentBinding getParentBinding(Key<?> key, GinjectorBindings parentBindings,
+      BindingContext context) {
+    return new ParentBinding(sourceWriteUtil, ginjectorNameGenerator, key, parentBindings, context);
   }
   
-  public ProviderMethodBinding getProviderMethodBinding(ProviderMethod<?> providerMethod) {
-    return new ProviderMethodBinding(guiceUtil, sourceWriteUtil, providerMethod);
+  public ProviderMethodBinding getProviderMethodBinding(ProviderMethod<?> providerMethod,
+      BindingContext context) {
+    return new ProviderMethodBinding(guiceUtil, sourceWriteUtil, providerMethod, context);
   }
 
   public RemoteServiceProxyBinding getRemoteServiceProxyBinding(TypeLiteral<?> type) {

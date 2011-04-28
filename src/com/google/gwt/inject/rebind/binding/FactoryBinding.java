@@ -59,7 +59,7 @@ import java.util.Set;
  * instance has been constructed, it will be member-injected before it is
  * returned to the caller of the method.
  */
-public class FactoryBinding implements Binding {
+public class FactoryBinding extends AbstractBinding implements Binding {
 
   /**
    * If a factory method parameter isn't annotated it gets this annotation.
@@ -101,7 +101,9 @@ public class FactoryBinding implements Binding {
   private final Set<Key<?>> implementations = new HashSet<Key<?>>();
 
   FactoryBinding(SourceWriteUtil sourceWriteUtil, Map<Key<?>, TypeLiteral<?>> collector,
-      Key<?> factoryKey) {
+      Key<?> factoryKey, BindingContext context) {
+    super(context);
+
     this.sourceWriteUtil = sourceWriteUtil;
     this.collector = Preconditions.checkNotNull(collector);
     this.factoryType = factoryKey.getTypeLiteral();
@@ -153,7 +155,7 @@ public class FactoryBinding implements Binding {
 
   private void matchMethods(Key<?> factoryKey) throws ErrorsException {
     Errors errors = new Errors();
-    dependencies.add(new Dependency(Dependency.GINJECTOR, factoryKey));
+    dependencies.add(new Dependency(Dependency.GINJECTOR, factoryKey, getContext().toString()));
     Class<?> factoryRawType = factoryType.getRawType();
 
     // getMethods() includes inherited methods from super-interfaces.
@@ -223,7 +225,8 @@ public class FactoryBinding implements Binding {
 
         parameterNames[p] = ReflectUtil.formatParameterName(location);
       } else {
-        dependencyCollector.add(new Dependency(factoryKey, ctorParamKey, false, true));
+        dependencyCollector.add(new Dependency(factoryKey, ctorParamKey, false, true,
+            constructor.toString()));
       }
 
       p++;

@@ -41,6 +41,11 @@ public interface Binding {
       NameGenerator nameGenerator) throws NoSourceNameException;
 
   /**
+   * Returns the context in which this binding was created.
+   */
+  BindingContext getContext();
+
+  /**
    * Returns the set of dependencies that this binding produces.  This contains edges coming into
    * the key that this type binds (from {@link Dependency#GINJECTOR}) as well as dependencies that
    * this binding needs.

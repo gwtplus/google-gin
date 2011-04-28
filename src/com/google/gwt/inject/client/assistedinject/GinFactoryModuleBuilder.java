@@ -331,8 +331,31 @@ public class GinFactoryModuleBuilder {
     return build(Key.get(factoryInterface));
   }
 
+  public <F> GinModule build(Key<F> factoryInterface) {
+    return new FactoryModule<F>(
+        bindings.getBindings(),
+        factoryInterface,
+        findCaller(factoryInterface));
+  }
 
-  public <F> GinModule build(final Key<F> factoryInterface) {
-    return new FactoryModule<F>(bindings.getBindings(), factoryInterface);
+  /**
+   * Find the topmost stack element that's not a method of this class, which is
+   * presumably the location in a Gin module that invoked build().
+   *
+   * @param factoryInterface An object identifying the factory interface; used
+   *     to generate a fallback message if we can't determine the caller.
+   */
+  private String findCaller(Object factoryInterface) {
+    Throwable dummyThrowableForStackTrace = new Throwable();
+
+    StackTraceElement[] stackTrace = dummyThrowableForStackTrace.getStackTrace();
+
+    for (StackTraceElement element : stackTrace) {
+      if (!element.getClassName().equals(GinFactoryModuleBuilder.class.getName())) {
+        return element.toString();
+      }
+    }
+
+    return "definition of factory " + factoryInterface;
   }
 }

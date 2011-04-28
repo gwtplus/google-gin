@@ -24,7 +24,9 @@ import java.util.Map;
  * Tests for {@link BindingPositioner}.
  */
 public class BindingPositionerTest extends TestCase {
- 
+
+  private static final String SOURCE = "dummy";
+
   private IMocksControl control;
   
   private GinjectorBindings root;
@@ -59,8 +61,8 @@ public class BindingPositionerTest extends TestCase {
   
   private PositionerExpectationsBuilder testTree() {
     return new PositionerExpectationsBuilder(grandchild)
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(foo(), baz()));
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(foo(), baz(), SOURCE));
   }
   
   public void testPositionTree() throws Exception {
@@ -83,8 +85,8 @@ public class BindingPositionerTest extends TestCase {
   
   private PositionerExpectationsBuilder testChain() {
     return new PositionerExpectationsBuilder(grandchild)
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(bar(), baz()));
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(bar(), baz(), SOURCE));
   }
   
   public void testPositionChain() throws Exception {
@@ -111,9 +113,9 @@ public class BindingPositionerTest extends TestCase {
   
   private PositionerExpectationsBuilder testCycle() {
     return new PositionerExpectationsBuilder(grandchild)
-        .addEdge(new Dependency(foo(), bar()))
-        .addEdge(new Dependency(bar(), baz()))
-        .addEdge(new Dependency(baz(), foo()));
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .addEdge(new Dependency(bar(), baz(), SOURCE))
+        .addEdge(new Dependency(baz(), foo(), SOURCE));
   }
   
   public void testPositionCycle() throws Exception {
@@ -149,7 +151,7 @@ public class BindingPositionerTest extends TestCase {
   
   public void testPositionCycle_OutsideDep() throws Exception {
     testCycle()
-        .addEdge(new Dependency(bar(), Key.get(A.class)))
+        .addEdge(new Dependency(bar(), Key.get(A.class), SOURCE))
         .keysBoundAt(child, Key.get(A.class))
         .implicitlyBoundAt(child, foo(), bar(), baz())
         .test();
@@ -162,11 +164,11 @@ public class BindingPositionerTest extends TestCase {
   
   public void testTwoCycles() throws Exception {
     testCycle()
-        .addEdge(new Dependency(bar(), Key.get(A.class)))
-        .addEdge(new Dependency(Key.get(A.class), Key.get(B.class)))
-        .addEdge(new Dependency(Key.get(B.class), Key.get(C.class)))
-        .addEdge(new Dependency(Key.get(B.class), Key.get(D.class)))
-        .addEdge(new Dependency(Key.get(C.class), Key.get(A.class)))
+        .addEdge(new Dependency(bar(), Key.get(A.class), SOURCE))
+        .addEdge(new Dependency(Key.get(A.class), Key.get(B.class), SOURCE))
+        .addEdge(new Dependency(Key.get(B.class), Key.get(C.class), SOURCE))
+        .addEdge(new Dependency(Key.get(B.class), Key.get(D.class), SOURCE))
+        .addEdge(new Dependency(Key.get(C.class), Key.get(A.class), SOURCE))
         .keysBoundAt(child, Key.get(D.class))
         .implicitlyBoundAt(child, foo(), bar(), baz(), 
             Key.get(A.class), Key.get(B.class), Key.get(C.class))

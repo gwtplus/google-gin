@@ -33,7 +33,7 @@ import java.util.Collections;
  * paradigm for parent and child bindings, but it is the easiest way to add this
  * to Gin.
  */
-public class ParentBinding implements Binding {
+public class ParentBinding extends AbstractBinding implements Binding {
 
   private final Key<?> key;
   private final GinjectorBindings parentBindings;
@@ -41,7 +41,9 @@ public class ParentBinding implements Binding {
   private GinjectorNameGenerator ginjectorNameGenerator;
 
   ParentBinding(SourceWriteUtil sourceWriteUtil, GinjectorNameGenerator ginjectorNameGenerator,
-      Key<?> key, GinjectorBindings parentBindings) {
+      Key<?> key, GinjectorBindings parentBindings, BindingContext context) {
+    super(context);
+
     this.sourceWriteUtil = sourceWriteUtil;
     this.ginjectorNameGenerator = ginjectorNameGenerator;
     this.key = Preconditions.checkNotNull(key);

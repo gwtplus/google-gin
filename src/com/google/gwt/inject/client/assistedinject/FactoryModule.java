@@ -32,10 +32,12 @@ public class FactoryModule<F> implements GinModule {
 
   private final Key<F> factoryType;
   private final Map<Key<?>, TypeLiteral<?>> bindings;
+  private final String source;
 
-  public FactoryModule(Map<Key<?>, TypeLiteral<?>> bindings, Key<F> factoryType) {
+  public FactoryModule(Map<Key<?>, TypeLiteral<?>> bindings, Key<F> factoryType, Object source) {
     this.bindings = bindings;
     this.factoryType = factoryType;
+    this.source = source.toString();
   }
 
   public Key<F> getFactoryType() {
@@ -44,6 +46,13 @@ public class FactoryModule<F> implements GinModule {
 
   public Map<Key<?>, TypeLiteral<?>> getBindings() {
     return bindings;
+  }
+
+  /**
+   * Returns the source location of the factory module's declaration.
+   */
+  public String getSource() {
+    return source;
   }
 
   public void configure(GinBinder binder) {}

@@ -30,9 +30,9 @@ import com.google.inject.TypeLiteral;
  */
 public class CallGwtDotCreateBinding extends CreatorBinding {
 
-  CallGwtDotCreateBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
-      TypeLiteral<?> type) {
-    super(sourceWriteUtil, guiceUtil, type);
+  CallGwtDotCreateBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil, TypeLiteral<?> type,
+      BindingContext context) {
+    super(sourceWriteUtil, guiceUtil, type, context);
   }
 
   @Override protected final void appendCreationStatement(SourceWriter sourceWriter,
