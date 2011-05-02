@@ -97,11 +97,7 @@ class GinBridgeClassLoader extends ClassLoader {
       if (inExceptedPackage(name)) {
         clazz = super.loadClass(name, false);
       } else {
-        try {
-          clazz = findClass(name);
-        } catch (ClassNotFoundException e) {
-          clazz = super.loadClass(name, false);
-        }
+        clazz = findClass(name);
       }
     }
 
