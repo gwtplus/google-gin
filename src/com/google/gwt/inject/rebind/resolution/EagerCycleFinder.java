@@ -130,10 +130,32 @@ public class EagerCycleFinder {
     for (Dependency edge : cycle) {
       pathFinder.addDestinations(edge.getTarget());
     }
-    
-    reportError(pathFinder.findShortestPath(), cycle);
+
+    List<Dependency> path = pathFinder.findShortestPath();
+    if (path != null && !path.isEmpty()) {
+      cycle = rootCycleAt(cycle, path.get(path.size() - 1).getTarget());
+    }
+    reportError(path, cycle);
   }
-  
+
+  /**
+   * Attempts to root the given dependency cycle at the given key.  If the key
+   * is present in the cycle, rotates the dependency cycle so that the key is
+   * the first source.  Otherwise, returns the cycle unchanged.
+   */
+  static List<Dependency> rootCycleAt(List<Dependency> cycle, Key<?> key) {
+    for (int i = 0; i < cycle.size(); ++i) {
+      if (key.equals(cycle.get(i).getSource())) {
+        List<Dependency> returnValue = new ArrayList<Dependency>();
+        returnValue.addAll(cycle.subList(i, cycle.size()));
+        returnValue.addAll(cycle.subList(0, i));
+        return returnValue;
+      }
+    }
+
+    return cycle;
+  }
+
   void reportError(List<Dependency> pathToCycle, List<Dependency> cycle) {
     errorManager.logError(String.format("Cycle detected in the dependency graph.  "
         + "Consider using a Provider?%n  Path To Cycle: %s%n  Cycle: %s%n", pathToCycle, cycle));

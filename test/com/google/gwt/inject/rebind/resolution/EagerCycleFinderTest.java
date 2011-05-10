@@ -24,15 +24,28 @@ import static org.easymock.EasyMock.isA;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.inject.Key;
 
 import junit.framework.TestCase;
 
 import org.easymock.classextension.EasyMock;
 import org.easymock.classextension.IMocksControl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class EagerCycleFinderTest extends TestCase { 
 
   private static final String SOURCE = "dummy";
+
+  private static final Dependency DEP_FOO_FOO = new Dependency(foo(), foo(), SOURCE);
+
+  private static final Dependency DEP_FOO_BAR = new Dependency(foo(), bar(), SOURCE);
+  private static final Dependency DEP_BAR_FOO = new Dependency(bar(), foo(), SOURCE);
+
+  private static final Dependency DEP_BAR_BAZ = new Dependency(bar(), baz(), SOURCE);
+  private static final Dependency DEP_BAZ_FOO = new Dependency(baz(), foo(), SOURCE);
 
   private IMocksControl control;
   private GinjectorBindings origin;
@@ -214,5 +227,63 @@ public class EagerCycleFinderTest extends TestCase {
         .addEdge(new Dependency(baz(), bar(), SOURCE)).build();
     assertTrue(eagerCycleFinder.findAndReportCycles(graph));
     control.verify();
+  }
+
+  public void testRootCycleAt_keyNotPresent() {
+    assertDependencyListEquals(
+        EagerCycleFinder.rootCycleAt(
+            dependencyList(DEP_FOO_BAR, DEP_BAR_BAZ, DEP_BAZ_FOO),
+            Key.get(TestCase.class)),
+        DEP_FOO_BAR, DEP_BAR_BAZ, DEP_BAZ_FOO);
+  }
+
+  public void testRootCycleAt_emptyCycle() {
+    assertDependencyListEquals(EagerCycleFinder.rootCycleAt(dependencyList(), foo()));
+  }
+
+  public void testRootCycleAt_singletonCycle() {
+    assertDependencyListEquals(
+        EagerCycleFinder.rootCycleAt(dependencyList(DEP_FOO_FOO), foo()),
+        DEP_FOO_FOO);
+  }
+
+  public void testRootCycleAt_twoCycleEntries_rotate0() {
+    assertDependencyListEquals(
+        EagerCycleFinder.rootCycleAt(dependencyList(DEP_FOO_BAR, DEP_BAR_FOO), foo()),
+        DEP_FOO_BAR, DEP_BAR_FOO);
+  }
+
+  public void testRootCycleAt_twoCycleEntries_rotate1() {
+    assertDependencyListEquals(
+        EagerCycleFinder.rootCycleAt(dependencyList(DEP_FOO_BAR, DEP_BAR_FOO), bar()),
+        DEP_BAR_FOO, DEP_FOO_BAR);
+  }
+
+  public void testRootCycleAt_threeCycleEntries_rotate0() {
+    assertDependencyListEquals(
+        EagerCycleFinder.rootCycleAt(dependencyList(DEP_FOO_BAR, DEP_BAR_BAZ, DEP_BAZ_FOO), foo()),
+        DEP_FOO_BAR, DEP_BAR_BAZ, DEP_BAZ_FOO);
+  }
+
+  public void testRootCycleAt_threeCycleEntries_rotate1() {
+    assertDependencyListEquals(
+        EagerCycleFinder.rootCycleAt(dependencyList(DEP_FOO_BAR, DEP_BAR_BAZ, DEP_BAZ_FOO), bar()),
+        DEP_BAR_BAZ, DEP_BAZ_FOO, DEP_FOO_BAR);
+  }
+
+  public void testRootCycleAt_threeCycleEntries_rotate2() {
+    assertDependencyListEquals(
+        EagerCycleFinder.rootCycleAt(dependencyList(DEP_FOO_BAR, DEP_BAR_BAZ, DEP_BAZ_FOO), baz()),
+        DEP_BAZ_FOO, DEP_FOO_BAR, DEP_BAR_BAZ);
+  }
+
+  private List<Dependency> dependencyList(Dependency... expected) {
+    return Arrays.asList(expected);
+  }
+
+  private void assertDependencyListEquals(List<Dependency> dependencies, Dependency... expected) {
+    assertEquals(
+        new ArrayList<Dependency>(dependencyList(expected)),
+        new ArrayList<Dependency>(dependencies));
   }
 }
