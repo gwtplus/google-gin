@@ -48,12 +48,10 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   private final Key<T> targetKey;
   private final List<Message> messages;
   private final GinjectorBindings bindingsCollection;
-  private final LieToGuiceModule lieToGuiceModule;
   private final BindingFactory bindingFactory;
 
-  public GuiceBindingVisitor(LieToGuiceModule lieToGuiceModule, Key<T> targetKey,
-      List<Message> messages, GinjectorBindings bindingsCollection, BindingFactory bindingFactory) {
-    this.lieToGuiceModule = lieToGuiceModule;
+  public GuiceBindingVisitor(Key<T> targetKey, List<Message> messages,
+      GinjectorBindings bindingsCollection, BindingFactory bindingFactory) {
     this.targetKey = targetKey;
     this.messages = messages;
     this.bindingsCollection = bindingsCollection;
@@ -118,9 +116,6 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   }
 
   private void addImplicitBinding(Element sourceElement) {
-    // Register the target key with the {@link GuiceLiesModule}'s blacklist to avoid
-    // adding a binding that Guice will think is double bound.
-    lieToGuiceModule.blacklist(targetKey);
     bindingsCollection.addDependency(new Dependency(Dependency.GINJECTOR, targetKey,
         BindingContext.forElement(sourceElement).toString()));
   }

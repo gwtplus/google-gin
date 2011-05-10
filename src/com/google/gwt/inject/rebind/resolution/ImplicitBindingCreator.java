@@ -17,14 +17,12 @@ package com.google.gwt.inject.rebind.resolution;
 
 import com.google.gwt.inject.client.AsyncProvider;
 import com.google.gwt.inject.rebind.LieToGuiceModule;
-import com.google.gwt.inject.rebind.binding.AsyncProviderBinding;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
-import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
@@ -35,11 +33,11 @@ import com.google.inject.Key;
 import com.google.inject.ProvidedBy;
 import com.google.inject.TypeLiteral;
 
-import javax.inject.Provider;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+
+import javax.inject.Provider;
 
 /**
  * Class responsible for creating implicit bindings.  This returns the binding entry
@@ -64,13 +62,10 @@ public class ImplicitBindingCreator {
   }
   
   private final BindingFactory bindingFactory;
-
-  private final LieToGuiceModule lieToGuiceModule;
   
   @Inject
-  public ImplicitBindingCreator(LieToGuiceModule lieToGuiceModule, BindingFactory bindingFactory) {
+  public ImplicitBindingCreator(BindingFactory bindingFactory) {
     this.bindingFactory = bindingFactory;
-    this.lieToGuiceModule = lieToGuiceModule;
   }
   
   /**
@@ -78,17 +73,6 @@ public class ImplicitBindingCreator {
    * necessary (and appropriate)
    */
   public Binding create(Key<?> key) throws BindingCreationException {
-    Binding binding = internalCreate(key);
-    if (binding instanceof CallGwtDotCreateBinding || binding instanceof AsyncProviderBinding) {
-      // Need to lie to Guice about any implicit GWT.create bindings and
-      // async provider bindings we install that Guice would otherwise not see.
-      // http://code.google.com/p/google-gin/issues/detail?id=13
-      lieToGuiceModule.registerImplicitBinding(key);
-    }
-    return binding;
-  }
-  
-  private Binding internalCreate(Key<?> key) throws BindingCreationException {
     TypeLiteral<?> type = key.getTypeLiteral();
     
     // All steps per:

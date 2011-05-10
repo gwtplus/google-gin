@@ -29,12 +29,9 @@ import java.util.List;
  */
 public class GuiceBindingVisitorFactory {
   private final BindingFactory bindingFactory;
-  private final LieToGuiceModule lieToGuiceModule;
 
   @Inject
-  public GuiceBindingVisitorFactory(LieToGuiceModule lieToGuiceModule,
-      BindingFactory bindingFactory) {
-    this.lieToGuiceModule = lieToGuiceModule;
+  public GuiceBindingVisitorFactory(BindingFactory bindingFactory) {
     this.bindingFactory = bindingFactory;
   }
 
@@ -48,7 +45,6 @@ public class GuiceBindingVisitorFactory {
    */
   <T> GuiceBindingVisitor<T> create(Key<T> targetKey, List<Message> messages,
       GinjectorBindings ginjectorBindings) {
-    return new GuiceBindingVisitor<T>(lieToGuiceModule, targetKey, messages, ginjectorBindings,
-        bindingFactory);
+    return new GuiceBindingVisitor<T>(targetKey, messages, ginjectorBindings, bindingFactory);
   }
 }

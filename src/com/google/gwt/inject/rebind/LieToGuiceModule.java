@@ -15,77 +15,46 @@
  */
 package com.google.gwt.inject.rebind;
 
-import com.google.gwt.core.ext.TreeLogger;
 import com.google.inject.AbstractModule;
 import com.google.inject.Binder;
-import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
-import com.google.inject.Singleton;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
- * A module to tell Guice about implicit bindings Gin has invented.
+ * A module to tell Guice to pretend that some bindings exist (especially bindings Gin "invented").
  */
-@Singleton
 public class LieToGuiceModule extends AbstractModule {
-  private final List<Module> lies = new ArrayList<Module>();
-  private final Set<Key<?>> blacklist = new HashSet<Key<?>>();
-  private final TreeLogger logger;
+  private final Set<Key<?>> lies;
 
-  @Inject
-  LieToGuiceModule(TreeLogger logger) {
-    this.logger = logger;
+  /**
+   * @param lies the keys that Gin has invented, and which should be lied about
+   */
+  LieToGuiceModule(Set<Key<?>> lies) {
+    this.lies = lies;
   }
 
   protected void configure() {
-    for (Module lie : lies) {
-      install(lie);
-    }
-  }
-
-  /**
-   * Registers an implicit binding. This binding will result in a special
-   * instance of Provider being registered with Guice. This provider will
-   * never be called -- we give it to Guice just so that Guice knows this
-   * key is bound.
-   *
-   * @param key Key to bind
-   */
-  public <T> void registerImplicitBinding(Key<T> key) {
-    if (!blacklist.contains(key)) {
-      logger.log(TreeLogger.Type.TRACE, "Implicit binding registered with Guice for " + key);
-      lies.add(new ImplicitBindingModule<T>(key));
+    for (Key<?> lie : lies) {
+      installLie(lie);
     }
   }
   
-  /**
-   * Add the given to the "blacklist".  This records types that we may try to register
-   * with the module, but we know shouldn't actually have a lie created for.  Specifically,
-   * this is used for Untargetted Bindings.  Once registered, the calls to 
-   * {@link #registerImplicitBinding(Key)} will have no effect.
-   * 
-   * @param key The key to blacklist
-   */
-  void blacklist(Key<?> key) {
-    blacklist.add(key);
+  private <T> void installLie(Key<T> key) {
+    install(new FakeBindingModule<T>(key));
   }
 
-  private class ImplicitBindingModule<T> implements Module, Provider<T> {
+  private static class FakeBindingModule<T> implements Module, Provider<T> {
     private final Key<T> key;
 
-    private ImplicitBindingModule(Key<T> key) {
+    private FakeBindingModule(Key<T> key) {
       this.key = key;
     }
 
     public void configure(Binder binder) {
-      logger.log(TreeLogger.Type.TRACE, "Binding " + key + "in Guice");
       binder.bind(key).toProvider(this);
     }
 

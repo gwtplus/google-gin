@@ -31,10 +31,12 @@ import com.google.inject.TypeLiteral;
 class BinderAdapter implements GinBinder {
   private final Binder binder;
   private GinjectorBindings bindings;
+  private final boolean hideChildModules;
 
-  BinderAdapter(Binder binder, GinjectorBindings bindings) {
+  BinderAdapter(Binder binder, GinjectorBindings bindings, boolean hideChildModules) {
     this.binder = binder;
     this.bindings = bindings;
+    this.hideChildModules = hideChildModules;
   }
 
   public <T> GinAnnotatedBindingBuilder<T> bind(Class<T> clazz) {
@@ -67,6 +69,9 @@ class BinderAdapter implements GinBinder {
       if (install == null) {
         moduleAdapter = null;
       } else if (install instanceof PrivateGinModule) {
+        if (hideChildModules) {
+          return;
+        }
         moduleAdapter = new PrivateGinModuleAdapter((PrivateGinModule) install, bindings);
       } else {
         moduleAdapter = new GinModuleAdapter(install, bindings);

@@ -28,19 +28,25 @@ import com.google.inject.internal.ProviderMethodsModule;
 public final class GinModuleAdapter implements Module {
   private final GinModule ginModule;
   private final GinjectorBindings bindings;
+  private final boolean hideChildModules;
   
   public GinModuleAdapter(GinModule ginModule) {
-    this.ginModule = ginModule;
-    this.bindings = null;
+    this(ginModule, null, false);
   }
 
   public GinModuleAdapter(GinModule ginModule, GinjectorBindings bindings) {
+    this(ginModule, bindings, false);
+  }
+  
+  public GinModuleAdapter(GinModule ginModule, GinjectorBindings bindings,
+      boolean hideChildModules) {
     if (ginModule == null) {
       throw new NullPointerException("Installing a null module is not permitted");
     }
 
     this.ginModule = ginModule;
     this.bindings = bindings;
+    this.hideChildModules = hideChildModules;
   }
 
   public void configure(Binder binder) {
@@ -48,7 +54,7 @@ public final class GinModuleAdapter implements Module {
     binder = binder.skipSources(GinModuleAdapter.class, BinderAdapter.class,
         AbstractGinModule.class);
 
-    ginModule.configure(new BinderAdapter(binder, bindings));
+    ginModule.configure(new BinderAdapter(binder, bindings, hideChildModules));
 
     // Install provider methods from the GinModule
     binder.install(ProviderMethodsModule.forObject(ginModule));
