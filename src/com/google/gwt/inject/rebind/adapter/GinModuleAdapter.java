@@ -37,7 +37,7 @@ public final class GinModuleAdapter implements Module {
   public GinModuleAdapter(GinModule ginModule, GinjectorBindings bindings) {
     this(ginModule, bindings, false);
   }
-  
+
   public GinModuleAdapter(GinModule ginModule, GinjectorBindings bindings,
       boolean hideChildModules) {
     if (ginModule == null) {

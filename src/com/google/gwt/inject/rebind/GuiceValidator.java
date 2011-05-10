@@ -74,7 +74,7 @@ public class GuiceValidator {
       errorManager.logError("Errors from Guice: " + e.getMessage(), e);
     }
   }
-  
+
   /**
    * Determine which Guice modules to use for validation.
    */
@@ -105,7 +105,7 @@ public class GuiceValidator {
     }
     return lies;
   }
-  
+
   private boolean shouldLieAbout(Binding binding) {
     return binding instanceof CallGwtDotCreateBinding
         || binding instanceof AsyncProviderBinding

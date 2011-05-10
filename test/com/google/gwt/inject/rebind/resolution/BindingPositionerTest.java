@@ -46,6 +46,9 @@ public class BindingPositionerTest extends TestCase {
     expect(root.isBoundInChild(isA(Key.class))).andStubReturn(false);
     expect(child.isBoundInChild(isA(Key.class))).andStubReturn(false);
     expect(grandchild.isBoundInChild(isA(Key.class))).andStubReturn(false);
+    expect(root.isBound(isA(Key.class))).andStubReturn(false);
+    expect(child.isBound(isA(Key.class))).andStubReturn(false);
+    expect(grandchild.isBound(isA(Key.class))).andStubReturn(false);
   }
   
   public void testNoDependencies() throws Exception {
@@ -94,7 +97,7 @@ public class BindingPositionerTest extends TestCase {
         .implicitlyBoundAt(root, foo(), bar(), baz())
         .test();
   }
-  
+
   public void testPositionChain_FooBoundInSibling() throws Exception {
     expect(root.isBoundInChild(foo())).andReturn(true).anyTimes();
     expect(child.isBoundInChild(foo())).andReturn(true).anyTimes();
@@ -227,15 +230,15 @@ public class BindingPositionerTest extends TestCase {
       // Check that already positioned things didn't move
       for (Map.Entry<Key<?>, GinjectorBindings> entry : preExistingLocations.entrySet()) {
         assertSame(String.format("Expected already-bound %s to remain in location %s, but was %s", 
-                entry.getKey(), entry.getValue(), positioner.getPosition(entry.getKey())), 
-            entry.getValue(), positioner.getPosition(entry.getKey()));
+                entry.getKey(), entry.getValue(), positioner.getInstallPosition(entry.getKey())),
+            entry.getValue(), positioner.getInstallPosition(entry.getKey()));
       }
       
       // Check that implicitly bound keys ended up where we expect
       for (Map.Entry<Key<?>, GinjectorBindings> entry : implicitlyBoundKeys.entrySet()) {
         assertSame(String.format("Expected %s to be placed at %s, but was %s",
-            entry.getKey(), entry.getValue(), positioner.getPosition(entry.getKey())), 
-        entry.getValue(), positioner.getPosition(entry.getKey()));
+            entry.getKey(), entry.getValue(), positioner.getInstallPosition(entry.getKey())),
+        entry.getValue(), positioner.getInstallPosition(entry.getKey()));
       }
       
       control.verify();

@@ -64,6 +64,11 @@ import java.util.Set;
  *    Level(k) = lowest(Level(k) U {Level(d) | d \in deps(k)})
  * }
  * 
+ * <p>One exception to the rules above is bindings that are needed in the origin and exposed to the
+ * parent.  Instead of installing and using them from "as high as possible", we need to install
+ * them in the origin, but still use them from "as high as possible."  These bindings are treated
+ * specially, using {@link installOverrides} to separate the use-location from the install-location.
+ *
  * <p>See {@link BindingResolver} for how this fits into the overall algorithm for resolution.
  */
 class BindingPositioner {
@@ -79,6 +84,15 @@ class BindingPositioner {
    */
   private Map<Key<?>, GinjectorBindings> positions = new HashMap<Key<?>, GinjectorBindings>();
   
+  /**
+   * Stores positions for keys that need to be placed below where they are actually installed.  This
+   * is the case for keys that are exposed to parents.  Specifically, if a child module binds and
+   * exposes Foo, then we should install Foo in the child injector, while any uses of Foo (such as
+   * by Bar) can still be created in the parent).
+   */
+  private Map<Key<?>, GinjectorBindings> installOverrides =
+      new HashMap<Key<?>, GinjectorBindings>();
+
   /**
    * The output from {@link DependencyExplorer} which includes the dependency graph, and also the
    * positions for all already available keys.
@@ -101,8 +115,19 @@ class BindingPositioner {
    * Returns the Ginjector where the binding for key should be placed, or null if the key was
    * removed from the dependency graph earlier.
    */
-  public GinjectorBindings getPosition(Key<?> key) {
-    Preconditions.checkNotNull(positions, "Must call position before calling getPosition(Key<?>)");
+  public GinjectorBindings getInstallPosition(Key<?> key) {
+    Preconditions.checkNotNull(positions,
+        "Must call position before calling getInstallPosition(Key<?>)");
+    GinjectorBindings position = installOverrides.get(key);
+    if (position == null) {
+      position = positions.get(key);
+    }
+    return position;
+  }
+
+  public GinjectorBindings getAccessPosition(Key<?> key) {
+    Preconditions.checkNotNull(positions,
+        "Must call position before calling getAccessPosition(Key<?>)");
     return positions.get(key);
   }
 
@@ -123,6 +148,15 @@ class BindingPositioner {
    */
   private GinjectorBindings computeInitialPosition(Key<?> key) {
     GinjectorBindings initialPosition = output.getGraph().getOrigin();
+
+    // If key is already bound in parent, there is a reason that {@link DependencyExplorer}
+    // chose not to use that binding.  Specifically, it implies that the key is exposed to the
+    // parent from the origin.  While we are fine using the higher binding, it is still necessary
+    // to install the biding in the origin.
+    if (initialPosition.getParent() != null && initialPosition.getParent().isBound(key)) {
+      installOverrides.put(key, initialPosition);
+    }
+
     while (initialPosition.getParent() != null 
         && !initialPosition.getParent().isBoundInChild(key)) {
       initialPosition = initialPosition.getParent();

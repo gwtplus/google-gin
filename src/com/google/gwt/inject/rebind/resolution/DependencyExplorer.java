@@ -21,6 +21,7 @@ import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCreationException;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -107,13 +108,30 @@ public class DependencyExplorer {
   /**
    * Find the highest binding in the Ginjector tree that could be used to supply the given key.
    * 
-   * <p>If this ever becomes a bottleneck, we could save a little time by jumping to the
-   * parent whenever we encounter a ParentBinding.
+   * <p>This takes care not to use a higher parent binding if the parent only has the binding
+   * because its exposed from this Ginjector.  This leads to problems because the resolution
+   * algorithm won't actually create the binding here if it can just use a parents binding.
    * 
    * @param key The binding to search for
    * @return the highest ginjector that contains the key or {@code null} if none contain it
    */
   private GinjectorBindings locateHighestAccessibleSource(Key<?> key, GinjectorBindings origin) {
+    // If the binding is exposed to the parent and supplied from the origin, we return null, to
+    // cause the remainder of the resolution process to populate the bindings.
+
+    // If the binding is exposed to the parent and not supplied from the origin, we must return the
+    // highest Ginjector to which the binding is exposed (the same as we would if it was a regular
+    // binding).  This allows bindings that depend on the given key to be positioned in any
+    // Ginjector to which the binding is visible, rather than forcing them to be positioned below
+    // the module that defines the binding.
+    if (!origin.isBound(key) && origin.getParent() != null) {
+      Binding binding = origin.getParent().getBinding(key);
+      if (binding instanceof ExposedChildBinding &&
+          ((ExposedChildBinding) binding).getChildBindings().equals(origin)) {
+        return null;
+      }
+    }
+
     GinjectorBindings source = null;
     for (GinjectorBindings iter = origin; iter != null; iter = iter.getParent()) {
       if (iter.isBound(key)) {
@@ -174,7 +192,7 @@ public class DependencyExplorer {
     
     /**
      * Returns map entries containing the {@code Key<?>}s that weren't already available and the
-     * {@Binding} we created (implicitly) for it.  If there was an error creating the implicit
+     * {@link Binding} we created (implicitly) for it.  If there was an error creating the implicit
      * binding, the key will not be found here.  Look in {@link #getBindingErrors()} instead.
      */
     public Collection<Map.Entry<Key<?>, Binding>> getImplicitBindings() {

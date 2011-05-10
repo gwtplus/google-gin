@@ -210,7 +210,7 @@ public class GinFactoryModuleBuilder {
   private final BindingCollector bindings = new BindingCollector();
 
   /**
-   * See the factory configuration examples at {@link GInFactoryModuleBuilder}.
+   * See the factory configuration examples at {@link GinFactoryModuleBuilder}.
    */
   public <T> GinFactoryModuleBuilder implement(Class<T> source, Class<? extends T> target) {
     return implement(source, TypeLiteral.get(target));

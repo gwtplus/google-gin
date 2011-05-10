@@ -187,5 +187,5 @@ class BindingsProcessor {
   private void createBindingsForModules(List<Module> modules) {
     GuiceElementVisitor visitor = guiceElementVisitorFactory.create(rootGinjectorBindings);
     visitor.visitElementsAndReportErrors(Elements.getElements(modules));
-  } 
+  }
 }

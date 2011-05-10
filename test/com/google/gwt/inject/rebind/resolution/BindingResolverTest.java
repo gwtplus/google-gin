@@ -102,6 +102,7 @@ public class BindingResolverTest extends TestCase {
     expect(node.getChildren()).andStubReturn(new ArrayList<GinjectorBindings>());
     expect(node.isBound(isA(Key.class))).andStubReturn(false);
     expect(node.isBoundInChild(isA(Key.class))).andStubReturn(false);
+    expect(node.getBinding(isA(Key.class))).andStubReturn(null);
     expect(node.getModuleName()).andStubReturn(name);
     return node;
   }
@@ -145,12 +146,15 @@ public class BindingResolverTest extends TestCase {
   private void bind(Key<?> key, GinjectorBindings in) {
     Binding binding = control.createMock(Binding.class);
     expect(in.isBound(key)).andReturn(true).anyTimes();
+    expect(in.getBinding(key)).andReturn(binding).anyTimes();
     bindings.add(binding);
   }
   
-  private void bindChild(Key<?> key, GinjectorBindings parent) {
+  private void bindChild(Key<?> key, GinjectorBindings parent, GinjectorBindings child) {
     ExposedChildBinding binding = control.createMock(ExposedChildBinding.class);
     expect(parent.isBound(key)).andReturn(true).anyTimes();
+    expect(parent.getBinding(key)).andReturn(binding).anyTimes();
+    expect(binding.getChildBindings()).andReturn(child).anyTimes();
     bindings.add(binding);
   }
   
@@ -158,6 +162,7 @@ public class BindingResolverTest extends TestCase {
     ParentBinding binding = control.createMock(ParentBinding.class);
     expect(binding.getParentBindings()).andReturn(parent).anyTimes();
     expect(child.isBound(key)).andReturn(true).anyTimes();
+    expect(child.getBinding(key)).andReturn(binding).anyTimes();
     bindings.add(binding);
   }
   
@@ -213,11 +218,40 @@ public class BindingResolverTest extends TestCase {
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
   }
   
+  public void testResolveDependenciesInOriginExposedToParent() throws Exception {
+    StandardTree tree = createExampleTree();
+    // Bar is bound in the child, but exposed to the root.  Foo should still be in root
+    bind(bar(), tree.childR);
+    bindChild(bar(), tree.root, tree.childR);
+    bind(baz(), tree.root);
+    Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
+
+    tree.root.addBinding(foo(), fooBinding);
+    expectParentBinding(foo(), tree.root, tree.childR);
+
+    replayAndResolve(tree.childR, required(Dependency.GINJECTOR, foo()));
+  }
+
+  public void testResolveDependenciesResolveInOriginExposedToParent() throws Exception {
+    StandardTree tree = createExampleTree();
+    // Bar is bound in the child, but exposed to the root.  Foo should still be in root
+    bindChild(bar(), tree.root, tree.childR);
+    bind(baz(), tree.root);
+    Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
+    Binding barBinding = expectCreateBinding(bar());
+
+    tree.root.addBinding(foo(), fooBinding);
+    tree.childR.addBinding(bar(), barBinding);
+    expectParentBinding(foo(), tree.root, tree.childR);
+
+    replayAndResolve(tree.childR, required(Dependency.GINJECTOR, foo()));
+  }
+
   public void testResolveDependenciesInChildL_ExposedToRoot() throws Exception {
     StandardTree tree = createExampleTree();
     // Bar is bound in the child, but exposed to the root.  Foo should still be in root
     bind(bar(), tree.childL);
-    bindChild(bar(), tree.root);
+    bindChild(bar(), tree.root, tree.childL);
     bind(baz(), tree.root);
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
 
@@ -411,9 +445,9 @@ public class BindingResolverTest extends TestCase {
     setChildren(root, child1, child2, child3);
     
     bind(bar(), child1);
-    bindChild(bar(), root);
+    bindChild(bar(), root, child1);
     bind(baz(), child2);
-    bindChild(baz(), root);
+    bindChild(baz(), root, child2);
     
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
     root.addBinding(foo(), fooBinding);

@@ -35,12 +35,12 @@ public class ModuleInstantiator {
    * Modules specified via a GWT configuration property
    */
   private final Set<Class<? extends GinModule>> configurationModules;
-  
+
   /**
    * Interface of the injector that this class is implementing.
    */
   private TypeLiteral<? extends Ginjector> ginjectorInterface;
-  
+
   @Inject
   public ModuleInstantiator(ErrorManager errorManager,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
@@ -119,14 +119,14 @@ public class ModuleInstantiator {
 
     return null;
   }
-  
+
   private void getModulesFromInjectorInterface(TypeLiteral<?> ginjectorType,
       Set<Class<? extends GinModule>> moduleClasses) {
     GinModules ginModulesAnnotation = ginjectorType.getRawType().getAnnotation(GinModules.class);
     if (ginModulesAnnotation != null) {
       moduleClasses.addAll(Arrays.asList(ginModulesAnnotation.value()));
     }
-    
+
     for (Class<?> ancestor : ginjectorType.getRawType().getInterfaces()) {
       getModulesFromInjectorInterface(ginjectorType.getSupertype(ancestor), moduleClasses);
     }

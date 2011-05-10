@@ -46,12 +46,12 @@ import javax.inject.Provider;
  * see {@link BindingResolver}.
  */
 public class ImplicitBindingCreator {
-  
+
   /**
    * Exception thrown to indicate an error occurred during binding creation.
    */
   public static class BindingCreationException extends Exception {
-    
+
     /**
      * Create a new BindingCreationException using the given format string and arguments.  Will
      * create an exception with a message constructed with {@code String.format(msgFmt, args)}.
@@ -60,21 +60,20 @@ public class ImplicitBindingCreator {
       super(String.format(msgFmt, args));
     }
   }
-  
   private final BindingFactory bindingFactory;
-  
+
   @Inject
   public ImplicitBindingCreator(BindingFactory bindingFactory) {
     this.bindingFactory = bindingFactory;
   }
-  
+
   /**
    * Creates the implicit binding and registers with the {@link LieToGuiceModule} if
    * necessary (and appropriate)
    */
   public Binding create(Key<?> key) throws BindingCreationException {
     TypeLiteral<?> type = key.getTypeLiteral();
-    
+
     // All steps per:
     // http://code.google.com/p/google-guice/wiki/BindingResolution
 
@@ -83,13 +82,13 @@ public class ImplicitBindingCreator {
     // 2. Ask parent injector.
     // 3. Ask child injector.
     // These bindings are created in BindingResolver and are not necessary here.
-    
+
     // 4. Provider injections.
     if (isProviderKey(key)) {
       return bindingFactory.getImplicitProviderBinding(key);
       // TODO(bstoler): Scope the provider binding like the thing being provided?
     }
-    
+
     // 4b. AsyncProvider injections.
     if (isAsyncProviderKey(key)) {
       return bindingFactory.getAsyncProviderBinding(key);
@@ -132,8 +131,8 @@ public class ImplicitBindingCreator {
     // 11. Use a single @Inject or public no-arguments constructor.
     return createImplicitBindingForClass(type);
   }
-  
-  private Binding createImplicitBindingForClass(TypeLiteral<?> type) 
+
+  private Binding createImplicitBindingForClass(TypeLiteral<?> type)
       throws BindingCreationException {
     // Either call the @Inject constructor or use GWT.create
     MethodLiteral<?, Constructor<?>> injectConstructor = getInjectConstructor(type);
@@ -152,7 +151,7 @@ public class ImplicitBindingCreator {
 
     throw new BindingCreationException("No @Inject or default constructor found for %s", type);
   }
-  
+
   /**
    * Returns true iff the passed type has a constructor with zero arguments
    * (default constructors included) and that constructor is non-private,
@@ -177,7 +176,7 @@ public class ImplicitBindingCreator {
 
     return !ReflectUtil.isPrivate(constructor) || ReflectUtil.isPrivate(typeLiteral);
   }
-  
+
   private BindClassBinding createImplementedByBinding(Key<?> key, ImplementedBy implementedBy)
       throws BindingCreationException {
     Class<?> rawType = key.getTypeLiteral().getRawType();
@@ -197,7 +196,7 @@ public class ImplicitBindingCreator {
         BindingContext.forText("@ImplementedBy annotation"));
   }
 
-  private BindProviderBinding createProvidedByBinding(Key<?> key, ProvidedBy providedBy) 
+  private BindProviderBinding createProvidedByBinding(Key<?> key, ProvidedBy providedBy)
       throws BindingCreationException {
     Class<?> rawType = key.getTypeLiteral().getRawType();
     Class<? extends Provider<?>> providerType = providedBy.value();
@@ -223,8 +222,8 @@ public class ImplicitBindingCreator {
     return keyType instanceof ParameterizedType &&
     ((ParameterizedType) keyType).getRawType() == AsyncProvider.class;
   }
-  
-  private MethodLiteral<?, Constructor<?>> getInjectConstructor(TypeLiteral<?> type) 
+
+  private MethodLiteral<?, Constructor<?>> getInjectConstructor(TypeLiteral<?> type)
       throws BindingCreationException {
     Constructor<?>[] constructors = type.getRawType().getDeclaredConstructors();
     MethodLiteral<?, Constructor<?>> injectConstructor = null;

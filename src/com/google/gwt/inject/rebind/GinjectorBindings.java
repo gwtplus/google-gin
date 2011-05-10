@@ -18,6 +18,7 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.Preconditions;
+import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.gwt.inject.rebind.binding.Binding;
@@ -321,6 +322,10 @@ public class GinjectorBindings implements BindingIndex {
 
   public boolean isBound(Key<?> key) {
     return bindings.containsKey(key);
+  }
+
+  public Binding getBinding(Key<?> key) {
+    return bindings.get(key);
   }
 
   public void addDependency(Dependency dependency) {

@@ -89,8 +89,8 @@ public class BindingInstallerTest extends TestCase {
     // foo and bar both had implicit bindings created (with no dependencies).  Foo is installed in
     // the child, and bar is installed in root.  We should add a binding to make bar accessible in
     // the child.
-    expect(positions.getPosition(foo())).andStubReturn(child);
-    expect(positions.getPosition(bar())).andStubReturn(root);
+    expect(positions.getInstallPosition(foo())).andStubReturn(child);
+    expect(positions.getInstallPosition(bar())).andStubReturn(root);
     
     Map<Key<?>, Binding> implicitBindingMap = new HashMap<Key<?>, Binding>();
     
@@ -122,9 +122,9 @@ public class BindingInstallerTest extends TestCase {
     // the dependencies (bar and baz) from the appropriate injectors.  In this case, bar must be
     // inherited from the root, but we don't need to do anything with baz, since it is already
     // available.
-    expect(positions.getPosition(foo())).andStubReturn(child);
-    expect(positions.getPosition(bar())).andStubReturn(root);
-    expect(positions.getPosition(baz())).andStubReturn(child);
+    expect(positions.getInstallPosition(foo())).andStubReturn(child);
+    expect(positions.getInstallPosition(bar())).andStubReturn(root);
+    expect(positions.getInstallPosition(baz())).andStubReturn(child);
     
     Map<Key<?>, Binding> implicitBindingMap = new HashMap<Key<?>, Binding>();
     

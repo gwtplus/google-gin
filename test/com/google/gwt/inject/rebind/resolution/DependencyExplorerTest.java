@@ -9,6 +9,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
 import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCreationException;
 
@@ -34,16 +35,19 @@ public class DependencyExplorerTest extends TestCase {
   private GinjectorBindings origin;
   private DependencyExplorer dependencyExplorer;
   private TreeLogger treeLogger;
+  private Binding binding;
+  private ExposedChildBinding childBinding;
   
   @Override
   protected void setUp() throws Exception {
     control = EasyMock.createControl();
     treeLogger = EasyMock.createNiceMock(TreeLogger.class);
     bindingCreator = control.createMock(ImplicitBindingCreator.class);
-    origin = control.createMock(GinjectorBindings.class);
+    origin = control.createMock("origin", GinjectorBindings.class);
     dependencyExplorer = new DependencyExplorer(bindingCreator, treeLogger);
+    binding = control.createMock("binding", Binding.class);
+    childBinding = control.createMock(ExposedChildBinding.class);
   }
-  
   
   private <T> void assertContentsAnyOrder(Collection<T> actual, T... expected) {
     Set<T> expectedSet = new HashSet<T>();
@@ -60,8 +64,8 @@ public class DependencyExplorerTest extends TestCase {
   public void testAlreadyPositioned() throws Exception {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
         new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
+    expect(origin.isBound(foo())).andReturn(true).anyTimes();
     expect(origin.getParent()).andReturn(null);
-    expect(origin.isBound(foo())).andReturn(true);
     control.replay();
     DependencyExplorerOutput output = dependencyExplorer.explore(origin);
     assertSame(origin, output.getPreExistingLocations().get(foo()));
@@ -79,10 +83,52 @@ public class DependencyExplorerTest extends TestCase {
     GinjectorBindings parent = control.createMock("parent", GinjectorBindings.class);
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
         new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
-    expect(origin.getParent()).andReturn(parent);
+    expect(origin.isBound(foo())).andReturn(false).anyTimes();
+    expect(origin.getParent()).andReturn(parent).anyTimes();
     expect(parent.getParent()).andReturn(null);
-    expect(origin.isBound(foo())).andReturn(false);
+    expect(parent.getBinding(foo())).andReturn(binding);
     expect(parent.isBound(foo())).andReturn(true);
+    control.replay();
+    DependencyExplorerOutput output = dependencyExplorer.explore(origin);
+    assertSame(parent, output.getPreExistingLocations().get(foo()));
+    control.verify();
+  }
+
+  /**
+   * Tests that we don't try to use an exposed binding from the "origin" to satisfy a dependency
+   * from the origin.
+   */
+  public void testSkipsExposedBindingFromOrigin() throws Exception {
+    GinjectorBindings parent = control.createMock("parent", GinjectorBindings.class);
+    expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
+    expect(origin.isBound(foo())).andReturn(false).anyTimes();
+    expect(origin.getParent()).andReturn(parent).anyTimes();
+    expect(parent.getBinding(foo())).andReturn(childBinding);
+    expect(childBinding.getChildBindings()).andReturn(origin);
+    expect(bindingCreator.create(foo())).andReturn(binding);
+    expect(binding.getDependencies()).andReturn(TestUtils.dependencyList());
+    control.replay();
+    DependencyExplorerOutput output = dependencyExplorer.explore(origin);
+    assertTrue(output.getPreExistingLocations().isEmpty());
+    assertTrue(output.getImplicitlyBoundKeys().contains(foo()));
+    control.verify();
+  }
+
+  /**
+   * Tests that we don't skip an exposed binding from a different injector.
+   */
+  public void testUsesExposedBinding() throws Exception {
+    GinjectorBindings parent = control.createMock("parent", GinjectorBindings.class);
+    GinjectorBindings otherGinjector = control.createMock("other", GinjectorBindings.class);
+    expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
+    expect(origin.isBound(foo())).andReturn(false).anyTimes();
+    expect(origin.getParent()).andReturn(parent).anyTimes();
+    expect(parent.getParent()).andReturn(null);
+    expect(parent.isBound(foo())).andReturn(true);
+    expect(parent.getBinding(foo())).andReturn(childBinding);
+    expect(childBinding.getChildBindings()).andReturn(otherGinjector);
     control.replay();
     DependencyExplorerOutput output = dependencyExplorer.explore(origin);
     assertSame(parent, output.getPreExistingLocations().get(foo()));
@@ -93,12 +139,11 @@ public class DependencyExplorerTest extends TestCase {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
             new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.getParent()).andStubReturn(null);
-    expect(origin.isBound(foo())).andReturn(false);
-    Binding binding = control.createMock(Binding.class);
+    expect(origin.isBound(foo())).andReturn(false).anyTimes();
     expect(bindingCreator.create(foo())).andReturn(binding);
     expect(binding.getDependencies()).andReturn(TestUtils.dependencyList(
         new Dependency(foo(), bar(), SOURCE)));
-    expect(origin.isBound(bar())).andReturn(true);
+    expect(origin.isBound(bar())).andReturn(true).anyTimes();
     control.replay();
     DependencyExplorerOutput output = dependencyExplorer.explore(origin);
     assertSame(origin, output.getPreExistingLocations().get(bar()));
@@ -118,7 +163,7 @@ public class DependencyExplorerTest extends TestCase {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
         new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.getParent()).andStubReturn(null);
-    expect(origin.isBound(foo())).andReturn(false);
+    expect(origin.isBound(foo())).andReturn(false).anyTimes();
     expect(bindingCreator.create(foo())).andThrow(new BindingCreationException("failed"));
     control.replay();
     DependencyExplorerOutput output = dependencyExplorer.explore(origin);
@@ -132,10 +177,9 @@ public class DependencyExplorerTest extends TestCase {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
         new Dependency(foo(), bar(), SOURCE)));
     expect(origin.getParent()).andStubReturn(null);
-    expect(origin.isBound(foo())).andReturn(true);
-    expect(origin.isBound(bar())).andReturn(false);
-    expect(origin.isBound(baz())).andReturn(true);
-    Binding binding = control.createMock(Binding.class);
+    expect(origin.isBound(foo())).andReturn(true).anyTimes();
+    expect(origin.isBound(bar())).andReturn(false).anyTimes();
+    expect(origin.isBound(baz())).andReturn(true).anyTimes();
     expect(bindingCreator.create(bar())).andReturn(binding);
     expect(binding.getDependencies()).andReturn(TestUtils.dependencyList(
         new Dependency(bar(), baz(), true, false, SOURCE)));

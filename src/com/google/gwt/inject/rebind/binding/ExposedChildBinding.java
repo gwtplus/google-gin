@@ -50,6 +50,10 @@ public class ExposedChildBinding extends AbstractBinding implements Binding {
     this.childBindings = Preconditions.checkNotNull(childBindings);
   }
 
+  public GinjectorBindings getChildBindings() {
+    return childBindings;
+  }
+
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) {
     String childMethodName = childBindings.getNameGenerator().getGetterMethodName(key);

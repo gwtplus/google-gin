@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  * Adds all of the positioned implicit bindings necessary to satisfy the unresolved bindings in the
  * origin injector to the {@link GinjectorBindings} where we've placed each key.  It installs the
- * following bindings using {@link GinjectorBindings#addBinding(Key, Binding, BindingContext)}:
+ * following bindings using {@link GinjectorBindings#addBinding(Key, Binding)}:
  * <ul>
  * <li>Each implicit binding created for a key is installed in the Ginjector that 
  * {@link BindingPositioner} decided it should be placed in.
@@ -82,7 +82,7 @@ class BindingInstaller {
    */
   private void installBinding(DependencyGraph graph, Key<?> key, Binding binding) {
     // Figure out where we're putting the implicit entry
-    GinjectorBindings implicitEntryPosition = positions.getPosition(key);
+    GinjectorBindings implicitEntryPosition = positions.getInstallPosition(key);
     
     // Ensure that the dependencies are available to the ginjector
     inheritBindingsForDeps(implicitEntryPosition, graph.getDependenciesOf(key));
@@ -97,7 +97,7 @@ class BindingInstaller {
    */
   private void inheritBindingsForDeps(GinjectorBindings ginjector, Iterable<Dependency> deps) {
     for (Dependency dep : deps) {
-      ensureAccessible(dep.getTarget(), positions.getPosition(dep.getTarget()), ginjector);
+      ensureAccessible(dep.getTarget(), positions.getInstallPosition(dep.getTarget()), ginjector);
     }
   }
   
