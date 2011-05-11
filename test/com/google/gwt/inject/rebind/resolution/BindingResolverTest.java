@@ -33,12 +33,13 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
-import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCreationException;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Key;
 import com.google.inject.util.Providers;
 import junit.framework.TestCase;
@@ -81,6 +82,7 @@ public class BindingResolverTest extends TestCase {
   
   protected void setUp() throws Exception {
     super.setUp();
+
     treeLogger = EasyMock.createNiceMock(TreeLogger.class);
     control = createControl();
     parentBinding = control.createMock("parentBinding", ParentBinding.class);
@@ -91,7 +93,7 @@ public class BindingResolverTest extends TestCase {
     bindingResolver = new BindingResolver(
         Providers.of(new DependencyExplorer(bindingCreator, treeLogger)), 
         Providers.of(new UnresolvedBindingValidator(
-            new EagerCycleFinder(errorManager), errorManager)), 
+            new EagerCycleFinder(errorManager), errorManager)),
         Providers.of(new BindingInstaller(new BindingPositioner(), bindingFactory)));
   }
   
@@ -167,7 +169,7 @@ public class BindingResolverTest extends TestCase {
   }
   
   private void expectParentBinding(Key<?> key, GinjectorBindings parent, GinjectorBindings dest) {
-    expect(bindingFactory.getParentBinding(eq(key), eq(parent), isA(BindingContext.class)))
+    expect(bindingFactory.getParentBinding(eq(key), eq(parent), isA(Context.class)))
         .andReturn(parentBinding);
     dest.addBinding(key, parentBinding);
   }
@@ -329,7 +331,7 @@ public class BindingResolverTest extends TestCase {
     StandardTree tree = createExampleTree();
     expect(bindingCreator.create(foo())).andThrow(new BindingCreationException("Unable to create"));
     
-    errorManager.logError(EasyMock.contains("" + foo()));
+    errorManager.logError(isA(String.class), eq(foo()), isA(String.class), isA(List.class));
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
   }
   
@@ -340,7 +342,7 @@ public class BindingResolverTest extends TestCase {
     expect(bindingCreator.create(bar()))
         .andThrow(new BindingCreationException("Unable to create"));
         
-    errorManager.logError(EasyMock.contains("" + bar()));
+    errorManager.logError(isA(String.class), eq(bar()), isA(String.class), isA(List.class));
     replayAndResolve(tree.childLL, required(Dependency.GINJECTOR, foo()));
   }
   
@@ -351,7 +353,7 @@ public class BindingResolverTest extends TestCase {
     expectCreateBinding(baz(), required(baz(), bar()));
     
     Capture<String> errorMessage = new Capture<String>();
-    errorManager.logError(EasyMock.isA(String.class));
+    errorManager.logError(isA(String.class), isA(Object.class), isA(Object.class));
 
     // Intentionally use a different key, so that == won't work
     replayAndResolve(root, required(Dependency.GINJECTOR, bar()));
@@ -365,7 +367,7 @@ public class BindingResolverTest extends TestCase {
     expectCreateBinding(bar(), required(bar(), foo()));
     
     Capture<String> errorMessage = new Capture<String>();
-    errorManager.logError(EasyMock.isA(String.class));
+    errorManager.logError(EasyMock.isA(String.class), EasyMock.anyObject(), EasyMock.anyObject());
 
     // Intentionally use a different key, so that == won't work
     replayAndResolve(root, required(foo(), fooImpl()));
@@ -415,8 +417,9 @@ public class BindingResolverTest extends TestCase {
     
     expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
     expectCreateBinding(bar());
-    errorManager.logError(isA(String.class)); // failure to create bar b/c already bound
-        
+    errorManager.logError(isA(String.class), isA(Object.class), isA(Object.class),
+        isA(Object.class)); // failure to create bar b/c already bound
+
     replayAndResolve(root, required(Dependency.GINJECTOR, foo()));
   }
   

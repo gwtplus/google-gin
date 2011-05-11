@@ -29,7 +29,7 @@ import java.util.List;
 
 public class FactoryBindingTest extends TestCase {
 
-  private static final BindingContext CONTEXT = BindingContext.forText("dummy");
+  private static final Context CONTEXT = Context.forText("dummy");
 
   public void testTooManyParams() {
 

@@ -39,30 +39,28 @@ public interface BindingFactory {
   AsyncProviderBinding getAsyncProviderBinding(Key<?> providerKey);
 
   BindClassBinding getBindClassBinding(Key<?> boundClassKey, Key<?> sourceClassKey,
-      BindingContext context);
+      Context context);
 
-  <T> BindConstantBinding getBindConstantBinding(Key<T> key, T instance, BindingContext context);
+  <T> BindConstantBinding getBindConstantBinding(Key<T> key, T instance, Context context);
 
   BindProviderBinding getBindProviderBinding(Key<? extends Provider<?>> providerKey,
-      Key<?> sourceKey, BindingContext context);
+      Key<?> sourceKey, Context context);
 
   CallConstructorBinding getCallConstructorBinding(MethodLiteral<?, Constructor<?>> constructor);
 
   CallGwtDotCreateBinding getCallGwtDotCreateBinding(TypeLiteral<?> type);
 
   ExposedChildBinding getExposedChildBinding(Key<?> key, GinjectorBindings childBindings,
-      BindingContext context);
+      Context context);
 
   FactoryBinding getFactoryBinding(Map<Key<?>, TypeLiteral<?>> collector, Key<?> factoryKey,
-      BindingContext context);
+      Context context);
 
   ImplicitProviderBinding getImplicitProviderBinding(Key<?> providerKey);
 
-  ParentBinding getParentBinding(Key<?> key, GinjectorBindings parentBindings,
-      BindingContext context);
+  ParentBinding getParentBinding(Key<?> key, GinjectorBindings parentBindings, Context context);
 
-  ProviderMethodBinding getProviderMethodBinding(ProviderMethod<?> providerMethod,
-      BindingContext context);
+  ProviderMethodBinding getProviderMethodBinding(ProviderMethod<?> providerMethod, Context context);
 
   RemoteServiceProxyBinding getRemoteServiceProxyBinding(TypeLiteral<?> type);
 

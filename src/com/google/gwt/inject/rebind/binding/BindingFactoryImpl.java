@@ -59,17 +59,16 @@ public class BindingFactoryImpl implements BindingFactory {
   }
 
   public BindClassBinding getBindClassBinding(Key<?> boundClassKey, Key<?> sourceClassKey,
-      BindingContext context) {
+      Context context) {
     return new BindClassBinding(sourceWriteUtil, boundClassKey, sourceClassKey, context);
   }
 
-  public <T> BindConstantBinding getBindConstantBinding(Key<T> key, T instance,
-      BindingContext context) {
+  public <T> BindConstantBinding getBindConstantBinding(Key<T> key, T instance, Context context) {
     return new BindConstantBinding<T>(sourceWriteUtil, key, instance, context);
   }
 
   public BindProviderBinding getBindProviderBinding(Key<? extends Provider<?>> providerKey,
-      Key<?> sourceKey, BindingContext context) {
+      Key<?> sourceKey, Context context) {
     return new BindProviderBinding(sourceWriteUtil, providerKey, sourceKey, context);
   }
 
@@ -80,17 +79,17 @@ public class BindingFactoryImpl implements BindingFactory {
 
   public CallGwtDotCreateBinding getCallGwtDotCreateBinding(TypeLiteral<?> type) {
     return new CallGwtDotCreateBinding(sourceWriteUtil, guiceUtil, type,
-        BindingContext.forText("Implicit GWT.create binding for " + type));
+        Context.forText("Implicit GWT.create binding for " + type));
   }
   
   public ExposedChildBinding getExposedChildBinding(Key<?> key, GinjectorBindings childBindings,
-      BindingContext context) {
+      Context context) {
     return new ExposedChildBinding(sourceWriteUtil, ginjectorNameGenerator, key, childBindings,
         context);
   }
   
-  public FactoryBinding getFactoryBinding(Map<Key<?>, TypeLiteral<?>> collector,
-      Key<?> factoryKey, BindingContext context) {
+  public FactoryBinding getFactoryBinding(Map<Key<?>, TypeLiteral<?>> collector, Key<?> factoryKey,
+      Context context) {
     return new FactoryBinding(sourceWriteUtil, collector, factoryKey, context);
   }
 
@@ -103,12 +102,12 @@ public class BindingFactoryImpl implements BindingFactory {
   }
   
   public ParentBinding getParentBinding(Key<?> key, GinjectorBindings parentBindings,
-      BindingContext context) {
+      Context context) {
     return new ParentBinding(sourceWriteUtil, ginjectorNameGenerator, key, parentBindings, context);
   }
   
   public ProviderMethodBinding getProviderMethodBinding(ProviderMethod<?> providerMethod,
-      BindingContext context) {
+      Context context) {
     return new ProviderMethodBinding(guiceUtil, sourceWriteUtil, providerMethod, context);
   }
 

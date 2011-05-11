@@ -35,7 +35,7 @@ public class GinjectorBinding extends AbstractBinding implements Binding {
   private final Class<? extends Ginjector> ginjectorInterface;
 
   @Inject
-  public GinjectorBinding(SourceWriteUtil sourceWriteUtil, 
+  public GinjectorBinding(SourceWriteUtil sourceWriteUtil,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface) {
     // This message is used to generate double-binding errors.  We output a very
     // specific message, because people were confused and tried to bind their
@@ -44,8 +44,8 @@ public class GinjectorBinding extends AbstractBinding implements Binding {
     // TODO(dburrows): probably it's better to explicitly error if the user
     // manually binds the ginjector, instead of relying on the double-binding
     // check to catch it.
-    super(BindingContext.forText("Automatic binding for " + ginjectorInterface
-        + "; you should not need to bind this manually."));
+    super(Context.format("Automatic binding for %s; you should not need to bind this manually.",
+        ginjectorInterface));
 
     this.sourceWriteUtil = sourceWriteUtil;
     this.ginjectorInterface = ginjectorInterface;
@@ -59,6 +59,6 @@ public class GinjectorBinding extends AbstractBinding implements Binding {
   public Collection<Dependency> getDependencies() {
     return Collections.singletonList(
         new Dependency(Dependency.GINJECTOR, Key.get(ginjectorInterface),
-            "Automatic binding for " + ginjectorInterface));
+            "Automatic binding for %s", ginjectorInterface));
   }
 }

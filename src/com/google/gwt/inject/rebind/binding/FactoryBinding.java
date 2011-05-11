@@ -23,6 +23,7 @@ import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -101,7 +102,7 @@ public class FactoryBinding extends AbstractBinding implements Binding {
   private final Set<Key<?>> implementations = new HashSet<Key<?>>();
 
   FactoryBinding(SourceWriteUtil sourceWriteUtil, Map<Key<?>, TypeLiteral<?>> collector,
-      Key<?> factoryKey, BindingContext context) {
+      Key<?> factoryKey, Context context) {
     super(context);
 
     this.sourceWriteUtil = sourceWriteUtil;
@@ -155,7 +156,7 @@ public class FactoryBinding extends AbstractBinding implements Binding {
 
   private void matchMethods(Key<?> factoryKey) throws ErrorsException {
     Errors errors = new Errors();
-    dependencies.add(new Dependency(Dependency.GINJECTOR, factoryKey, getContext().toString()));
+    dependencies.add(new Dependency(Dependency.GINJECTOR, factoryKey, getContext()));
     Class<?> factoryRawType = factoryType.getRawType();
 
     // getMethods() includes inherited methods from super-interfaces.
@@ -255,8 +256,10 @@ public class FactoryBinding extends AbstractBinding implements Binding {
 
         if (constructorHasMatchingParams(implementation, constructor, paramList, errors)) {
           if (matchingConstructor != null) {
-            errors.addMessage("%s has more than one constructor annotated with @AssistedInject "
-                + "that matches the parameters in method %s.", implementation, method);
+            errors.addMessage(PrettyPrinter.format(
+                "%s has more than one constructor annotated with @AssistedInject "
+                    + "that matches the parameters in method %s.",
+                implementation, method));
             return null;
           } else {
             matchingConstructor = constructor;
@@ -270,8 +273,9 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     }
 
     if (anyAssistedInjectConstructors) {
-      errors.addMessage("%s has @AssistedInject constructors, but none of them match the "
-           + "parameters in method %s.", implementation, method);
+      errors.addMessage(PrettyPrinter.format(
+          "%s has @AssistedInject constructors, but none of them match the "
+              + "parameters in method %s.", implementation, method));
       return null;
     }
 
@@ -284,8 +288,9 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     }
 
     // No matching constructor exists, complain.
-    errors.addMessage("%s has no constructors matching the parameters in method %s.",
-        implementation, method);
+    errors.addMessage(PrettyPrinter.format(
+        "%s has no constructors matching the parameters in method %s.",
+        implementation, method));
     return null;
   }
 
@@ -362,9 +367,9 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     } else if (key.getAnnotationType() == Assisted.class) {
       return key;
     } else {
-      errors.withSource(method).addMessage(
+      errors.withSource(method).addMessage(PrettyPrinter.format(
           "Only @Assisted is allowed for factory parameters, but found @%s",
-          key.getAnnotationType());
+          key.getAnnotationType()));
       throw errors.toException();
     }
   }

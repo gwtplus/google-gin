@@ -27,7 +27,7 @@ import junit.framework.TestCase;
 public class BindConstantBindingTest extends TestCase {
 
   private static final String SOURCE = "dummy";
-  private static final BindingContext CONTEXT = BindingContext.forText(SOURCE);
+  private static final Context CONTEXT = Context.forText(SOURCE);
 
   // TODO(schmitt):  Add tests for other constant types.
 

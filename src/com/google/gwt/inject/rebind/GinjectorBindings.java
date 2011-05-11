@@ -22,7 +22,6 @@ import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.gwt.inject.rebind.binding.Binding;
-import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
@@ -360,13 +359,13 @@ public class GinjectorBindings implements BindingIndex {
   public void addBinding(Key<?> key, Binding binding) {
     assertNotFinalized();
     if (bindings.containsKey(key)) {
-      errorManager.logError(String.format("Double-bound: %s.  Bound at %s and %s", key, 
-          bindings.get(key).getContext(), binding.getContext()));
+      errorManager.logError("Double-bound: %s.  Bound at %s and %s", key,
+          bindings.get(key).getContext(), binding.getContext());
       return;
     }
 
     if (!isClassAccessibleFromGinjector(key.getTypeLiteral())) {
-      errorManager.logError("Can not inject an instance of an inaccessible class. Key=" + key);
+      errorManager.logError("Can not inject an instance of an inaccessible class: %s", key);
       return;
     }
 

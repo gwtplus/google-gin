@@ -24,13 +24,13 @@ import com.google.gwt.dev.util.Preconditions;
  * <p>Provides an implementation of {@link Binding#getContext()}.
  */
 abstract class AbstractBinding implements Binding {
-  private final BindingContext context;
+  private final Context context;
 
-  protected AbstractBinding(BindingContext context) {
+  protected AbstractBinding(Context context) {
     this.context = Preconditions.checkNotNull(context);
   }
 
-  public BindingContext getContext() {
+  public Context getContext() {
     return context;
   }
 }

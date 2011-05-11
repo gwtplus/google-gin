@@ -55,8 +55,7 @@ public class BindConstantBinding<T> extends AbstractBinding implements Binding {
         || clazz.isEnum();
   }
 
-  BindConstantBinding(SourceWriteUtil sourceWriteUtil, Key<T> key, T instance,
-      BindingContext context) {
+  BindConstantBinding(SourceWriteUtil sourceWriteUtil, Key<T> key, T instance, Context context) {
     super(context);
 
     this.sourceWriteUtil = sourceWriteUtil;

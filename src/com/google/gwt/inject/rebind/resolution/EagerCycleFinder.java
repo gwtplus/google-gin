@@ -117,9 +117,6 @@ public class EagerCycleFinder {
   }
   
   private void reportCycle(Dependency cycleEdge) {
-    // TODO(bchambers, dburrows): Once we have BindingContext on each Dependency, and have a better
-    // print method than just dumping the list using toString, update this to report a cleaner
-    // error message.
     cycleDetected = true;
     
     // Get the edges in the cycle
@@ -157,7 +154,9 @@ public class EagerCycleFinder {
   }
 
   void reportError(List<Dependency> pathToCycle, List<Dependency> cycle) {
-    errorManager.logError(String.format("Cycle detected in the dependency graph.  "
-        + "Consider using a Provider?%n  Path To Cycle: %s%n  Cycle: %s%n", pathToCycle, cycle));
+    Object pathToCycleArg = pathToCycle == null ? "(none)" : pathToCycle;
+    errorManager.logError("Cycle detected in the dependency graph.  "
+        + "Consider using a Provider?%n  Path To Cycle:%n%s%n  Cycle:%n%s%n",
+        pathToCycleArg, cycle);
   }
 }

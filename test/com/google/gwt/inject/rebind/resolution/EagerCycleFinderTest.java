@@ -24,6 +24,7 @@ import static org.easymock.EasyMock.isA;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Key;
 
 import junit.framework.TestCase;
@@ -131,7 +132,7 @@ public class EagerCycleFinderTest extends TestCase {
   }
   
   public void testOnlyReportedOnce() throws Exception {
-    errorManager.logError(isA(String.class));
+    errorManager.logError(isA(String.class), isA(Object.class), isA(Object.class));
     expect(origin.getDependencies()).andStubReturn(
         TestUtils.dependencyList(
             new Dependency(Dependency.GINJECTOR, foo(), SOURCE),

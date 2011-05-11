@@ -17,6 +17,7 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -36,12 +37,12 @@ public class ErrorManager {
     this.logger = logger;
   }
 
-  public void logError(String message) {
-    logError(message, null);
+  public void logError(String message, Object... args) {
+    logError(message, null, (Object[]) args);
   }
 
-  public void logError(String message, Throwable t) {
-    logger.log(TreeLogger.ERROR, message, t);
+  public void logError(String message, Throwable t, Object... args) {
+    logger.log(TreeLogger.ERROR, PrettyPrinter.format(message, args), t);
     foundError = true;
   }
 

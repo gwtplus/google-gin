@@ -59,7 +59,7 @@ public class AsyncProviderBinding extends AbstractBinding implements Binding {
   private final Key<?> targetKey;
 
   AsyncProviderBinding(SourceWriteUtil sourceWriteUtil, Key<?> providerKey) {
-    super(BindingContext.forText("Implicit asynchronous provider for " + providerKey));
+    super(Context.format("Implicit injection of %s", providerKey));
 
     this.sourceWriteUtil = Preconditions.checkNotNull(sourceWriteUtil);
     this.providerKey = Preconditions.checkNotNull(providerKey);
@@ -99,8 +99,7 @@ public class AsyncProviderBinding extends AbstractBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {    
-    return Collections.singleton(new Dependency(providerKey, targetKey, false, true,
-        "Implicit asynchronous provider for " + targetKey));
+    return Collections.singleton(new Dependency(providerKey, targetKey, false, true, getContext()));
   }
 
   private Key<?> getKeyWithSameAnnotation(Type keyType, Key<?> baseKey) {

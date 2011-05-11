@@ -21,12 +21,13 @@ import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
 import com.google.gwt.inject.rebind.binding.Binding;
-import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.RemoteServiceProxyBinding;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.ImplementedBy;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -57,7 +58,7 @@ public class ImplicitBindingCreator {
      * create an exception with a message constructed with {@code String.format(msgFmt, args)}.
      */
     public BindingCreationException(String msgFmt, Object... args) {
-      super(String.format(msgFmt, args));
+      super(PrettyPrinter.format(msgFmt, args));
     }
   }
   private final BindingFactory bindingFactory;
@@ -193,7 +194,7 @@ public class ImplicitBindingCreator {
     }
 
     return bindingFactory.getBindClassBinding(Key.get(implementationType), key,
-        BindingContext.forText("@ImplementedBy annotation"));
+        Context.forText("@ImplementedBy annotation"));
   }
 
   private BindProviderBinding createProvidedByBinding(Key<?> key, ProvidedBy providedBy)
@@ -207,7 +208,7 @@ public class ImplicitBindingCreator {
     }
 
     return bindingFactory.getBindProviderBinding(Key.get(providerType), key,
-        BindingContext.forText("@ProvidedBy annotation"));
+        Context.forText("@ProvidedBy annotation"));
   }
 
   private boolean isProviderKey(Key<?> key) {
@@ -233,7 +234,7 @@ public class ImplicitBindingCreator {
         if (injectConstructor != null) {
           throw new BindingCreationException(
               "More than one @Inject constructor found for %s; %s, %s",
-              type, injectConstructor, constructor);
+              type, injectConstructor, constructorLiteral);
         }
         injectConstructor = constructorLiteral;
       }

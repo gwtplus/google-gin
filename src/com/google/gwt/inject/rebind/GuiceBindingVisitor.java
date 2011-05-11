@@ -17,9 +17,10 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.inject.rebind.adapter.GwtDotCreateProvider;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
-import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Key;
 import com.google.inject.Scope;
 import com.google.inject.Singleton;
@@ -59,7 +60,7 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   }
 
   public Void visit(ProviderKeyBinding<? extends T> providerKeyBinding) {
-    BindingContext context = BindingContext.forElement(providerKeyBinding);
+    Context context = Context.forElement(providerKeyBinding);
     bindingsCollection.addBinding(
         targetKey,
         bindingFactory.getBindProviderBinding(
@@ -74,7 +75,7 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
     // provider methods
     Provider<? extends T> provider = providerInstanceBinding.getProviderInstance();
     if (provider instanceof ProviderMethod) {
-      BindingContext context = BindingContext.forElement(providerInstanceBinding);
+      Context context = Context.forElement(providerInstanceBinding);
       bindingsCollection.addBinding(targetKey,
           bindingFactory.getProviderMethodBinding((ProviderMethod) provider, context));
       return null;
@@ -90,7 +91,7 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   }
 
   public Void visit(LinkedKeyBinding<? extends T> linkedKeyBinding) {
-    BindingContext context = BindingContext.forElement(linkedKeyBinding);
+    Context context = Context.forElement(linkedKeyBinding);
     bindingsCollection.addBinding(targetKey,
         bindingFactory.getBindClassBinding(linkedKeyBinding.getLinkedKey(), targetKey, context));
     return null;
@@ -99,12 +100,13 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   public Void visit(InstanceBinding<? extends T> instanceBinding) {
     T instance = instanceBinding.getInstance();
     if (BindConstantBinding.isConstantKey(targetKey)) {
-      BindingContext context = BindingContext.forElement(instanceBinding);
+      Context context = Context.forElement(instanceBinding);
       bindingsCollection.addBinding(targetKey,
           bindingFactory.getBindConstantBinding(targetKey, instance, context));
     } else {
       messages.add(new Message(instanceBinding.getSource(),
-          "Instance binding not supported; key=" + targetKey + " inst=" + instance));
+          PrettyPrinter.format("Instance binding not supported; key=%s, inst=%s",
+              targetKey, instance)));
     }
 
     return null;
@@ -117,12 +119,12 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
 
   private void addImplicitBinding(Element sourceElement) {
     bindingsCollection.addDependency(new Dependency(Dependency.GINJECTOR, targetKey,
-        BindingContext.forElement(sourceElement).toString()));
+        Context.forElement(sourceElement).toString()));
   }
 
   protected Void visitOther(com.google.inject.Binding<? extends T> binding) {
-    messages.add(new Message(binding.getSource(), "Unsupported binding provided for key: "
-        + targetKey + ": " + binding));
+    messages.add(new Message(binding.getSource(), PrettyPrinter.format(
+        "Unsupported binding provided for key: %s: %s", targetKey, binding)));
     return null;
   }
 
@@ -134,7 +136,8 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   // TODO(schmitt): We don't support this right now in any case, but it's
   // strange to be using the Guice Scope instead of javax.inject.Scope
   public Void visitScope(Scope scope) {
-    messages.add(new Message("Explicit scope unsupported: key=" + targetKey + " scope=" + scope));
+    messages.add(new Message(PrettyPrinter.format("Explicit scope unsupported: key=%s scope=%s",
+        targetKey, scope)));
     return null;
   }
 
@@ -142,8 +145,8 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
     if (scopeAnnotation == Singleton.class || scopeAnnotation == javax.inject.Singleton.class) {
       bindingsCollection.putScope(targetKey, GinScope.SINGLETON);
     } else {
-      messages.add(new Message("Unsupported scope annoation: key=" + targetKey + " scope="
-          + scopeAnnotation));
+      messages.add(new Message(PrettyPrinter.format("Unsupported scope annotation: key=%s scope=%s",
+          targetKey, scopeAnnotation)));
     }
     return null;
   }

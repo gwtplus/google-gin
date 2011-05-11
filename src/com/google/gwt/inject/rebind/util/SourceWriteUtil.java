@@ -16,8 +16,8 @@
 
 package com.google.gwt.inject.rebind.util;
 
-import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingIndex;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
@@ -346,7 +346,7 @@ public class SourceWriteUtil {
    * the SourceWriter to ensure that indents, Javadoc comments, etc are handled
    * properly.
    */
-  public void writeBindingContext(SourceWriter writer, BindingContext context) {
+  public void writeBindingContext(SourceWriter writer, Context context) {
     // Avoid a trailing \n -- the GWT class source file composer will output an
     // ugly extra newline if we do that.
     String text = context.toString();
@@ -372,7 +372,7 @@ public class SourceWriteUtil {
    * @param writer The writer to use in displaying the context.
    * @param bindingContext The context of the binding.
    */
-  public void writeBindingContextJavadoc(SourceWriter writer, BindingContext bindingContext,
+  public void writeBindingContextJavadoc(SourceWriter writer, Context bindingContext,
       String description) {
     writer.beginJavaDocComment();
     writer.println(description);
@@ -388,7 +388,7 @@ public class SourceWriteUtil {
    * @param writer The writer to use to write this comment.
    * @param bindingContext The context of the binding.
    */
-  public void writeBindingContextJavadoc(SourceWriter writer, BindingContext bindingContext,
+  public void writeBindingContextJavadoc(SourceWriter writer, Context bindingContext,
       Key<?> key) {
     writeBindingContextJavadoc(writer, bindingContext,
         "Binding for " + key.getTypeLiteral() + " declared at:");

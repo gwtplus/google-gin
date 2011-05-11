@@ -41,7 +41,7 @@ public class ParentBinding extends AbstractBinding implements Binding {
   private GinjectorNameGenerator ginjectorNameGenerator;
 
   ParentBinding(SourceWriteUtil sourceWriteUtil, GinjectorNameGenerator ginjectorNameGenerator,
-      Key<?> key, GinjectorBindings parentBindings, BindingContext context) {
+      Key<?> key, GinjectorBindings parentBindings, Context context) {
     super(context);
 
     this.sourceWriteUtil = sourceWriteUtil;

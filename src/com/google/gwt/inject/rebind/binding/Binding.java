@@ -43,7 +43,7 @@ public interface Binding {
   /**
    * Returns the context in which this binding was created.
    */
-  BindingContext getContext();
+  Context getContext();
 
   /**
    * Returns the set of dependencies that this binding produces.  This contains edges coming into

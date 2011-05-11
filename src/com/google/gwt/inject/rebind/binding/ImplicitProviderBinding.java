@@ -41,7 +41,7 @@ public class ImplicitProviderBinding extends AbstractBinding implements Binding 
   private final Key<?> providerKey;
 
   ImplicitProviderBinding(SourceWriteUtil sourceWriteUtil, Key<?> providerKey) {
-    super(BindingContext.forText("Implicit provider for " + providerKey));
+    super(Context.format("Implicit provider for %s", providerKey));
 
     this.sourceWriteUtil = sourceWriteUtil;
     this.providerKey = Preconditions.checkNotNull(providerKey);
@@ -65,8 +65,7 @@ public class ImplicitProviderBinding extends AbstractBinding implements Binding 
   }
 
   public Collection<Dependency> getDependencies() {
-    return Collections.singleton(new Dependency(providerKey, targetKey, false, true,
-        getContext().toString()));
+    return Collections.singleton(new Dependency(providerKey, targetKey, false, true, getContext()));
   }
 
   // TODO(schmitt): Remove duplication with AsyncProviderBinding.

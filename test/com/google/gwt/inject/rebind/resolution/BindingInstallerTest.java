@@ -24,8 +24,8 @@ import static org.easymock.EasyMock.isA;
 
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
-import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
@@ -97,7 +97,7 @@ public class BindingInstallerTest extends TestCase {
     // Parent Binding to make bar available to child
     ParentBinding barBinding = control.createMock("barBinding", ParentBinding.class);
     expect(child.isBound(bar())).andReturn(false);
-    expect(bindingFactory.getParentBinding(eq(bar()), eq(root), isA(BindingContext.class)))
+    expect(bindingFactory.getParentBinding(eq(bar()), eq(root), isA(Context.class)))
         .andReturn(barBinding);
     
     // Implicit binding for Foo
@@ -131,7 +131,7 @@ public class BindingInstallerTest extends TestCase {
     // Parent Binding to make bar available to child
     ParentBinding barBinding = control.createMock("barBinding", ParentBinding.class);
     expect(child.isBound(bar())).andReturn(false);
-    expect(bindingFactory.getParentBinding(eq(bar()), eq(root), isA(BindingContext.class)))
+    expect(bindingFactory.getParentBinding(eq(bar()), eq(root), isA(Context.class)))
         .andReturn(barBinding);
 
     // Implicit binding for Bar

@@ -17,6 +17,7 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GuiceBindingVisitor;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 
@@ -45,7 +46,7 @@ public class Dependency {
   private final Key<?> target;
   private final boolean optional;
   private final boolean lazy;
-  private final String context;
+  private final Context context;
   
   /**
    * Construct a dependency edge from the given source to target keys.  Creates a required, eager 
@@ -55,8 +56,23 @@ public class Dependency {
    *     described above.
    * @param target the key that is depended on
    * @param context a brief description of the context of the dependency (e.g., Foo.java:123)
+   * @param contextArgs arguments to pretty-print into the context as with
+   *     {@link PrettyPrinter#format}
    */
-  public Dependency(Key<?> source, Key<?> target, String context) {
+  public Dependency(Key<?> source, Key<?> target, String context, Object... contextArgs) {
+    this(source, target, false, false, context, contextArgs);
+  }
+
+  /**
+   * Construct a dependency edge from the given source to target keys.  Creates a required, eager 
+   * edge.
+   *
+   * @param source The key that depends on target.  Can use {@link Dependency#GINJECTOR} as
+   *     described above.
+   * @param target the key that is depended on
+   * @param context the context of the dependency (e.g., Foo.java:123)
+   */
+  public Dependency(Key<?> source, Key<?> target, Context context) {
     this(source, target, false, false, context);
   }
   
@@ -71,13 +87,33 @@ public class Dependency {
    * @param lazy {@code true} iff the dependency is only needed on-demand (eg, by calling 
    *     {@link Provider#get}).  A cycle is only a problem if none of the edges are lazy.
    * @param context a brief description of the context of the dependency (e.g., Foo.java:123)
+   * @param contextArgs arguments to pretty-print into the context as with
+   *     {@link PrettyPrinter#format}
    */
-  public Dependency(Key<?> source, Key<?> target, boolean optional, boolean lazy, String context) {
+  public Dependency(Key<?> source, Key<?> target, boolean optional, boolean lazy, String context,
+      Object... contextArgs) {
+    this(source, target, optional, lazy, Context.format(context, (Object[]) contextArgs));
+
+    Preconditions.checkArgument(!context.isEmpty(), "dependency context must not be empty");
+  }
+
+  /**
+   * Construct a dependency edge from the given source to target keys.
+   * 
+   * @param source The key that depends on the target.  Can use {@link Dependency#GINJECTOR} as
+   *     described above.
+   * @param target the key that is depended on
+   * @param optional {@code true} iff the dependency is optional.  Errors will not be reported if
+   *     the target is unavailable.
+   * @param lazy {@code true} iff the dependency is only needed on-demand (eg, by calling 
+   *     {@link Provider#get}).  A cycle is only a problem if none of the edges are lazy.
+   * @param context the context of the dependency (e.g., Foo.java:123)
+   */
+  public Dependency(Key<?> source, Key<?> target, boolean optional, boolean lazy, Context context) {
     Preconditions.checkArgument(source != null, "null is not supported as the source");
     Preconditions.checkArgument(target != null && !target.equals(GINJECTOR),
         "null and GINJECTOR are not supported as the target.");
     Preconditions.checkArgument(context != null, "dependency context must not be null");
-    Preconditions.checkArgument(!context.isEmpty(), "dependency context must not be empty");
     this.source = source;
     this.target = target;
     this.optional = optional;
@@ -85,10 +121,9 @@ public class Dependency {
     this.context = context;
   }
 
-  public String getContext() {
+  public Context getContext() {
     return context;
   }
-
   
   public Key<?> getTarget() {
     return target;

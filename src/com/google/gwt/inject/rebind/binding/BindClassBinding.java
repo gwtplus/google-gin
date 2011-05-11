@@ -35,7 +35,7 @@ public class BindClassBinding extends AbstractBinding implements Binding {
   private final Key<?> boundClassKey;
 
   BindClassBinding(SourceWriteUtil sourceWriteUtil, Key<?> boundClassKey, Key<?> sourceClassKey,
-      BindingContext context) {
+      Context context) {
     super(context);
 
     this.sourceWriteUtil = sourceWriteUtil;
@@ -50,11 +50,11 @@ public class BindClassBinding extends AbstractBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
-    String source = getContext().toString();
+    Context context = getContext();
 
     Collection<Dependency> dependencies = new ArrayList<Dependency>();
-    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceClassKey, source));
-    dependencies.add(new Dependency(sourceClassKey, boundClassKey, source));
+    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceClassKey, context));
+    dependencies.add(new Dependency(sourceClassKey, boundClassKey, context));
     return dependencies;
   }
 }

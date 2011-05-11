@@ -45,7 +45,7 @@ abstract class CreatorBinding extends AbstractBinding implements Binding {
   private final TypeLiteral<?> type;
 
   protected CreatorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
-        TypeLiteral<?> type, BindingContext context) {
+        TypeLiteral<?> type, Context context) {
     super(context);
 
     this.sourceWriteUtil = sourceWriteUtil;

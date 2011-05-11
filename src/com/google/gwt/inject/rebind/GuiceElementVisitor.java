@@ -16,8 +16,8 @@
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -139,7 +139,7 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
     for (Key<?> key : privateElements.getExposedKeys()) {
       ExposedChildBinding childBinding =
           bindingFactory.getExposedChildBinding(key, childCollection,
-              BindingContext.forElement(privateElements));
+              Context.forElement(privateElements));
       logger.log(TreeLogger.TRACE, "Child binding for " + key + ": " + childBinding);
       bindings.addBinding(key, childBinding);
     }

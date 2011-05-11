@@ -18,8 +18,8 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
-import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.FactoryBinding;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
@@ -136,10 +136,9 @@ class BindingsProcessor {
         binding = bindingFactory.getFactoryBinding(
             factoryModule.getBindings(),
             factoryModule.getFactoryType(),
-            BindingContext.forText(factoryModule.getSource()));
+            Context.forText(factoryModule.getSource()));
       } catch (ConfigurationException e) {
-        errorManager.logError("Factory " + factoryModule.getFactoryType()
-            + " could not be created: ", e);
+        errorManager.logError("Factory %s could not be created", factoryModule.getFactoryType(), e);
         continue;
       }
 
@@ -157,8 +156,8 @@ class BindingsProcessor {
     for (MethodLiteral<?, Method> method : completeCollector.getMethods(ginjectorInterface)) {
       List<TypeLiteral<?>> parameters = method.getParameterTypes();
       if (parameters.size() > 1) {
-        errorManager.logError("Injector methods cannot have more than one parameter, found: " 
-            + method);
+        errorManager.logError("Injector methods cannot have more than one parameter, found: %s",
+            method);
       }
 
       if (parameters.size() == 1) {
@@ -167,12 +166,14 @@ class BindingsProcessor {
         Class<?> paramType = parameters.get(0).getRawType();
         if (!ReflectUtil.isClassOrInterface(paramType)) {
           errorManager.logError(
-              "Injector method parameter types must be a class or interface, found: " + method);
+              "Injector method parameter types must be a class or interface, found: %s",
+              method);
         }
 
         if (!method.getReturnType().getRawType().equals(Void.TYPE)) {
           errorManager.logError(
-              "Injector methods with a parameter must have a void return type, found: " + method);
+              "Injector methods with a parameter must have a void return type, found: %s",
+              method);
         }
       } else if (method.getReturnType().getRawType().equals(Void.TYPE)) {
 

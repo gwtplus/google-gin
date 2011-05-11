@@ -36,7 +36,7 @@ public class BindProviderBinding extends AbstractBinding implements Binding {
   private final Key<?> sourceKey;
 
   BindProviderBinding(SourceWriteUtil sourceWriteUtil, Key<? extends Provider<?>> providerKey,
-      Key<?> sourceKey, BindingContext context) {
+      Key<?> sourceKey, Context context) {
     super(context);
 
     this.sourceWriteUtil = sourceWriteUtil;
@@ -51,11 +51,11 @@ public class BindProviderBinding extends AbstractBinding implements Binding {
   }
 
   public Collection<Dependency> getDependencies() {
-    String source = getContext().toString();
+    Context context = getContext();
 
     Collection<Dependency> dependencies = new ArrayList<Dependency>();
-    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceKey, source));
-    dependencies.add(new Dependency(sourceKey, providerKey, source));
+    dependencies.add(new Dependency(Dependency.GINJECTOR, sourceKey, context));
+    dependencies.add(new Dependency(sourceKey, providerKey, context));
     return dependencies;
   }
 }

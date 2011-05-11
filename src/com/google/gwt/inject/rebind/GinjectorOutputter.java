@@ -21,7 +21,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.binding.Binding;
-import com.google.gwt.inject.rebind.binding.BindingContext;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
@@ -191,7 +191,7 @@ class GinjectorOutputter {
    */
   private void outputBinding(NameGenerator nameGenerator, Key<?> key, Binding binding,
       GinScope scope, StringBuilder constructorBody) {
-    BindingContext bindingContext = binding.getContext();
+    Context bindingContext = binding.getContext();
 
     String getter = nameGenerator.getGetterMethodName(key);
     String creator = nameGenerator.getCreatorMethodName(key);
@@ -206,8 +206,8 @@ class GinjectorOutputter {
       binding.writeCreatorMethods(writer, "private " + typeName + " " + creator + "()", 
           nameGenerator);
     } catch (NoSourceNameException e) {
-      errorManager.logError("Error trying to write source for [" + key + "] -> ["
-          + binding + "]; binding declaration: " + bindingContext, e);
+      errorManager.logError("Error trying to write source for [%s] -> [%s];"
+          + " binding declaration: %s", e, key, binding, bindingContext);
       return;
     }
 
@@ -251,7 +251,7 @@ class GinjectorOutputter {
     writer.println();
   }
 
-  private void appendBindingContextCommentToConstructor(BindingContext bindingContext,
+  private void appendBindingContextCommentToConstructor(Context bindingContext,
       StringBuilder constructorBody) {
     for(String line : bindingContext.toString().split("\n")) {
       constructorBody.append("//   ").append(line).append("\n");

@@ -17,8 +17,8 @@ package com.google.gwt.inject.rebind.resolution;
 
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
-import com.google.gwt.inject.rebind.binding.BindingContext;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
@@ -108,8 +108,8 @@ class BindingInstaller {
   private void ensureAccessible(Key<?> key, GinjectorBindings parent, GinjectorBindings child) {
     // Parent will be null if it is was an optional dependency and it couldn't be created.
     if (parent != null && !child.equals(parent) && !child.isBound(key)) {
-      BindingContext context = BindingContext.forText("Inheriting " + key + " from parent");
-      
+      Context context = Context.format("Inheriting %s from parent", key);
+
       // We don't strictly need all the extra checks in addBinding, but it can't hurt.  We know, for
       // example, that there will not be any unresolved bindings for this key.
       child.addBinding(key, bindingFactory.getParentBinding(key, parent, context));
