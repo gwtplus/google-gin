@@ -81,6 +81,10 @@ class GinBridgeClassLoader extends ClassLoader {
     // Make sure we're not loading JRE classes through a non-system class loader (which is not
     // allowed).
     names.add("java.");
+
+    // Annotation loading will require sun.reflect APIs, even when they're referenced from 
+    // and present in client code.
+    names.add("sun.reflect.");
     return names;
   }
 
