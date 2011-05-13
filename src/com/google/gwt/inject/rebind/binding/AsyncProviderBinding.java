@@ -65,9 +65,7 @@ public class AsyncProviderBinding extends AbstractBinding implements Binding {
     this.providerKey = Preconditions.checkNotNull(providerKey);
     providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
 
-    // Pass any binding annotation on the Provider to the thing we create
-    Type targetType = providerType.getActualTypeArguments()[0];
-    targetKey = getKeyWithSameAnnotation(targetType, providerKey);
+    targetKey = ReflectUtil.getProvidedKey(providerKey);
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
@@ -100,19 +98,5 @@ public class AsyncProviderBinding extends AbstractBinding implements Binding {
 
   public Collection<Dependency> getDependencies() {    
     return Collections.singleton(new Dependency(providerKey, targetKey, false, true, getContext()));
-  }
-
-  private Key<?> getKeyWithSameAnnotation(Type keyType, Key<?> baseKey) {
-    Annotation annotation = baseKey.getAnnotation();
-    if (annotation != null) {
-      return Key.get(keyType, annotation);
-    }
-
-    Class<? extends Annotation> annotationType = baseKey.getAnnotationType();
-    if (annotationType != null) {
-      return Key.get(keyType, annotationType);
-    }
-
-    return Key.get(keyType);
   }
 }

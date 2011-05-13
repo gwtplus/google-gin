@@ -16,6 +16,8 @@
 
 package com.google.gwt.inject.rebind.reflect;
 
+import com.google.gwt.dev.util.Preconditions;
+import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
 import java.lang.reflect.GenericArrayType;
@@ -339,5 +341,21 @@ public class ReflectUtil {
     Class clazz = (Class) type;
     return !clazz.isPrimitive() && !clazz.isAnnotation() && !clazz.isArray() && !clazz.isEnum()
         && !clazz.isAnonymousClass();
+  }
+  
+  /**
+   * Given a parameterized type (such as a {@code Provider<Foo>}) return the 
+   * parameter ({@code Foo}).
+   */
+  public static Key<?> getProvidedKey(Key<?> key) {
+    Type providerType = key.getTypeLiteral().getType();
+
+    // If the Provider has no type parameter (raw Provider)...
+    Preconditions.checkArgument(providerType instanceof ParameterizedType,
+        "Expected all providers to be parameterized, but %s wasn't", key);
+
+    Type entryType = ((ParameterizedType) providerType).getActualTypeArguments()[0];
+
+    return key.ofType(entryType);
   }
 }

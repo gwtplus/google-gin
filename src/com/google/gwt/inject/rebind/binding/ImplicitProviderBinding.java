@@ -23,9 +23,7 @@ import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -48,8 +46,7 @@ public class ImplicitProviderBinding extends AbstractBinding implements Binding 
     this.providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
 
     // Pass any binding annotation on the Provider to the thing we create
-    Type targetType = providerType.getActualTypeArguments()[0];
-    this.targetKey = getKeyWithSameAnnotation(targetType, providerKey);
+    this.targetKey = ReflectUtil.getProvidedKey(providerKey);
   }
 
   public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
@@ -66,20 +63,5 @@ public class ImplicitProviderBinding extends AbstractBinding implements Binding 
 
   public Collection<Dependency> getDependencies() {
     return Collections.singleton(new Dependency(providerKey, targetKey, false, true, getContext()));
-  }
-
-  // TODO(schmitt): Remove duplication with AsyncProviderBinding.
-  private Key<?> getKeyWithSameAnnotation(Type keyType, Key<?> baseKey) {
-    Annotation annotation = baseKey.getAnnotation();
-    if (annotation != null) {
-      return Key.get(keyType, annotation);
-    }
-
-    Class<? extends Annotation> annotationType = baseKey.getAnnotationType();
-    if (annotationType != null) {
-      return Key.get(keyType, annotationType);
-    }
-
-    return Key.get(keyType);
   }
 }

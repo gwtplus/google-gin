@@ -7,10 +7,12 @@ import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Stage;
 import com.google.inject.util.Modules;
 
@@ -100,7 +102,15 @@ public class GuiceValidator {
     lies.add(Key.get(ginjectorInterface));
     for (Entry<Key<?>, Binding> bindingPair : ginjector.getBindings()) {
       if (shouldLieAbout(bindingPair.getValue())) {
-        lies.add(bindingPair.getKey());
+        Key<?> key = bindingPair.getKey();
+        // The lie module can't install a lie for Provider<X> because Guice doesn't allow you to
+        // create bindings for Providers.  In this case, we should lie about X instead and let
+        // Guice create its own Provider<X>.
+        Class<?> clazz = key.getTypeLiteral().getRawType();
+        if (Provider.class.equals(clazz) || javax.inject.Provider.class.equals(clazz)) {
+          key = ReflectUtil.getProvidedKey(key);
+        }
+        lies.add(key);
       }
     }
     return lies;
