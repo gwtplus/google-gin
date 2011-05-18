@@ -30,8 +30,9 @@ public class PrivateBinderAdapter extends BinderAdapter implements PrivateGinBin
 
   private final PrivateBinder privateBinder;
 
-  PrivateBinderAdapter(PrivateBinder privateBinder, GinjectorBindings bindings) {
-    super(privateBinder, bindings, false);
+  PrivateBinderAdapter(PrivateBinder privateBinder, GinjectorBindings bindings, 
+      boolean hidePrivateBindings) {
+    super(privateBinder, bindings, hidePrivateBindings);
     this.privateBinder = privateBinder;
   }
 

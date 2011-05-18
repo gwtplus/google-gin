@@ -72,7 +72,7 @@ class BinderAdapter implements GinBinder {
         if (hideChildModules) {
           return;
         }
-        moduleAdapter = new PrivateGinModuleAdapter((PrivateGinModule) install, bindings);
+        moduleAdapter = new PrivateGinModuleAdapter((PrivateGinModule) install, bindings, false);
       } else {
         moduleAdapter = new GinModuleAdapter(install, bindings);
       }

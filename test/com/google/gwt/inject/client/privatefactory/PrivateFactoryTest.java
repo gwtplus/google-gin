@@ -53,8 +53,15 @@ public class PrivateFactoryTest extends GWTTestCase {
   }
   
   interface Part {}
-  static class PartA implements Part {}
-  static class PartB implements Part {}
+  
+  // Each Part depends on the factory so that we can verify that (1) the lies are correctly
+  // installed and (2) the factories are installed early enough to be depended on.
+  static class PartA implements Part {
+    @Inject public PartA(WidgetFactory factory) {}
+  }
+  static class PartB implements Part {
+    @Inject public PartB(WidgetFactory factory) {}
+  }
   
   static class Widget {
     

@@ -29,10 +29,13 @@ import com.google.inject.internal.ProviderMethodsModule;
 public class PrivateGinModuleAdapter extends PrivateModule {
   private final PrivateGinModule ginModule;
   private final GinjectorBindings bindings;
+  private final boolean hidePrivateBindings;
 
-  public PrivateGinModuleAdapter(PrivateGinModule ginModule, GinjectorBindings bindings) {
+  public PrivateGinModuleAdapter(PrivateGinModule ginModule, GinjectorBindings bindings, 
+      boolean hidePrivateBindings) {
     this.ginModule = ginModule;
     this.bindings = bindings;
+    this.hidePrivateBindings = hidePrivateBindings;
   }
 
   public void configure() {
@@ -40,7 +43,8 @@ public class PrivateGinModuleAdapter extends PrivateModule {
         BinderAdapter.class, PrivateGinModule.class);
 
     ginModule.configure(new PrivateBinderAdapter((PrivateBinder) binder, 
-        bindings == null ? null : bindings.createChildGinjectorBindings(ginModule.getClass())));
+        bindings == null ? null : bindings.createChildGinjectorBindings(ginModule.getClass()), 
+        hidePrivateBindings));
 
     // Install provider methods from the GinModule
     binder.install(ProviderMethodsModule.forObject(ginModule));

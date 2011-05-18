@@ -121,10 +121,17 @@ class BindingsProcessor {
    */
   private void resolveAllUnresolvedBindings(GinjectorBindings collection) 
       throws UnableToCompleteException {
+    // Create known/explicit bindings before descending into children.  This ensures that they are
+    // available to any children that may need to depend on them.
+    createBindingsForFactories(collection);
+    
+    // Visit all children and resolve bindings as appropriate.  This visitation may add implicit
+    // bindings (and dependencies) to this ginjector
     for (GinjectorBindings child : collection.getChildren()) {
       resolveAllUnresolvedBindings(child);
     }
-    createBindingsForFactories(collection);
+    
+    // Resolve bindings within this ginjector and validate that everything looks OK.
     collection.resolveBindings();
     validator.validate(collection);
   }

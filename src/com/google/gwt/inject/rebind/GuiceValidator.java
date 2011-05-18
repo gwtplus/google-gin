@@ -6,6 +6,7 @@ import com.google.gwt.inject.rebind.binding.AsyncProviderBinding;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
+import com.google.gwt.inject.rebind.binding.FactoryBinding;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.inject.Guice;
@@ -120,6 +121,7 @@ public class GuiceValidator {
     return binding instanceof CallGwtDotCreateBinding
         || binding instanceof AsyncProviderBinding
         || binding instanceof ParentBinding
-        || binding instanceof ExposedChildBinding;
+        || binding instanceof ExposedChildBinding
+        || binding instanceof FactoryBinding;
   }
 }
