@@ -54,7 +54,7 @@ public final class GinModuleAdapter implements Module {
     binder = binder.skipSources(GinModuleAdapter.class, BinderAdapter.class,
         AbstractGinModule.class);
 
-    ginModule.configure(new BinderAdapter(binder, bindings, hideChildModules));
+    ginModule.configure(new BinderAdapter(binder, bindings));
 
     // Install provider methods from the GinModule
     binder.install(ProviderMethodsModule.forObject(ginModule));

@@ -62,8 +62,6 @@ class BindingsProcessor {
 
   private final ModuleInstantiator instantiator;
 
-  private final GuiceValidator validator;
-  
   @Inject
   BindingsProcessor(Provider<MemberCollector> collectorProvider,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
@@ -71,10 +69,9 @@ class BindingsProcessor {
       @RootBindings GinjectorBindings rootGinjectorBindings,
       GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory,
       BindingFactory bindingFactory,
-      ModuleInstantiator instantiator, GuiceValidator validator) {
+      ModuleInstantiator instantiator) {
     this.bindingFactory = bindingFactory;
     this.instantiator = instantiator;
-    this.validator = validator;
     this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
     this.errorManager = errorManager;
     this.rootGinjectorBindings = rootGinjectorBindings;
@@ -90,8 +87,7 @@ class BindingsProcessor {
     rootGinjectorBindings.addUnresolvedEntriesForInjectorInterface();
     registerGinjectorBinding();
 
-    createBindingsForModules(
-        instantiator.instantiateModulesForGinjector(rootGinjectorBindings, false));
+    createBindingsForModules(instantiator.instantiateModulesForGinjector(rootGinjectorBindings));
     errorManager.checkForError();
     
     resolveAllUnresolvedBindings(rootGinjectorBindings);
@@ -133,7 +129,6 @@ class BindingsProcessor {
     
     // Resolve bindings within this ginjector and validate that everything looks OK.
     collection.resolveBindings();
-    validator.validate(collection);
   }
 
   private void createBindingsForFactories(GinjectorBindings bindings) {

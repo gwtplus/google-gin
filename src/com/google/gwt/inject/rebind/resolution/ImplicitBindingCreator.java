@@ -16,7 +16,6 @@
 package com.google.gwt.inject.rebind.resolution;
 
 import com.google.gwt.inject.client.AsyncProvider;
-import com.google.gwt.inject.rebind.LieToGuiceModule;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
 import com.google.gwt.inject.rebind.binding.BindProviderBinding;
@@ -69,8 +68,7 @@ public class ImplicitBindingCreator {
   }
 
   /**
-   * Creates the implicit binding and registers with the {@link LieToGuiceModule} if
-   * necessary (and appropriate)
+   * Creates the implicit binding
    */
   public Binding create(Key<?> key) throws BindingCreationException {
     TypeLiteral<?> type = key.getTypeLiteral();

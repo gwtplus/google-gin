@@ -54,37 +54,29 @@ public class ModuleInstantiator {
    * Instantiate the modules for the Ginjector type.
    * 
    * @param ginjectorBindings Ginjector bindings to use as the "root" ginjector.
-   * @param hidePrivateModules if {@code true} avoids instantiating/installing PrivateModules
    */
-  public List<Module> instantiateModulesForGinjector(
-      GinjectorBindings ginjectorBindings, boolean hidePrivateModules) {
+  public List<Module> instantiateModulesForGinjector(GinjectorBindings ginjectorBindings) {
     Set<Class<? extends GinModule>> moduleClasses = new HashSet<Class<? extends GinModule>>();
     moduleClasses.addAll(configurationModules);
     getModulesFromInjectorInterface(ginjectorInterface, moduleClasses);
-    return instantiateModulesForClasses(ginjectorBindings, hidePrivateModules, hidePrivateModules, 
-        moduleClasses);
+    return instantiateModulesForClasses(ginjectorBindings, moduleClasses);
   }
   
   /**
    * Instantiate the module the given module class.
-   * 
-   * @param hidePrivateModules should PrivateModules be hidden/suppressed?
    */
   public List<Module> instantiateModulesForClass(
-      GinjectorBindings ginjectorBindings, boolean hidePrivateModules,
-      Class<? extends GinModule> clazz) {
+      GinjectorBindings ginjectorBindings, Class<? extends GinModule> clazz) {
     List<Class<? extends GinModule>> moduleClasses = 
         Collections.<Class<? extends GinModule>>singletonList(clazz);
-    return instantiateModulesForClasses(ginjectorBindings, hidePrivateModules, false, moduleClasses);
+    return instantiateModulesForClasses(ginjectorBindings, moduleClasses);
   }
   
-  private List<Module> instantiateModulesForClasses(GinjectorBindings ginjectorBindings, 
-      boolean hideChildPrivateModules, boolean hideTopLevelPrivateModules,
-      Iterable<Class<? extends GinModule>> classes) {
+  private List<Module> instantiateModulesForClasses(
+      GinjectorBindings ginjectorBindings, Iterable<Class<? extends GinModule>> classes) {
     List<Module> modules = new ArrayList<Module>();
     for (Class<? extends GinModule> clazz : classes) {
-      Module module = instantiateModuleClass(clazz, ginjectorBindings, hideChildPrivateModules, 
-          hideTopLevelPrivateModules);
+      Module module = instantiateModuleClass(clazz, ginjectorBindings);
       if (module != null) {
         modules.add(module);
       }
@@ -93,18 +85,16 @@ public class ModuleInstantiator {
   }
   
   private Module instantiateModuleClass(
-      Class<? extends GinModule> moduleClass, GinjectorBindings rootGinjectorBindings,
-      boolean hideChildModules, boolean doNotInstantiateIfPrivate) {
+      Class<? extends GinModule> moduleClass, GinjectorBindings rootGinjectorBindings) {
     try {
       Constructor<? extends GinModule> constructor = moduleClass.getDeclaredConstructor();
       try {
         constructor.setAccessible(true);
         if (PrivateGinModule.class.isAssignableFrom(moduleClass)) {
-          return doNotInstantiateIfPrivate ? null : new PrivateGinModuleAdapter(
-            (PrivateGinModule) constructor.newInstance(), rootGinjectorBindings, hideChildModules);
+          return new PrivateGinModuleAdapter((PrivateGinModule) constructor.newInstance(),
+              rootGinjectorBindings);
         } else {
-          return new GinModuleAdapter(constructor.newInstance(), rootGinjectorBindings, 
-              hideChildModules);
+          return new GinModuleAdapter(constructor.newInstance(), rootGinjectorBindings);
         }
       } finally {
         constructor.setAccessible(false);
