@@ -114,7 +114,7 @@ public class GinjectorBindings implements BindingIndex {
    * member inject handling is required - a member inject method will be created
    * as part of a regular binding.
    */
-  private final Set<Key<?>> memberInjectRequests = new HashSet<Key<?>>();
+  private final Set<TypeLiteral<?>> memberInjectRequests = new HashSet<TypeLiteral<?>>();
 
   /**
    * Collection of all factory modules configured for this ginjector.
@@ -244,11 +244,7 @@ public class GinjectorBindings implements BindingIndex {
     return Collections.unmodifiableCollection(staticInjectionRequests);
   }
 
-  public void addMemberInjectRequests(Set<Key<?>> implementations) {
-    memberInjectRequests.addAll(implementations);
-  }
-
-  public Iterable<Key<?>> getMemberInjectRequests() {
+  public Iterable<TypeLiteral<?>> getMemberInjectRequests() {
     return Collections.unmodifiableCollection(memberInjectRequests);
   }
 
@@ -347,7 +343,7 @@ public class GinjectorBindings implements BindingIndex {
       // Member inject types do not need to be gin-creatable themselves but we
       // need to provide all dependencies.
       if (guiceUtil.isMemberInject(method)) {
-        memberInjectRequests.add(key);
+        memberInjectRequests.add(key.getTypeLiteral());
         addDependencies(guiceUtil.getMemberInjectionDependencies(
             Dependency.GINJECTOR, key.getTypeLiteral()));
       } else {
@@ -370,13 +366,13 @@ public class GinjectorBindings implements BindingIndex {
     }
 
     bindings.put(key, binding);
-    memberInjectRequests.remove(key);
     if (parent != null) {      
       parent.registerChildBinding(key);
     }
 
     logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
     dependencies.addAll(binding.getDependencies());
+    memberInjectRequests.addAll(binding.getMemberInjectRequests());
   }
   
   /**

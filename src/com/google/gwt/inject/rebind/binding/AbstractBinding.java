@@ -17,6 +17,10 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.dev.util.Preconditions;
+import com.google.inject.TypeLiteral;
+
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Common base class for implementations of {@link Binding}.
@@ -32,5 +36,9 @@ abstract class AbstractBinding implements Binding {
 
   public Context getContext() {
     return context;
+  }
+
+  public Collection<TypeLiteral<?>> getMemberInjectRequests() {
+    return Collections.emptySet();
   }
 }

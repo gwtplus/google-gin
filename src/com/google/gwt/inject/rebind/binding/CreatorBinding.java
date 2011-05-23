@@ -28,6 +28,7 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -57,8 +58,7 @@ abstract class CreatorBinding extends AbstractBinding implements Binding {
 
   public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
       NameGenerator nameGenerator) throws NoSourceNameException {
-    String memberInjectMethodName = sourceWriteUtil.appendMemberInjection(writer, Key.get(type),
-        nameGenerator);
+    String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(type);
 
     StringBuilder sb = new StringBuilder();
     appendCreationStatement(writer, sb, nameGenerator);
@@ -87,5 +87,10 @@ abstract class CreatorBinding extends AbstractBinding implements Binding {
 
   protected void addParamTypes(MethodLiteral<?, ?> method) {
     dependencies.addAll(guiceUtil.getDependencies(Key.get(type), method));
+  }
+
+  @Override
+  public Collection<TypeLiteral<?>> getMemberInjectRequests() {
+    return Collections.<TypeLiteral<?>>singleton(type);
   }
 }

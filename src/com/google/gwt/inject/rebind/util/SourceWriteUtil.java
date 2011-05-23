@@ -432,13 +432,12 @@ public class SourceWriteUtil {
    * writer.
    *
    * @param writer source writer to write to
-   * @param key key for which the injection is performed
+   * @param type type for which the injection is performed
    * @return name of the method created
    */
-  public String appendMemberInjection(SourceWriter writer, Key<?> key, 
+  public String appendMemberInjection(SourceWriter writer, TypeLiteral<?> type,
       NameGenerator nameGenerator) throws NoSourceNameException {
-    TypeLiteral<?> type = key.getTypeLiteral();
-    String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(key);
+    String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(type);
 
     StringBuilder sb = new StringBuilder();
 

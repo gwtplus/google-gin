@@ -275,9 +275,9 @@ class GinjectorOutputter {
 
     // Implements methods of the form "void foo(BarType bar)"
     for (MethodLiteral<?, Method> method : memberInjectCollector.getMethods(ginjectorInterface)) {
-      Key<?> injectee = method.getParameterKeys().get(0);
+      Key<?> injectee = guiceUtil.getKey(method);
 
-      String body = nameGenerator.getMemberInjectMethodName(injectee) + "(param);";
+      String body = nameGenerator.getMemberInjectMethodName(injectee.getTypeLiteral()) + "(param);";
 
       String readableDeclaration = ReflectUtil.getSignature(method, new String[]{"param"},
           ReflectUtil.nonAbstractModifiers(method));
@@ -317,9 +317,9 @@ class GinjectorOutputter {
 
   private void outputMemberInjections(GinjectorBindings bindings) {
     NameGenerator nameGenerator = bindings.getNameGenerator();
-    for (Key<?> key : bindings.getMemberInjectRequests()) {
+    for (TypeLiteral<?> type : bindings.getMemberInjectRequests()) {
       try {
-        sourceWriteUtil.appendMemberInjection(writer, key, nameGenerator);
+        sourceWriteUtil.appendMemberInjection(writer, type, nameGenerator);
       } catch (NoSourceNameException e) {
         errorManager.logError(e.getMessage(), e);
       }

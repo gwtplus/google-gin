@@ -16,6 +16,7 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,13 +85,13 @@ public class NameGenerator {
   }
 
   /**
-   * Returns the key's member inject method name.  The method with that name
+   * Returns the type's member inject method name.  The method with that name
    * can be called with a single parameter to inject members of that parameter.
    *
    * @return member inject method name
    */
-  public String getMemberInjectMethodName(Key<?> key) {
-    return mangle("memberInject_", key);
+  public String getMemberInjectMethodName(TypeLiteral<?> type) {
+    return mangle("memberInject_", Key.get(type));
   }
 
   /**

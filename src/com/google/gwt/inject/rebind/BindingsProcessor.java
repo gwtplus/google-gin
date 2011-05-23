@@ -145,12 +145,6 @@ class BindingsProcessor {
       }
 
       bindings.addBinding(factoryModule.getFactoryType(), binding);
-
-      // All implementations that are created by the factory are also member-
-      // injected. To ensure that implementations created by multiple factories
-      // result only in one member inject method they are added to this central
-      // list.
-      bindings.addMemberInjectRequests(binding.getImplementations());
     }
   }
 

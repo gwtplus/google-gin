@@ -40,6 +40,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -99,7 +100,7 @@ public class FactoryBinding extends AbstractBinding implements Binding {
    * Collection of all implementations produced by this factory, each annotated
    * with @Assisted. This is used to gather all required member-inject methods.
    */
-  private final Set<Key<?>> implementations = new HashSet<Key<?>>();
+  private final Set<TypeLiteral<?>> implementations = new HashSet<TypeLiteral<?>>();
 
   FactoryBinding(SourceWriteUtil sourceWriteUtil, Map<Key<?>, TypeLiteral<?>> collector,
       Key<?> factoryKey, Context context) {
@@ -126,8 +127,8 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     for (AssistData assisted : assistData) {
       String returnName = ReflectUtil.getSourceName(assisted.implementation);
 
-      String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(
-          Key.get(assisted.implementation, Assisted.class));
+      String memberInjectMethodName =
+          nameGenerator.getMemberInjectMethodName(assisted.implementation);
       String methodCall = sourceWriteUtil.createMethodCallWithInjection(writer,
           assisted.constructor, null, assisted.parameterNames, nameGenerator);
 
@@ -150,8 +151,9 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     return dependencies;
   }
 
-  public Set<Key<?>> getImplementations() {
-    return implementations;
+  @Override
+  public Collection<TypeLiteral<?>> getMemberInjectRequests() {
+    return Collections.unmodifiableCollection(implementations);
   }
 
   private void matchMethods(Key<?> factoryKey) throws ErrorsException {
@@ -194,7 +196,7 @@ public class FactoryBinding extends AbstractBinding implements Binding {
       TypeLiteral<?> methodDeclaringType = factoryType.getSupertype(method.getDeclaringClass());
       assistData.add(new AssistData(implementation, MethodLiteral.get(constructor, implementation),
           MethodLiteral.get(method, methodDeclaringType), parameterNames));
-      implementations.add(Key.get(implementation, Assisted.class));
+      implementations.add(implementation);
     }
 
     errors.throwConfigurationExceptionIfErrorsExist();

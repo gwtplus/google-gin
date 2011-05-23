@@ -18,6 +18,7 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.user.rebind.SourceWriter;
+import com.google.inject.TypeLiteral;
 
 import java.util.Collection;
 
@@ -51,4 +52,10 @@ public interface Binding {
    * this binding needs.
    */
   Collection<Dependency> getDependencies();
+
+  /**
+   * Returns the set of types for which this binding requires member injection methods to be
+   * written.
+   */
+  Collection<TypeLiteral<?>> getMemberInjectRequests();
 }

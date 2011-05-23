@@ -16,10 +16,14 @@
 package com.google.gwt.inject.client.method;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.gwt.inject.client.CreationException;
+import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 
 public class MethodInjectTest extends GWTTestCase {
 
@@ -87,6 +91,15 @@ public class MethodInjectTest extends GWTTestCase {
 
     injector.injectSquare(square);
     assertEquals(ShapeGinModule.OTHER_HEIGHT, square.getOtherHeight());
+  }
+
+  public void testMemberInjectWithForwarding() {
+    ForwardingGinjector ginjector = GWT.create(ForwardingGinjector.class);
+    Forwarding forwarded = ginjector.getForwarding();
+    Forwarding forwarding = new Forwarding();
+    ginjector.injectMembers(forwarding);
+    assertEquals("red", forwarding.value);
+    assertEquals("blue", forwarded.value);
   }
 
   public void testNoArgsInject() {
@@ -172,6 +185,40 @@ public class MethodInjectTest extends GWTTestCase {
     @Inject
     private HiddenDanger() throws Exception {
       throw new Exception("test");
+    }
+  }
+
+  @GinModules(ForwardingModule.class)
+  interface ForwardingGinjector extends Ginjector {
+    Forwarding getForwarding();
+    void injectMembers(Forwarding forwarding);
+  }
+
+  static class ForwardingModule extends AbstractGinModule {
+
+    @Override
+    protected void configure() {
+      bind(Forwarding.class).to(Forwarded.class);
+      bindConstant().annotatedWith(Names.named("blue")).to("blue");
+      bindConstant().annotatedWith(Names.named("red")).to("red");
+    }
+  }
+
+  static class Forwarding {
+    String value = "";
+
+    @Inject
+    public void setValue(@Named("red") String value) {
+      this.value = value;
+    }
+  }
+
+  static class Forwarded extends Forwarding {
+
+    @Inject
+    @Override
+    public void setValue(@Named("blue") String value) {
+      this.value = value;
     }
   }
 }
