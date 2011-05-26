@@ -118,7 +118,7 @@ public final class PrettyPrinter {
   private static void formatArgTo(Key<?> key, StringBuilder builder) {
     if (key.getAnnotation() != null) {
       builder.append("@");
-      builder.append(key.getAnnotation().toString());
+      builder.append(formatArg(key.getAnnotation().annotationType()));
       builder.append(" ");
     } else if (key.getAnnotationType() != null) {
       builder.append("@");

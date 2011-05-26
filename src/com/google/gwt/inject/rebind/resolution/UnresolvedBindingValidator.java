@@ -194,7 +194,7 @@ public class UnresolvedBindingValidator {
         .addDestinations(key)
         .findShortestPath();
 
-    errorManager.logError("Error injecting %s: %s.%n  Path to required node:%n%s",
+    errorManager.logError("Error injecting %s: %s%n  Path to required node:%n%s",
         key, error, path);
   }
   
