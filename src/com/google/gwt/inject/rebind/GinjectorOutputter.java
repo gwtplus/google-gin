@@ -136,6 +136,8 @@ class GinjectorOutputter {
       outputInterfaceMethods();
       ginjectorNameGenerator.registerName(rootBindings, implClassName);
       outputBindings(rootBindings);
+      writeToplevelConstructor(ginjectorNameGenerator.getClassName(rootBindings));
+
       errorManager.checkForError();
     } catch (NoSourceNameException e) {
       // TODO(schmitt): Collect errors and log list of them.
@@ -150,6 +152,12 @@ class GinjectorOutputter {
    * in the hierarchy, it will first output the necessary classes. 
    */
   private void outputBindings(GinjectorBindings bindings) {
+    // Collects the text of the body of initialize().  initialize() contains
+    // code that needs to run before the root injector is returned to the
+    // client, but after the injector hierarchy is fully constructed.  See
+    // writeToplevelConstructor.
+    StringBuilder initializeBody = new StringBuilder();
+
     // Output child modules.
     for (GinjectorBindings child : bindings.getChildren()) {
       String className = ginjectorNameGenerator.getClassName(child);
@@ -170,27 +178,31 @@ class GinjectorOutputter {
       writer.print("  %s", child.getModule());
       writer.endJavaDocComment();
       writer.println("private final %1$s %2$s = new %1$s();", className, fieldName);
+
+      // Ensure that the initializer initializes this child.
+      outputSubInitialize(child, initializeBody);
     }
 
-    StringBuilder constructorBody = new StringBuilder();
+    initializeBody.append("\n");
+
     
     outputMemberInjections(bindings);
-    outputStaticInjections(bindings, constructorBody);
+    outputStaticInjections(bindings, initializeBody);
 
     // Output the actual bindings
     for (Map.Entry<Key<?>, Binding> entry : bindings.getBindings()) {
       outputBinding(bindings.getNameGenerator(), entry.getKey(), entry.getValue(),
-          bindings.determineScope(entry.getKey()), constructorBody);
+          bindings.determineScope(entry.getKey()), initializeBody);
     }
 
-    writeConstructor(ginjectorNameGenerator.getClassName(bindings), constructorBody);
+    writeInitialize(initializeBody);
   }
 
   /**
    * Output the the creator/getter methods for the given binding.
    */
   private void outputBinding(NameGenerator nameGenerator, Key<?> key, Binding binding,
-      GinScope scope, StringBuilder constructorBody) {
+      GinScope scope, StringBuilder initializeBody) {
     Context bindingContext = binding.getContext();
 
     String getter = nameGenerator.getGetterMethodName(key);
@@ -216,9 +228,9 @@ class GinjectorOutputter {
 
     switch (scope) {
       case EAGER_SINGLETON:
-        constructorBody.append("// Eager singleton bound at:\n");
-        appendBindingContextCommentToConstructor(bindingContext, constructorBody);
-        constructorBody.append(getter).append("();\n");
+        initializeBody.append("// Eager singleton bound at:\n");
+        appendBindingContextCommentToMethod(bindingContext, initializeBody);
+        initializeBody.append(getter).append("();\n");
         // $FALL-THROUGH$
       case SINGLETON:
         writer.println("private " + typeName + " " + field + " = null;");
@@ -251,10 +263,20 @@ class GinjectorOutputter {
     writer.println();
   }
 
-  private void appendBindingContextCommentToConstructor(Context bindingContext,
-      StringBuilder constructorBody) {
+  /**
+   * Outputs code to invoke the given child's initialize() routine via its
+   * member variable.
+   */
+  private void outputSubInitialize(GinjectorBindings child, StringBuilder initializeBody) {
+    String fieldName = ginjectorNameGenerator.getFieldName(child);
+    initializeBody.append(fieldName);
+    initializeBody.append(".initialize();\n");
+  }
+
+  private void appendBindingContextCommentToMethod(Context bindingContext,
+      StringBuilder methodBody) {
     for(String line : bindingContext.toString().split("\n")) {
-      constructorBody.append("//   ").append(line).append("\n");
+      methodBody.append("//   ").append(line).append("\n");
     }
   }
 
@@ -286,7 +308,7 @@ class GinjectorOutputter {
   }
 
   // Visible for tests.
-  void outputStaticInjections(GinjectorBindings bindings, StringBuilder constructorBody) {
+  void outputStaticInjections(GinjectorBindings bindings, StringBuilder initializeBody) {
     NameGenerator nameGenerator = bindings.getNameGenerator();
 
     for (Class<?> type : bindings.getStaticInjectionRequests()) {
@@ -311,7 +333,7 @@ class GinjectorOutputter {
       }
 
       sourceWriteUtil.writeMethod(writer, "private void " + methodName + "()", body.toString());
-      constructorBody.append(methodName).append("();\n");
+      initializeBody.append(methodName).append("();\n");
     }
   }
 
@@ -326,9 +348,22 @@ class GinjectorOutputter {
     }
   }
 
-  private void writeConstructor(String implClassName, StringBuilder constructorBody) {
-    sourceWriteUtil.writeMethod(writer, "public " + implClassName + "()",
-        constructorBody.toString());
+  // Setting up the injector works as follows:
+  //
+  // When the injectors are constructed, each injector creates its children via
+  // field initializers.  Then, if the injector is the top-level injector, it
+  // initializes itself and its children (thus, only the top-level injector has
+  // an explicit constructor).  Initialization is performed as a separate step
+  // to ensure that the entire injector hierarchy is created before we try to
+  // invoke any injection method to, e.g., create eager singletons.  For more
+  // details, see <http://code.google.com/p/google-gin/issues/detail?id=156>.
+
+  private void writeToplevelConstructor(String implClassName) {
+    sourceWriteUtil.writeMethod(writer, "public " + implClassName + "()", "initialize();");
+  }
+
+  private void writeInitialize(StringBuilder initializeBody) {
+    sourceWriteUtil.writeMethod(writer, "private void initialize()", initializeBody.toString());
   }
 
 }
