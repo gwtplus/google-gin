@@ -166,8 +166,15 @@ public class ReflectUtil {
   /**
    * Returns {@code true} if the passed type's visibility is {@code private}.
    */
+  public static boolean isPrivate(Class<?> type) {
+    return Modifier.isPrivate(type.getModifiers());
+  }
+
+  /**
+   * Returns {@code true} if the passed type's visibility is {@code private}.
+   */
   public static boolean isPrivate(TypeLiteral<?> type) {
-    return Modifier.isPrivate(type.getRawType().getModifiers());
+    return isPrivate(type.getRawType());
   }
 
   /**

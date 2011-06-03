@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.resolution;
 
+import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.inject.client.AsyncProvider;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
@@ -60,11 +61,14 @@ public class ImplicitBindingCreator {
       super(PrettyPrinter.format(msgFmt, args));
     }
   }
+
   private final BindingFactory bindingFactory;
+  private final GeneratorContext generatorContext;
 
   @Inject
-  public ImplicitBindingCreator(BindingFactory bindingFactory) {
+  public ImplicitBindingCreator(BindingFactory bindingFactory, GeneratorContext generatorContext) {
     this.bindingFactory = bindingFactory;
+    this.generatorContext = generatorContext;
   }
 
   /**
@@ -140,7 +144,7 @@ public class ImplicitBindingCreator {
       return bindingFactory.getCallConstructorBinding(injectConstructor);
     }
 
-    if (hasAccessibleZeroArgConstructor(type)) {
+    if (shouldGwtDotCreate(type)) {
       if (RemoteServiceProxyBinding.isRemoteServiceProxy(type)) {
         return bindingFactory.getRemoteServiceProxyBinding(type);
       } else {
@@ -152,6 +156,45 @@ public class ImplicitBindingCreator {
   }
 
   /**
+   * Returns {@code true} if the given type should be created automatically with
+   * {@code GWT.create()}.
+   *
+   * <p>{@code GWT.create()} is used to create concrete classes with accessible
+   * zero-argument constructors, and interfaces or classes with GWT rebind
+   * rules.
+   */
+  private boolean shouldGwtDotCreate(TypeLiteral<?> typeLiteral) throws BindingCreationException {
+    Class<?> rawType = typeLiteral.getRawType();
+    if (rawType.isInterface()) {
+      // Check whether we can GWT.create() the interface.
+
+      // Remote service proxies don't have rebind rules; we handle them
+      // specially by creating the corresponding synchronous interface (which
+      // does have a rebind rule).
+      if (RemoteServiceProxyBinding.isRemoteServiceProxy(typeLiteral)) {
+        // We could check whether the synchronous interface has a rebind rule;
+        // however, the user is probably expecting us to GWT.create() a service
+        // interface for them.  If there isn't a rebind rule, a GWT rebind error
+        // probably makes more sense than a Gin error.
+        return true;
+      }
+
+      return hasRebindRule(rawType);
+    } else {
+      return hasAccessibleZeroArgConstructor(rawType) || hasRebindRule(rawType);
+    }
+  }
+
+  private boolean hasRebindRule(Class<?> rawType) throws BindingCreationException {
+    String canonicalName = rawType.getCanonicalName();
+    if (canonicalName == null) {
+      throw new BindingCreationException("Cannot inject a type with no canonical name: " + rawType);
+    } else {
+      return generatorContext.checkRebindRuleAvailable(canonicalName);
+    }
+  }
+
+  /**
    * Returns true iff the passed type has a constructor with zero arguments
    * (default constructors included) and that constructor is non-private,
    * excepting constructors for private classes where the constructor may be of
@@ -160,12 +203,7 @@ public class ImplicitBindingCreator {
    * @param typeLiteral type to be checked for matching constructor
    * @return true if a matching constructor is present on the passed type
    */
-  private boolean hasAccessibleZeroArgConstructor(TypeLiteral<?> typeLiteral) {
-    Class<?> rawType = typeLiteral.getRawType();
-    if (rawType.isInterface()) {
-      return true;
-    }
-
+  private boolean hasAccessibleZeroArgConstructor(Class<?> rawType) {
     Constructor<?> constructor;
     try {
       constructor = rawType.getDeclaredConstructor();
@@ -173,7 +211,7 @@ public class ImplicitBindingCreator {
       return rawType.getDeclaredConstructors().length == 0;
     }
 
-    return !ReflectUtil.isPrivate(constructor) || ReflectUtil.isPrivate(typeLiteral);
+    return !ReflectUtil.isPrivate(constructor) || ReflectUtil.isPrivate(rawType);
   }
 
   private BindClassBinding createImplementedByBinding(Key<?> key, ImplementedBy implementedBy)

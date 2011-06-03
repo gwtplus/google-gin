@@ -29,6 +29,7 @@ import com.google.gwt.inject.client.eager.EagerSingletonTest;
 import com.google.gwt.inject.client.field.FieldInjectTest;
 import com.google.gwt.inject.client.generics.GenericsTest;
 import com.google.gwt.inject.client.gwtdotcreate.BikeTest;
+import com.google.gwt.inject.client.gwtdotcreate.BusTest;
 import com.google.gwt.inject.client.gwtdotcreate.CarTest;
 import com.google.gwt.inject.client.gwtdotcreate.GwtDotCreateInjectTest;
 import com.google.gwt.inject.client.hierarchical.HierarchicalTest;
@@ -92,6 +93,7 @@ public class GinClientTestSuite {
     suite.addTestSuite(CircularFactoryTest.class);
     suite.addTestSuite(CarTest.class);
     suite.addTestSuite(BikeTest.class);
+    suite.addTestSuite(BusTest.class);
     suite.addTestSuite(ConfigurationModulesTest.class);
     suite.addTestSuite(InstallDuplicateTest.class);
     suite.addTestSuite(PrivateBasicTest.class);
