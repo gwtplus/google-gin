@@ -22,7 +22,11 @@ import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.PrivateGinModule;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.Inject;
+import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+
+import javax.inject.Provider;
 
 public class PrivateManyLevelTest extends GWTTestCase {
 
@@ -70,9 +74,17 @@ public class PrivateManyLevelTest extends GWTTestCase {
   static class StereoModule extends PrivateGinModule {
     @Override
     protected void configure() {
-      bind(Speaker.class).to(BoseSpeakers.class);
-      bind(Stereo.class);
       expose(Stereo.class);
+    }
+    
+    @Provides @Named("bose")
+    public Speaker provideSpeaker(BoseSpeakers bose) {
+      return bose;
+    }
+    
+    @Provides
+    public Stereo provideStereo(Radio radio, @Named("bose") Provider<Speaker> speakers) {
+      return new Stereo(radio, speakers.get());
     }
   }
   

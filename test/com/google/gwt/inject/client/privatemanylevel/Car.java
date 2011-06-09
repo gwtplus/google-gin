@@ -28,9 +28,9 @@ public class Car {
   private final Drive driveline;
   
   @Inject
-  public Car(Engine engine, Transmission transmission, Provider<Drive> driveline) {
+  public Car(Engine engine, Provider<Transmission> transmission, Provider<Drive> driveline) {
     this.engine = engine;
-    this.transmission = transmission;
+    this.transmission = transmission.get();
     this.driveline = driveline.get();
   }
   

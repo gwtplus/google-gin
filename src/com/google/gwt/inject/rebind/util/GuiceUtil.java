@@ -32,7 +32,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -133,7 +133,7 @@ public class GuiceUtil {
    */
   public Collection<Dependency> getMemberInjectionDependencies(
       Key<?> typeKey, TypeLiteral<?> type) {
-    Set<Dependency> required = new HashSet<Dependency>();
+    Set<Dependency> required = new LinkedHashSet<Dependency>();
     for (MethodLiteral<?, Method> method : memberCollector.getMethods(type)) {
       required.addAll(getDependencies(typeKey, method));
     }
@@ -164,7 +164,7 @@ public class GuiceUtil {
       context = "Member injection via " + method;
     }
 
-    Set<Dependency> required = new HashSet<Dependency>();
+    Set<Dependency> required = new LinkedHashSet<Dependency>();
     for (Key<?> key : method.getParameterKeys()) {
       required.add(new Dependency(typeKey, key, isOptional(method), false, context));
     }

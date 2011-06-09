@@ -93,7 +93,53 @@ public class DependencyExplorerTest extends TestCase {
     assertSame(parent, output.getPreExistingLocations().get(foo()));
     control.verify();
   }
-
+  
+  /**
+   * Tests that when we have a dependency that installs multiple steps (eg, GINJECTOR -> foo -> bar)
+   * we will treat foo as previously positioned.
+   */
+  public void testSourcePositioned() throws Exception {
+    GinjectorBindings parent = control.createMock("parent", GinjectorBindings.class);
+    expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE),
+        new Dependency(foo(), bar(), SOURCE)));
+    expect(origin.isBound(foo())).andReturn(true).anyTimes();
+    expect(origin.isBound(bar())).andReturn(false).anyTimes();
+    expect(origin.getParent()).andReturn(parent).anyTimes();
+    expect(parent.getParent()).andReturn(null).times(2);
+    expect(parent.isBound(foo())).andReturn(false);
+    expect(parent.getBinding(bar())).andReturn(binding);
+    expect(parent.isBound(bar())).andReturn(true);
+    control.replay();
+    DependencyExplorerOutput output = dependencyExplorer.explore(origin);
+    assertSame(origin, output.getPreExistingLocations().get(foo()));
+    assertSame(parent, output.getPreExistingLocations().get(bar()));
+    control.verify();
+  }
+  
+  /**
+   * Tests that when we have a dependency that installs multiple steps (eg, GINJECTOR -> foo -> bar)
+   * we will use the highest foo available.
+   */
+  public void testSourcePositioned_Exposed() throws Exception {
+    GinjectorBindings parent = control.createMock("parent", GinjectorBindings.class);
+    expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE),
+        new Dependency(foo(), bar(), SOURCE)));
+    expect(origin.isBound(foo())).andReturn(true).anyTimes();
+    expect(origin.isBound(bar())).andReturn(false).anyTimes();
+    expect(origin.getParent()).andReturn(parent).anyTimes();
+    expect(parent.getParent()).andReturn(null).times(2);
+    expect(parent.isBound(foo())).andReturn(true);
+    expect(parent.getBinding(bar())).andReturn(binding);
+    expect(parent.isBound(bar())).andReturn(true);
+    control.replay();
+    DependencyExplorerOutput output = dependencyExplorer.explore(origin);
+    assertSame(parent, output.getPreExistingLocations().get(foo()));
+    assertSame(parent, output.getPreExistingLocations().get(bar()));
+    control.verify();
+  }
+  
   /**
    * Tests that we don't try to use an exposed binding from the "origin" to satisfy a dependency
    * from the origin.

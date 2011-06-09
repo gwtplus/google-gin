@@ -69,8 +69,15 @@ public class DependencyExplorer {
           Dependency.GINJECTOR.equals(edge.getSource()) || origin.isBound(edge.getSource()),
           "Expected non-null source %s to be bound in origin!", edge.getSource());
       builder.addEdge(edge);
-      visited.add(edge.getSource());
+      if (!edge.getSource().equals(Dependency.GINJECTOR) && visited.add(edge.getSource())) {
+        // Need to register where we can find the "source".  Note that this will be always be
+        // available somewhere, because it's already available at the origin (that's how we found
+        // this dependency).
+        output.preExistingBindings.put(edge.getSource(), 
+            locateHighestAccessibleSource(edge.getSource(), origin));
+      }     
       
+      // Visit the target of the dependency to find additional bindings
       visit(edge.getTarget(), builder, output, origin);
     }
     
