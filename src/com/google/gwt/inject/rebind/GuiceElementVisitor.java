@@ -93,6 +93,10 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
   public <T> Void visit(com.google.inject.Binding<T> command) {
     GuiceBindingVisitor<T> bindingVisitor = bindingVisitorFactory.create(
         command.getKey(), messages, bindings);
+    // If we visit a binding for a key, we pin it to the current ginjector,
+    // since it indicates that the user explicitly asked for it to be placed
+    // there.
+    bindings.addPin(command.getKey());
     command.acceptTargetVisitor(bindingVisitor);
     command.acceptScopingVisitor(bindingVisitor);
     return null;

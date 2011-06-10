@@ -123,20 +123,11 @@ public class DependencyExplorer {
    * @return the highest ginjector that contains the key or {@code null} if none contain it
    */
   private GinjectorBindings locateHighestAccessibleSource(Key<?> key, GinjectorBindings origin) {
-    // If the binding is exposed to the parent and supplied from the origin, we return null, to
-    // cause the remainder of the resolution process to populate the bindings.
-
-    // If the binding is exposed to the parent and not supplied from the origin, we must return the
-    // highest Ginjector to which the binding is exposed (the same as we would if it was a regular
-    // binding).  This allows bindings that depend on the given key to be positioned in any
-    // Ginjector to which the binding is visible, rather than forcing them to be positioned below
-    // the module that defines the binding.
-    if (!origin.isBound(key) && origin.getParent() != null) {
-      Binding binding = origin.getParent().getBinding(key);
-      if (binding instanceof ExposedChildBinding &&
-          ((ExposedChildBinding) binding).getChildBindings().equals(origin)) {
-        return null;
-      }
+    // If we don't already have a binding, and the key is "pinned", it means that this injector
+    // is supposed to contain a binding, but it needs to have one created implicitly.  We return
+    // null so that we attempt to create the implicit binding.
+    if (!origin.isBound(key) && origin.isPinned(key)) {
+      return null;
     }
 
     GinjectorBindings source = null;

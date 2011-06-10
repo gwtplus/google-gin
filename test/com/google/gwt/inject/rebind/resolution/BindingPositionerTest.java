@@ -46,9 +46,9 @@ public class BindingPositionerTest extends TestCase {
     expect(root.isBoundInChild(isA(Key.class))).andStubReturn(false);
     expect(child.isBoundInChild(isA(Key.class))).andStubReturn(false);
     expect(grandchild.isBoundInChild(isA(Key.class))).andStubReturn(false);
-    expect(root.isBound(isA(Key.class))).andStubReturn(false);
-    expect(child.isBound(isA(Key.class))).andStubReturn(false);
-    expect(grandchild.isBound(isA(Key.class))).andStubReturn(false);
+    expect(root.isPinned(isA(Key.class))).andStubReturn(false);
+    expect(child.isPinned(isA(Key.class))).andStubReturn(false);
+    expect(grandchild.isPinned(isA(Key.class))).andStubReturn(false);
   }
   
   public void testNoDependencies() throws Exception {
@@ -160,6 +160,17 @@ public class BindingPositionerTest extends TestCase {
         .test();
   }
   
+  public void testPositionPinned() throws Exception {
+    // Bar is bound (and pinned) at grandchild, but because it is exposed to the root, foo should
+    // be created up there.
+    testChain()
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .pinnedAt(grandchild, bar())
+        .implicitlyBoundAt(grandchild, bar())
+        .implicitlyBoundAt(root, foo())
+        .test();    
+  }
+  
   private static class A {}
   private static class B {}
   private static class C {}
@@ -214,6 +225,13 @@ public class BindingPositionerTest extends TestCase {
         Preconditions.checkState(!implicitlyBoundKeys.containsKey(key),
             "Key %s cannot be bound at %s -- already in implicitly bound set!", key, ginjector);
         preExistingLocations.put(key, ginjector);
+      }
+      return this;
+    }
+    
+    public PositionerExpectationsBuilder pinnedAt(GinjectorBindings ginjector, Key<?>... keys) {
+      for (Key<?> key : keys) {
+        expect(ginjector.isPinned(key)).andReturn(true).anyTimes();
       }
       return this;
     }

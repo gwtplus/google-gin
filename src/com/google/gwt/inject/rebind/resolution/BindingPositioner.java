@@ -149,11 +149,14 @@ class BindingPositioner {
   private GinjectorBindings computeInitialPosition(Key<?> key) {
     GinjectorBindings initialPosition = output.getGraph().getOrigin();
 
+    // If the key is pinned (explicitly bound) at the origin, we may be in a situation where we need
+    // to install a binding at the origin, even though we should *use* the binding form a higher
+    // location.
     // If key is already bound in parent, there is a reason that {@link DependencyExplorer}
     // chose not to use that binding.  Specifically, it implies that the key is exposed to the
     // parent from the origin.  While we are fine using the higher binding, it is still necessary
-    // to install the biding in the origin.
-    if (initialPosition.getParent() != null && initialPosition.getParent().isBound(key)) {
+    // to install the binding in the origin.
+    if (initialPosition.isPinned(key)) {
       installOverrides.put(key, initialPosition);
     }
 

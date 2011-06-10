@@ -106,6 +106,7 @@ public class BindingResolverTest extends TestCase {
     expect(node.isBoundInChild(isA(Key.class))).andStubReturn(false);
     expect(node.getBinding(isA(Key.class))).andStubReturn(null);
     expect(node.getModuleName()).andStubReturn(name);
+    expect(node.isPinned(isA(Key.class))).andStubReturn(false);
     return node;
   }
   
@@ -156,6 +157,7 @@ public class BindingResolverTest extends TestCase {
     ExposedChildBinding binding = control.createMock(ExposedChildBinding.class);
     expect(parent.isBound(key)).andReturn(true).anyTimes();
     expect(parent.getBinding(key)).andReturn(binding).anyTimes();
+    expect(child.isPinned(key)).andReturn(true).anyTimes();
     expect(binding.getChildBindings()).andReturn(child).anyTimes();
     bindings.add(binding);
   }

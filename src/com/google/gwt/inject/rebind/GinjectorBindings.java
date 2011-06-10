@@ -133,6 +133,12 @@ public class GinjectorBindings implements BindingIndex {
    * error.
    */
   private final Set<Key<?>> boundInChildren = new HashSet<Key<?>>();
+  
+  /**
+   * Set of key's that *must* be bound here.  This corresponds to things that are explicitly bound
+   * here. 
+   */
+  private final Set<Key<?>> pinned = new HashSet<Key<?>>();
 
   /**
    * Collector that gathers all methods from an injector.
@@ -373,6 +379,14 @@ public class GinjectorBindings implements BindingIndex {
     logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
     dependencies.addAll(binding.getDependencies());
     memberInjectRequests.addAll(binding.getMemberInjectRequests());
+  }
+  
+  public void addPin(Key<?> key) {
+    pinned.add(key);
+  }
+  
+  public boolean isPinned(Key<?> key) {
+    return pinned.contains(key);
   }
   
   /**
