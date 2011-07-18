@@ -17,7 +17,9 @@ package com.google.gwt.inject.rebind.resolution;
 
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
+import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -148,6 +150,7 @@ class BindingPositioner {
    */
   private GinjectorBindings computeInitialPosition(Key<?> key) {
     GinjectorBindings initialPosition = output.getGraph().getOrigin();
+    boolean pinned = initialPosition.isPinned(key);
 
     // If the key is pinned (explicitly bound) at the origin, we may be in a situation where we need
     // to install a binding at the origin, even though we should *use* the binding form a higher
@@ -156,15 +159,57 @@ class BindingPositioner {
     // chose not to use that binding.  Specifically, it implies that the key is exposed to the
     // parent from the origin.  While we are fine using the higher binding, it is still necessary
     // to install the binding in the origin.
-    if (initialPosition.isPinned(key)) {
+    if (pinned) {
       installOverrides.put(key, initialPosition);
     }
 
-    while (initialPosition.getParent() != null 
-        && !initialPosition.getParent().isBoundInChild(key)) {
+    while (canExposeKeyFrom(key, initialPosition, pinned)) {
       initialPosition = initialPosition.getParent();
     }
     return initialPosition;
+  }
+
+  /**
+   * Tests whether a key from the given child injector can be made visible in
+   * its parent.  For pinned keys, this means that they're exposed to the
+   * parent; for keys that aren't pinned, it means that there's no other
+   * constraint preventing them from floating up.
+   *
+   * <p>Note that "pinned" states whether the key was pinned in the injector it
+   * started in; it might not be pinned in child.
+   */
+  private boolean canExposeKeyFrom(Key<?> key, GinjectorBindings child, boolean pinned) {
+    GinjectorBindings parent = child.getParent();
+
+    if (parent == null) {
+      // Can't move above the root.
+      return false;
+    } else if (parent.isBoundInChild(key)) {
+      // If a sibling module already materialized a binding for this key, we
+      // can't float over it.
+      return false;
+    } else if (pinned) {
+      // If a key is pinned, it's visible in the parent iff it has an
+      // ExposedChildBinding pointing at the child.
+      Binding binding = parent.getBinding(key);
+      if (binding == null) {
+        return false;
+      } else if (!(binding instanceof ExposedChildBinding)) {
+        // This should never happen (it would have been caught as a
+        // double-binding earlier).
+        throw new RuntimeException("Unexpected binding shadowing a pinned binding: " + binding);
+      } else {
+        ExposedChildBinding exposedChildBinding = (ExposedChildBinding) binding;
+        if (exposedChildBinding.getChildBindings() != child) {
+          throw new RuntimeException(
+              "Unexpected exposed child binding shadowing a pinned binding: " + binding);
+        } else {
+          return true;
+        }
+      }
+    } else {
+      return true;
+    }
   }
     
   /**

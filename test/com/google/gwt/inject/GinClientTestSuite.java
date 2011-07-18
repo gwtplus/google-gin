@@ -49,6 +49,7 @@ import com.google.gwt.inject.client.privateeager.PrivateEagerSingletonInstantiat
 import com.google.gwt.inject.client.privatefactory.PrivateFactoryTest;
 import com.google.gwt.inject.client.privategwtcreate.PrivateGwtCreateTest;
 import com.google.gwt.inject.client.privatemanylevel.PrivateManyLevelTest;
+import com.google.gwt.inject.client.privatepinned.PrivatePinnedTest;
 import com.google.gwt.inject.client.provider.ProviderTest;
 import com.google.gwt.inject.client.providermethods.ProviderMethodsTest;
 import com.google.gwt.inject.client.scopedimplicit.ScopedImplicitTest;
@@ -104,6 +105,7 @@ public class GinClientTestSuite {
     suite.addTestSuite(PrivateDependsOnExposedTest.class);
     suite.addTestSuite(PrivateEagerSingletonTest.class);
     suite.addTestSuite(PrivateEagerSingletonInstantiationTest.class);
+    suite.addTestSuite(PrivatePinnedTest.class);
     suite.addTestSuite(GeneratorTest.class);
     suite.addTestSuite(SuperSourceTest.class);
 

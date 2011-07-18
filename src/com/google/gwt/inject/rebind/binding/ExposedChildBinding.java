@@ -39,7 +39,8 @@ public class ExposedChildBinding extends AbstractBinding implements Binding {
   private final SourceWriteUtil sourceWriteUtil;
   private final GinjectorNameGenerator ginjectorNameGenerator;
 
-  ExposedChildBinding(SourceWriteUtil sourceWriteUtil,
+  // Visible for testing.
+  public ExposedChildBinding(SourceWriteUtil sourceWriteUtil,
       GinjectorNameGenerator ginjectorNameGenerator, Key<?> key, GinjectorBindings childBindings,
       Context context) {
     super(context);

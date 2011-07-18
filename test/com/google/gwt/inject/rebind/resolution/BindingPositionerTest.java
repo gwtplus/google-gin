@@ -3,12 +3,16 @@ package com.google.gwt.inject.rebind.resolution;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.bar;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.baz;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.foo;
+import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
+import com.google.gwt.inject.rebind.binding.Binding;
+import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
 import com.google.inject.Key;
 
@@ -18,7 +22,9 @@ import org.easymock.classextension.EasyMock;
 import org.easymock.classextension.IMocksControl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Tests for {@link BindingPositioner}.
@@ -32,6 +38,7 @@ public class BindingPositionerTest extends TestCase {
   private GinjectorBindings root;
   private GinjectorBindings child;
   private GinjectorBindings grandchild;
+  private GinjectorBindings othergrandchild; // Only used as the source of an ExposedChildBinding.
     
   @Override
   protected void setUp() throws Exception {
@@ -40,12 +47,16 @@ public class BindingPositionerTest extends TestCase {
     root = control.createMock("root", GinjectorBindings.class);
     child = control.createMock("child", GinjectorBindings.class);
     grandchild = control.createMock("grandchild", GinjectorBindings.class);
+    othergrandchild = control.createMock("other", GinjectorBindings.class);
     expect(grandchild.getParent()).andStubReturn(child);
     expect(child.getParent()).andStubReturn(root);
     expect(root.getParent()).andStubReturn(null);
     expect(root.isBoundInChild(isA(Key.class))).andStubReturn(false);
     expect(child.isBoundInChild(isA(Key.class))).andStubReturn(false);
     expect(grandchild.isBoundInChild(isA(Key.class))).andStubReturn(false);
+    expect(root.getBinding(isA(Key.class))).andStubReturn(null);
+    expect(child.getBinding(isA(Key.class))).andStubReturn(null);
+    expect(grandchild.getBinding(isA(Key.class))).andStubReturn(null);
     expect(root.isPinned(isA(Key.class))).andStubReturn(false);
     expect(child.isPinned(isA(Key.class))).andStubReturn(false);
     expect(grandchild.isPinned(isA(Key.class))).andStubReturn(false);
@@ -160,15 +171,74 @@ public class BindingPositionerTest extends TestCase {
         .test();
   }
   
-  public void testPositionPinned() throws Exception {
-    // Bar is bound (and pinned) at grandchild, but because it is exposed to the root, foo should
-    // be created up there.
+  public void testPositionPinned_noBindingInParent() throws Exception {
+    // Bar is bound (and pinned) at grandchild, but because it is not exposed to
+    // the root, foo should be created in grandchild.
     testChain()
         .addEdge(new Dependency(foo(), bar(), SOURCE))
         .pinnedAt(grandchild, bar())
         .implicitlyBoundAt(grandchild, bar())
+        .implicitlyBoundAt(grandchild, foo())
+        .test();
+  }
+
+  public void testPositionPinned_exposedBindingInParent() throws Exception {
+    // Bar is bound (and pinned) at grandchild, but because it is exposed to the
+    // child, foo should be created up there.
+    testChain()
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .pinnedAt(grandchild, bar())
+        .exposed(grandchild, child, bar())
+        .implicitlyBoundAt(grandchild, bar())
+        .implicitlyBoundAt(child, foo())
+        .test();
+  }
+
+  public void testPositionPinned_exposedBindingInParent_fromOtherChild() throws Exception {
+    // Bar is bound (and pinned) at grandchild.  It is exposed to the parent
+    // from a different grandchild, and the positioner should throw an exception
+    // in this case.
+    //
+    // (this should be an error in other parts of the code, but check that this
+    // module behaves in a well-defined way)
+    testChain()
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .pinnedAt(grandchild, bar())
+        .exposed(othergrandchild, child, bar())
+        .shouldThrow(Exception.class)
+        .implicitlyBoundAt(grandchild, bar())
+        .implicitlyBoundAt(grandchild, foo())
+        .test();
+  }
+
+  public void testPositionPinned_bindingInParent_notExposedBinding() throws Exception {
+    // Bar is bound (and pinned) at grandchild.  It is available in the parent
+    // with a different binding, and the positioner should throw an exception in
+    // this case.
+    //
+    // (this should be an error in other parts of the code, but check that this
+    // module behaves in a well-defined way)
+    testChain()
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .pinnedAt(grandchild, bar())
+        .notExposedBinding(child, bar())
+        .shouldThrow(Exception.class)
+        .implicitlyBoundAt(grandchild, bar())
+        .implicitlyBoundAt(grandchild, foo())
+        .test();
+  }
+
+  public void testPositionPinned_exposedBindingInParentAndGrandparent() throws Exception {
+    // Bar is bound (and pinned) at grandchild, but because it is exposed to the
+    // child and the root, foo should be created up there.
+    testChain()
+        .addEdge(new Dependency(foo(), bar(), SOURCE))
+        .pinnedAt(grandchild, bar())
+        .exposed(grandchild, child, bar())
+        .exposed(child, root, bar())
+        .implicitlyBoundAt(grandchild, bar())
         .implicitlyBoundAt(root, foo())
-        .test();    
+        .test();
   }
   
   private static class A {}
@@ -199,6 +269,11 @@ public class BindingPositionerTest extends TestCase {
         new HashMap<Key<?>, GinjectorBindings>();
     private final Map<Key<?>, GinjectorBindings> preExistingLocations = 
         new HashMap<Key<?>, GinjectorBindings>();
+    private final Map<GinjectorBindings, Map<Key<?>, GinjectorBindings>> exposedTo =
+        new HashMap<GinjectorBindings, Map<Key<?>, GinjectorBindings>>();
+    private final Map<GinjectorBindings, Set<Key<?>>> notExposedBinding =
+        new HashMap<GinjectorBindings, Set<Key<?>>>();
+    private Class<?> thrownType = null;
     
     public PositionerExpectationsBuilder(GinjectorBindings origin) {
       graphBuilder = new DependencyGraph.Builder(origin);
@@ -219,7 +294,47 @@ public class BindingPositionerTest extends TestCase {
       }
       return this;
     }
-    
+
+    public PositionerExpectationsBuilder exposed(
+        GinjectorBindings child, GinjectorBindings parent, Key<?>... keys) {
+
+      for (Key<?> key : keys) {
+        Preconditions.checkState(
+            !(notExposedBinding.containsKey(parent) && notExposedBinding.get(parent).contains(key)),
+            "Key %s cannot be exposed: it has a not-exposed binding in %s!", key, parent);
+      }
+
+      Map<Key<?>, GinjectorBindings> keyToChildMap = exposedTo.get(parent);
+      if (keyToChildMap == null) {
+        keyToChildMap = new HashMap<Key<?>, GinjectorBindings>();
+        exposedTo.put(parent, keyToChildMap);
+      }
+
+      for (Key<?> key : keys) {
+        keyToChildMap.put(key, child);
+      }
+      return this;
+    }
+
+    public PositionerExpectationsBuilder notExposedBinding(
+        GinjectorBindings parent, Key<?>... keys) {
+
+      Set<Key<?>> keySet = notExposedBinding.get(parent);
+      if (keySet == null) {
+        keySet = new HashSet<Key<?>>();
+        notExposedBinding.put(parent, keySet);
+      }
+
+      for (Key<?> key : keys) {
+        Preconditions.checkState(
+            !(exposedTo.containsKey(parent) && exposedTo.get(parent).containsKey(key)),
+            "Key %s cannot have a not-exposed binding: it already is exposed to %s!", key, parent);
+
+        keySet.add(key);
+      }
+      return this;
+    }
+
     public PositionerExpectationsBuilder keysBoundAt(GinjectorBindings ginjector, Key<?>... keys) {
       for (Key<?> key : keys) {
         Preconditions.checkState(!implicitlyBoundKeys.containsKey(key),
@@ -235,31 +350,101 @@ public class BindingPositionerTest extends TestCase {
       }
       return this;
     }
+
+    public PositionerExpectationsBuilder shouldThrow(Class<?> thrownType) {
+      this.thrownType = thrownType;
+      return this;
+    }
     
     public void test() {
       DependencyExplorerOutput output = control.createMock(DependencyExplorerOutput.class);
       expect(output.getGraph()).andStubReturn(graphBuilder.build());
       expect(output.getImplicitlyBoundKeys()).andStubReturn(implicitlyBoundKeys.keySet());
       expect(output.getPreExistingLocations()).andStubReturn(preExistingLocations);
+      expectExposedBindingsExist();
+      expectNotExposedBindingsExist();
       control.replay();
       BindingPositioner positioner = new BindingPositioner();
-      positioner.position(output);
 
-      // Check that already positioned things didn't move
-      for (Map.Entry<Key<?>, GinjectorBindings> entry : preExistingLocations.entrySet()) {
-        assertSame(String.format("Expected already-bound %s to remain in location %s, but was %s", 
-                entry.getKey(), entry.getValue(), positioner.getInstallPosition(entry.getKey())),
-            entry.getValue(), positioner.getInstallPosition(entry.getKey()));
+      RuntimeException actuallyThrownException = null;
+      try {
+        positioner.position(output);
+      } catch (RuntimeException exception) {
+        actuallyThrownException = exception;
       }
-      
-      // Check that implicitly bound keys ended up where we expect
-      for (Map.Entry<Key<?>, GinjectorBindings> entry : implicitlyBoundKeys.entrySet()) {
-        assertSame(String.format("Expected %s to be placed at %s, but was %s",
-            entry.getKey(), entry.getValue(), positioner.getInstallPosition(entry.getKey())),
-        entry.getValue(), positioner.getInstallPosition(entry.getKey()));
+
+      // If we expected an exception, make sure it happened.  Otherwise, verify the results.
+      if (thrownType != null) {
+        // Distinguish the "wrong type" vs "nothing at all" cases to get better
+        // error messages.
+        if (actuallyThrownException == null) {
+          fail("Expected " + thrownType);
+        } else if (!thrownType.isInstance(actuallyThrownException)) {
+          // The positioner failed in an unexpected way -- let the user see the
+          // stack trace.
+          throw new RuntimeException("Wrong exception type (expected " + thrownType + ")",
+              actuallyThrownException);
+        }
+      } else {
+        if (actuallyThrownException != null) {
+          throw new RuntimeException("Unexpected exception", actuallyThrownException);
+        }
+
+        // Check that already positioned things didn't move
+        for (Map.Entry<Key<?>, GinjectorBindings> entry : preExistingLocations.entrySet()) {
+          assertSame(String.format("Expected already-bound %s to remain in location %s, but was %s", 
+                  entry.getKey(), entry.getValue(), positioner.getInstallPosition(entry.getKey())),
+              entry.getValue(), positioner.getInstallPosition(entry.getKey()));
+        }
+
+        // Check that implicitly bound keys ended up where we expect
+        for (Map.Entry<Key<?>, GinjectorBindings> entry : implicitlyBoundKeys.entrySet()) {
+          assertSame(String.format("Expected %s to be placed at %s, but was %s",
+              entry.getKey(), entry.getValue(), positioner.getInstallPosition(entry.getKey())),
+          entry.getValue(), positioner.getInstallPosition(entry.getKey()));
+        }
       }
-      
+
       control.verify();
+    }
+
+    /**
+     * For each binding exposed from a child, expect it to be represented
+     * in the parent by an {@link ExposedChildBinding}.
+     */
+    private void expectExposedBindingsExist() {
+      for (Map.Entry<GinjectorBindings, Map<Key<?>, GinjectorBindings>> entry :
+          exposedTo.entrySet()) {
+        GinjectorBindings parent = entry.getKey();
+        Map<Key<?>, GinjectorBindings> keyToChildMap = entry.getValue();
+
+        for (Map.Entry<Key<?>, GinjectorBindings> keyAndChild : keyToChildMap.entrySet()) {
+          Key<?> key = keyAndChild.getKey();
+          GinjectorBindings child = keyAndChild.getValue();
+
+          expect(parent.getBinding(key))
+              .andReturn(new ExposedChildBinding(
+                  null, null, Key.get(Long.class), child, Context.forText("")))
+              .anyTimes();
+        }
+      }
+    }
+
+    /**
+     * For each non-exposed binding, expect it to return an arbitrary binding
+     * implementation that is never accessed.
+     */
+    private void expectNotExposedBindingsExist() {
+      for (Map.Entry<GinjectorBindings, Set<Key<?>>> entry : notExposedBinding.entrySet()) {
+        GinjectorBindings bindings = entry.getKey();
+        Set<Key<?>> keys = entry.getValue();
+
+        for(Key<?> key : keys) {
+          expect(bindings.getBinding(key))
+              .andReturn(createMock(Binding.class))
+              .anyTimes();
+        }
+      }
     }
   }
 }
