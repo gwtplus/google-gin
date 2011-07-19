@@ -140,7 +140,7 @@ class BindingsProcessor {
             factoryModule.getFactoryType(),
             Context.forText(factoryModule.getSource()));
       } catch (ConfigurationException e) {
-        errorManager.logError("Factory %s could not be created", factoryModule.getFactoryType(), e);
+        errorManager.logError("Factory %s could not be created", e, factoryModule.getFactoryType());
         continue;
       }
 
