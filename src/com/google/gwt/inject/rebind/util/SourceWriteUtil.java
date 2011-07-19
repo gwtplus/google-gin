@@ -111,6 +111,7 @@ public class SourceWriteUtil {
     String methodName = nameGenerator.createMethodName(methodBaseName);
     String signatureParams = fieldTypeName + " value";
     String callParams = nameGenerator.getGetterMethodName(guiceUtil.getKey(field)) + "()";
+    boolean isLongAcccess = field.getFieldType().getRawType().equals(Long.TYPE);
 
     if (hasInjectee) {
       signatureParams = injecteeTypeName + " injectee, " + signatureParams;
@@ -118,8 +119,18 @@ public class SourceWriteUtil {
     }
 
     // Compose method implementation and invocation.
-    String signature = "private" + (isPublic ? "" : " native") + " void " + methodName + "("
-        + signatureParams + ")";
+    String header;
+    if (isPublic) {
+      header = "private ";
+    } else {
+      // GWT JSNI to violate access restriction.
+      if (isLongAcccess) {
+        header = "@com.google.gwt.core.client.UnsafeNativeLong private native ";
+      } else {
+        header = "private native ";
+      }
+    }
+    String signature = header + "void " + methodName + "(" + signatureParams + ")";
 
     String call = methodName + "(" + callParams + ");";
 
@@ -252,6 +263,7 @@ public class SourceWriteUtil {
     TypeLiteral<?> returnType = method.getReturnType();
     String returnTypeString = ReflectUtil.getSourceName(returnType);
     boolean returning = !returnType.getRawType().equals(Void.TYPE);
+    boolean isLongAcccess = returnType.getRawType().equals(Long.TYPE);
 
     // Collect method parameters to be passed to the native and actual method.
     int invokerParamCount = method.getParameterTypes().size() + (hasInjectee ? 1 : 0);
@@ -281,11 +293,23 @@ public class SourceWriteUtil {
       invokerSignatureParams.add(ReflectUtil.getSourceName(paramLiteral) + " " + paramName);
       invokeeCallParams.add(paramName);
       paramCount++;
+      isLongAcccess |= paramLiteral.getRawType().equals(Long.TYPE);
     }
 
     // Compose method implementation and invocation.
-    String invokerSignature = "private " + (isPublic ? "" : "native ") + returnTypeString + " "
-        + methodName + "(" + join(", ", invokerSignatureParams) + ")";
+    String header;
+    if (isPublic) {
+      header = "private ";
+    } else {
+      // GWT JSNI to violate access restriction.
+      if (isLongAcccess) {
+        header = "@com.google.gwt.core.client.UnsafeNativeLong private native ";
+      } else {
+        header = "private native ";
+      }
+    }
+    String invokerSignature = header + returnTypeString + " " + methodName
+        + "(" + join(", ", invokerSignatureParams) + ")";
 
     String invokerCall = methodName + "(" + join(", ", invokerCallParams) + ");";
 

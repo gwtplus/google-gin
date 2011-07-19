@@ -22,6 +22,7 @@ import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.Inject;
+import com.google.inject.Provides;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -142,6 +143,12 @@ public class MethodInjectTest extends GWTTestCase {
     }
   }
 
+  public void testUnsafeNativeLong() {
+    LongInjector injector = GWT.create(LongInjector.class);
+    assertEquals(3, injector.getLong());
+    assertEquals(5, injector.getHexagon().getValue());
+  }
+
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }
@@ -219,6 +226,25 @@ public class MethodInjectTest extends GWTTestCase {
     @Override
     public void setValue(@Named("blue") String value) {
       this.value = value;
+    }
+  }
+
+  @GinModules(LongModule.class)
+  interface LongInjector extends Ginjector {
+    Hexagon getHexagon();
+    long getLong();
+  }
+
+  static class LongModule extends AbstractGinModule {
+
+    @Override
+    protected void configure() {
+      bindConstant().annotatedWith(Names.named("foo")).to(5L);
+    }
+
+    @Provides
+    private long provideLong() {
+      return 3L;
     }
   }
 }
