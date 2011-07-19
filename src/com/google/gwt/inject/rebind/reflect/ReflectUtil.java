@@ -17,6 +17,7 @@
 package com.google.gwt.inject.rebind.reflect;
 
 import com.google.gwt.dev.util.Preconditions;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
@@ -29,7 +30,9 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.gwt.inject.rebind.util.SourceWriteUtil.join;
 
@@ -131,6 +134,175 @@ public class ReflectUtil {
   }
 
   /**
+   * Return the name of the package from which the given type can be used.
+   *
+   * <p>Returns a package from which all the type names contained in the given
+   * type literal are visible.  Throws {@link IllegalArgumentException} if there
+   * is no such package.  If there are multiple such packages, then the type
+   * name can be used from any package; the package containing the outermost
+   * class is used arbitrarily.
+   *
+   * <p>This method is intentionally not overloaded on Class, because it's
+   * normally an error to use a raw Class token to determine the package in
+   * which to manipulate a type.
+   */
+  public static String getUserPackageName(TypeLiteral<?> typeLiteral) {
+    Map<String, Class<?>> packageNames = new HashMap<String, Class<?>>();
+    getTypePackageNames(typeLiteral.getType(), packageNames);
+
+    if (packageNames.size() == 0) {
+      // All type names are public, so typeLiteral is visible from any package.
+      // Arbitrarily put it in the package declaring the top-level class.
+      return typeLiteral.getRawType().getPackage().getName();
+    } else if (packageNames.size() == 1) {
+      // The type contains names that are private to exactly one package; it
+      // must be referenced from that package.
+      return packageNames.keySet().iterator().next();
+    } else {
+      // The type literal contains types that are private to two or more
+      // different packages.  This can happen if a class uses a type that is
+      // protected in its parent, and its parent is from another package.  For
+      // instance:
+      //
+      // package pkg1:
+      // public class Parent {
+      //   protected static class ForSubclasses {
+      //   }
+      // }
+      //
+      // Here the type ForSubclasses is accessible to anything in the package
+      // "pkg1", but it can't be used in another package:
+      //
+      // package pkg2:
+      // class Foo<T> {
+      // }
+      //
+      // class Child extends Parent {
+      //    @Inject Child(Foo<ForSubclasses>) {}
+      // }
+      //
+      // There's no package in which we can place code that can create
+      // Foo<ForSubclasses>, even though the user was able to write that type,
+      // because we would have to subclass Parent to do so.  (theoretically we
+      // could write static helper methods inside a subclass, but that seems
+      // like too much trouble to support this sort of weirdness)
+      StringBuilder packageNamesListBuilder = new StringBuilder();
+
+      for (Class<?> entry : packageNames.values()) {
+        packageNamesListBuilder.append(entry.getCanonicalName()).append("\n");
+      }
+
+      throw new IllegalArgumentException(PrettyPrinter.format(
+          "Unable to inject an instance of %s because it references protected classes"
+              + " from multiple packages:\n%s",
+          typeLiteral,
+          packageNamesListBuilder));
+    }
+  }
+
+  /**
+   * Visits all the components of a type, collecting a map taking the name of
+   * each package in which package-private types are defined to one of the
+   * classes contained in {@code type} that belongs to that package.  If any
+   * private types are encountered, an {@link IllegalArgumentException} is
+   * thrown.
+   *
+   * This is required to deal with situations like Generic<Private> where
+   * Generic is publically defined in package A and Private is private to
+   * package B; we need to place code that uses this type in package B, even
+   * though the top-level class is from A.
+   */
+  private static void getTypePackageNames(Type type, Map<String, Class<?>> packageNames) {
+    if (type instanceof Class<?>) {
+      getClassPackageNames((Class<?>) type, packageNames);
+    } else if (type instanceof GenericArrayType) {
+      getTypePackageNames(((GenericArrayType) type).getGenericComponentType(), packageNames);
+    } else if (type instanceof ParameterizedType) {
+      getParameterizedTypePackageNames((ParameterizedType) type, packageNames);
+    } else if (type instanceof TypeVariable) {
+      getTypeVariablePackageNames((TypeVariable) type, packageNames);
+    } else if (type instanceof WildcardType) {
+      getWildcardTypePackageNames((WildcardType) type, packageNames);
+    }
+  }
+
+  /**
+   * Visits classes to collect package names.
+   *
+   * @see {@link #getTypePackageNames}.
+   */
+  private static void getClassPackageNames(Class<?> clazz, Map<String, Class<?>> packageNames) {
+    if (isPrivate(clazz)) {
+      throw new IllegalArgumentException(PrettyPrinter.format(
+          "Unable to inject an instance of %s because it is a private class.", clazz));
+    } else if (!isPublic(clazz)) {
+      packageNames.put(clazz.getPackage().getName(), clazz);
+    }
+
+    Class<?> enclosingClass = clazz.getEnclosingClass();
+    if (enclosingClass != null) {
+      getClassPackageNames(enclosingClass, packageNames);
+    }
+  }
+
+  /**
+   * Visits parameterized types to collect package names.
+   *
+   * @see {@link #getTypePackageNames}.
+   */
+  private static void getParameterizedTypePackageNames(ParameterizedType type,
+      Map<String, Class<?>> packageNames) {
+    for (Type argumentType : type.getActualTypeArguments()) {
+      getTypePackageNames(argumentType, packageNames);
+    }
+
+    getTypePackageNames(type.getRawType(), packageNames);
+    Type ownerType = type.getOwnerType();
+    if (ownerType != null) {
+      getTypePackageNames(ownerType, packageNames);
+    }
+  }
+
+  /**
+   * Visits type variables to collect package names.
+   *
+   * @see {@link #getTypeVariablePackageNames}.
+   */
+  private static void getTypeVariablePackageNames(TypeVariable type,
+      Map<String, Class<?>> packageNames) {
+    for (Type boundType : type.getBounds()) {
+      getTypePackageNames(boundType, packageNames);
+    }
+  }
+
+  /**
+   * Visits wildcard types to collect package names.
+   *
+   * @see {@link #getTypeVariablePackageNames}.
+   */
+  private static void getWildcardTypePackageNames(WildcardType type,
+      Map<String, Class<?>> packageNames) {
+    for (Type boundType : type.getUpperBounds()) {
+      getTypePackageNames(boundType, packageNames);
+    }
+
+    for (Type boundType : type.getLowerBounds()) {
+      getTypePackageNames(boundType, packageNames);
+    }
+  }
+
+  /**
+   * Return the name of the package from which the given key can be used.
+   *
+   * <p>Returns a package from which all the type names contained in the given
+   * key are visible.  Throws {@link IllegalArgumentException} if there is no
+   * such package.
+   */
+  public static String getUserPackageName(Key<?> key) {
+    return getUserPackageName(key.getTypeLiteral());
+  }
+
+  /**
    * Creates a bounded source name of the form {@code T extends Foo & Bar},
    * {@code ? super Baz} or {@code ?} as appropriate.
    */
@@ -159,8 +331,15 @@ public class ReflectUtil {
   /**
    * Returns {@code true} if the passed type's visibility is {@code public}.
    */
+  public static boolean isPublic(Class<?> type) {
+    return Modifier.isPublic(type.getModifiers());
+  }
+
+  /**
+   * Returns {@code true} if the passed type's visibility is {@code public}.
+   */
   public static boolean isPublic(TypeLiteral<?> type) {
-    return Modifier.isPublic(type.getRawType().getModifiers());
+    return isPublic(type.getRawType());
   }
 
   /**

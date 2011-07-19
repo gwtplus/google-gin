@@ -17,15 +17,150 @@
 package com.google.gwt.inject.rebind.reflect;
 
 import com.google.gwt.inject.rebind.GinjectorGenerator;
+import com.google.gwt.inject.rebind.reflect.subpackage.BogusTypeLiteralMaker;
 import com.google.inject.TypeLiteral;
 
 import junit.framework.TestCase;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Map;
 
 public class ReflectUtilTest extends TestCase {
+
+  public void testGetUserPackageName_privateClass() {
+    try {
+      ReflectUtil.getUserPackageName(new TypeLiteral<PrivateClass>() {});
+      fail("Expected IllegalArgumentException.");
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  public void testGetUserPackageName_privateClass_nested() {
+    try {
+      ReflectUtil.getUserPackageName(new TypeLiteral<List<PrivateClass>>() {});
+      fail("Expected IllegalArgumentException.");
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  public void testGetUserPackageName_privateClass_inArray() {
+    try {
+      ReflectUtil.getUserPackageName(new TypeLiteral<PrivateClass[]>() {});
+      fail("Expected IllegalArgumentException.");
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  public void testGetUserPackageName_privateClass_inTypeBound() {
+    try {
+      ReflectUtil.getUserPackageName(new TypeLiteral<List<? extends PrivateClass>>() {});
+      fail("Expected IllegalArgumentException.");
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  public void testGetUserPackageName_privateClass_deeplyHidden() {
+    try {
+      ReflectUtil.getUserPackageName(new TypeLiteral<List<? extends List<PrivateClass[]>>>() {});
+      fail("Expected IllegalArgumentException.");
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  public void testGetUserPackageName_impossibleClass() {
+    // Check a class that has no private components, but would have to be
+    // accessed from two packages simultaneously.
+
+    // First check that the parts are OK.
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(
+            TypeLiteral.get(HasProtectedInnerClass.ProtectedInnerClass.class)));
+
+    assertEquals("com.google.gwt.inject.rebind.reflect.subpackage",
+        ReflectUtil.getUserPackageName(BogusTypeLiteralMaker.getProtectedClassTypeLiteral()));
+
+    try {
+      ReflectUtil.getUserPackageName(BogusTypeLiteralMaker.getBogusTypeLiteral());
+      fail("Expected IllegalArgumentException.");
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  public void testGetUserPackageName_unparameterized() {
+    assertEquals("java.util",
+        ReflectUtil.getUserPackageName(TypeLiteral.get(Map.class)));
+  }
+
+  public void testGetUserPackageName_usesToplevelIfAllPublic() {
+    assertEquals("java.util",
+        ReflectUtil.getUserPackageName(new TypeLiteral<Map<TestCase, Integer>>() {}));
+  }
+
+  public void testGetUserPackageName_outerNameIsPackagePrivate() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(new TypeLiteral<Generic<List<Integer>>>() {}));
+  }
+
+  public void testGetUserPackageName_innerNestedNameHasPackagePrivateParent() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(new TypeLiteral<List<Nested.PublicNested>>() {}));
+  }
+
+  public void testGetUserPackageName_innerNestedNameHasPublicParent() {
+    assertEquals("java.util",
+        ReflectUtil.getUserPackageName(
+            new TypeLiteral<List<PublicNested.DoublePublicNested>>() {}));
+  }
+
+  public void testGetUserPackageName_onePackagePrivateName() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(
+            new TypeLiteral<Map<TypeLiteral<Integer>, TypeLiteral<ExampleException>>>() {}));
+  }
+
+  public void testGetUserPackageName_oneProtectedName() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(
+            new TypeLiteral<Map<TypeLiteral<Integer>, TypeLiteral<ProtectedClass>>>() {}));
+  }
+
+  public void testGetUserPackageName_twoPackagePrivateNames() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(new TypeLiteral<Generic<List<ExampleException>>>() {}));
+  }
+
+  public void testGetUserPackageName_array() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(new TypeLiteral<ExampleException[]>() {}));
+  }
+
+  public void testGetUserPackageName_wildcard_public() {
+    assertEquals("java.util",
+        ReflectUtil.getUserPackageName(new TypeLiteral<List<?>>() {}));
+  }
+
+  public void testGetUserPackageName_wildcard_private() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(new TypeLiteral<Generic<?>>() {}));
+  }
+
+  public void testGetUserPackageName_wildcard_withUpperBound() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(new TypeLiteral<List<? extends ExampleException>>() {}));
+  }
+
+  public void testGetUserPackageName_wildcard_withLowerBound() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(new TypeLiteral<List<? super ExampleException>>() {}));
+  }
+
+  public void testGetUserPackageName_allAtOnce() {
+    assertEquals("com.google.gwt.inject.rebind.reflect",
+        ReflectUtil.getUserPackageName(
+            new TypeLiteral<List<Generic<? extends List<ExampleException[]>[]>>>() {}));
+  }
 
   public void testGetSourceName() throws NoSourceNameException {
     assertEquals("com.google.gwt.inject.rebind.reflect.ReflectUtilTest",
@@ -185,6 +320,8 @@ public class ReflectUtilTest extends TestCase {
 
   static class Nested {
     static class DoublyNested {}
+    public static class PublicNested {
+    }
   }
   static abstract class Parametrized<T extends CharSequence> {}
 
@@ -221,6 +358,25 @@ public class ReflectUtilTest extends TestCase {
 
     <V extends T> V parametrizedMethod() {
       return null;
+    }
+  }
+
+  static class Generic<T> {
+  }
+
+  private static class PrivateClass {
+  }
+
+  protected static class ProtectedClass {
+  }
+
+  public static class PublicNested {
+    public static class DoublePublicNested {
+    }
+  }
+
+  public static class HasProtectedInnerClass {
+    protected static class ProtectedInnerClass {
     }
   }
 }
