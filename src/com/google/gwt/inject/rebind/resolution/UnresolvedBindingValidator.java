@@ -15,12 +15,15 @@
  */
 package com.google.gwt.inject.rebind.resolution;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
+import com.google.inject.assistedinject.Assisted;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -63,11 +66,14 @@ public class UnresolvedBindingValidator {
   
   private final ErrorManager errorManager;
   private final EagerCycleFinder cycleFinder;
+  private final TreeLogger logger;
   
   @Inject
-  public UnresolvedBindingValidator(EagerCycleFinder cycleFinder, ErrorManager errorManager) {
+  public UnresolvedBindingValidator(EagerCycleFinder cycleFinder, ErrorManager errorManager,
+      @Assisted TreeLogger logger) {
     this.cycleFinder = cycleFinder;
     this.errorManager = errorManager;
+    this.logger = logger;
   }
   
   /**
@@ -139,9 +145,15 @@ public class UnresolvedBindingValidator {
       DependencyExplorerOutput output, Map<Key<?>, String> invalidKeys) {
     RequiredKeySet requiredKeys = new RequiredKeySet(output.getGraph());
     Set<Key<?>> optionalKeys = new HashSet<Key<?>>();
-    for (Iterator<Key<?>> iterator = invalidKeys.keySet().iterator(); iterator.hasNext();) {
-      Key<?> key = iterator.next();
+    // We need to use a for loop instead of a foreach loop because we remove
+    // entries as we go (see the call to iterator.remove() below).
+    for (Iterator<Map.Entry<Key<?>, String>> iterator = invalidKeys.entrySet().iterator();
+        iterator.hasNext();) {
+      Map.Entry<Key<?>, String> entry = iterator.next();
+      Key<?> key = entry.getKey();
       if (!requiredKeys.isRequired(key)) {
+        PrettyPrinter.log(logger, TreeLogger.DEBUG,
+            "Removing the optional key %s because it had errors: %s", key, entry.getValue());
         optionalKeys.add(key);
         iterator.remove();
       }
@@ -178,6 +190,8 @@ public class UnresolvedBindingValidator {
     for (Key<?> target : targets) {
       for (Dependency edge : graph.getDependenciesTargeting(target)) {
         if (!edge.isOptional()) {
+          PrettyPrinter.log(logger, TreeLogger.DEBUG, "Removing the key %s because of %s",
+              edge.getSource(), edge);
           requiredSources.add(edge.getSource());
         }
       }
@@ -217,5 +231,9 @@ public class UnresolvedBindingValidator {
     public Collection<Key<?>> getInvalidOptionalKeys() {
       return invalidOptionalKeys;
     }
+  }
+
+  public interface Factory {
+    UnresolvedBindingValidator create(TreeLogger logger);
   }
 }

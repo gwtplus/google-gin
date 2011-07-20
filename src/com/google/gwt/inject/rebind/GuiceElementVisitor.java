@@ -19,6 +19,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.assistedinject.Assisted;
@@ -93,6 +94,9 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
   public <T> Void visit(com.google.inject.Binding<T> command) {
     GuiceBindingVisitor<T> bindingVisitor = bindingVisitorFactory.create(
         command.getKey(), messages, bindings);
+    PrettyPrinter.log(logger, TreeLogger.DEBUG, "Adding pin for %s in %s because %s",
+        command.getKey(), bindings, command);
+
     // If we visit a binding for a key, we pin it to the current ginjector,
     // since it indicates that the user explicitly asked for it to be placed
     // there.
@@ -144,7 +148,9 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
       ExposedChildBinding childBinding =
           bindingFactory.getExposedChildBinding(key, childCollection,
               Context.forElement(privateElements));
-      logger.log(TreeLogger.TRACE, "Child binding for " + key + ": " + childBinding);
+
+      PrettyPrinter.log(logger, TreeLogger.TRACE, "Child binding for %s: %s", key, childBinding);
+
       bindings.addBinding(key, childBinding);
     }
     return null;

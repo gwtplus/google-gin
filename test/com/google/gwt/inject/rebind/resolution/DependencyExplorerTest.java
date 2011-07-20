@@ -4,6 +4,7 @@ import static com.google.gwt.inject.rebind.resolution.TestUtils.bar;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.baz;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.foo;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.GinjectorBindings;
@@ -37,14 +38,29 @@ public class DependencyExplorerTest extends TestCase {
   private TreeLogger treeLogger;
   private Binding binding;
   private ExposedChildBinding childBinding;
+
+  private final ImplicitBindingCreator.Factory bindingCreatorFactory =
+      new ImplicitBindingCreator.Factory() {
+        @Override
+        public ImplicitBindingCreator create(TreeLogger logger) {
+          return bindingCreator;
+        }
+      };
+
   
   @Override
   protected void setUp() throws Exception {
     control = EasyMock.createControl();
-    treeLogger = EasyMock.createNiceMock(TreeLogger.class);
+
+    treeLogger = control.createMock(TreeLogger.class);
+    treeLogger.log(EasyMock.<TreeLogger.Type>anyObject(), EasyMock.<String>anyObject(),
+        EasyMock.<Throwable>anyObject(), EasyMock.<TreeLogger.HelpInfo>anyObject());
+    EasyMock.expectLastCall().asStub();
+    expect(treeLogger.isLoggable(isA(TreeLogger.Type.class))).andStubReturn(true);
+
     bindingCreator = control.createMock(ImplicitBindingCreator.class);
     origin = control.createMock("origin", GinjectorBindings.class);
-    dependencyExplorer = new DependencyExplorer(bindingCreator, treeLogger);
+    dependencyExplorer = new DependencyExplorer(bindingCreatorFactory, treeLogger);
     binding = control.createMock("binding", Binding.class);
     childBinding = control.createMock(ExposedChildBinding.class);
   }

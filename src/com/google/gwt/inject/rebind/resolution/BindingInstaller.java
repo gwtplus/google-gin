@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.resolution;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
@@ -22,8 +23,10 @@ import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
+import com.google.inject.assistedinject.Assisted;
 
 import java.util.Map;
 
@@ -49,11 +52,16 @@ class BindingInstaller {
   
   private final BindingPositioner positions;
   private final BindingFactory bindingFactory;
+  private final TreeLogger logger;
 
   @Inject
-  public BindingInstaller(BindingPositioner positions, BindingFactory bindingFactory) {
-    this.positions = positions;
+  public BindingInstaller(
+      BindingPositioner.Factory positionsFactory,
+      BindingFactory bindingFactory,
+      @Assisted TreeLogger logger) {
+    this.positions = positionsFactory.create(logger);
     this.bindingFactory = bindingFactory;
+    this.logger = logger;
   }
   
   /**
@@ -108,11 +116,17 @@ class BindingInstaller {
   private void ensureAccessible(Key<?> key, GinjectorBindings parent, GinjectorBindings child) {
     // Parent will be null if it is was an optional dependency and it couldn't be created.
     if (parent != null && !child.equals(parent) && !child.isBound(key)) {
+      PrettyPrinter.log(logger, TreeLogger.DEBUG,
+          "In %s: inheriting binding for %s from the parent %s", child, key, parent);
       Context context = Context.format("Inheriting %s from parent", key);
 
       // We don't strictly need all the extra checks in addBinding, but it can't hurt.  We know, for
       // example, that there will not be any unresolved bindings for this key.
       child.addBinding(key, bindingFactory.getParentBinding(key, parent, context));
     }
+  }
+
+  interface Factory {
+    BindingInstaller create(TreeLogger logger);
   }
 }

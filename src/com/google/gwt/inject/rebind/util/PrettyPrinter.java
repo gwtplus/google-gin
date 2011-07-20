@@ -16,6 +16,7 @@
 
 package com.google.gwt.inject.rebind.util;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
@@ -46,6 +47,17 @@ import java.util.List;
 public final class PrettyPrinter {
 
   private PrettyPrinter() {
+  }
+
+  /**
+   * Log a pretty-printed message if the given log level is active.  The message
+   * is only formatted if it will be logged.
+   */
+  public static void log(TreeLogger logger, TreeLogger.Type type, String formatString,
+      Object... args) {
+    if (logger.isLoggable(type)) {
+      logger.log(type, format(formatString, args));
+    }
   }
 
   /**

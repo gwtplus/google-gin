@@ -438,4 +438,13 @@ public class GinjectorBindings implements BindingIndex {
   public void addFactoryModule(FactoryModule<?> install) {
     factoryModules.add(install);
   }
+
+  @Override
+  public String toString() {
+    if (parent == null) {
+      return ginjectorInterface.toString();
+    } else {
+      return module.getCanonicalName();
+    }
+  }
 }

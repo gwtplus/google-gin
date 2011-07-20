@@ -15,14 +15,17 @@
  */
 package com.google.gwt.inject.rebind.resolution;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
+import com.google.inject.assistedinject.Assisted;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,6 +77,8 @@ import java.util.Set;
  * <p>See {@link BindingResolver} for how this fits into the overall algorithm for resolution.
  */
 class BindingPositioner {
+
+  private final TreeLogger logger;
   
   /**
    * The keys that still need to be positioned.  We use a LinkedHashSet so that we visit keys in the
@@ -102,7 +107,9 @@ class BindingPositioner {
   private DependencyExplorerOutput output;
 
   @Inject
-  public BindingPositioner() {}
+  public BindingPositioner(@Assisted TreeLogger logger) {
+    this.logger = logger;
+  }
   
   public void position(DependencyExplorerOutput output) {
     Preconditions.checkState(this.output == null, "Should not call position more than once");
@@ -140,7 +147,12 @@ class BindingPositioner {
   private void computeInitialPositions() {
     positions.putAll(output.getPreExistingLocations());
     for (Key<?> key : output.getImplicitlyBoundKeys()) {
-      positions.put(key, computeInitialPosition(key));
+      GinjectorBindings initialPosition = computeInitialPosition(key);
+
+      PrettyPrinter.log(logger, TreeLogger.DEBUG, PrettyPrinter.format(
+          "Initial highest visible position of %s is %s", key, initialPosition));
+
+      positions.put(key, initialPosition);
     }
   }
   
@@ -160,10 +172,16 @@ class BindingPositioner {
     // parent from the origin.  While we are fine using the higher binding, it is still necessary
     // to install the binding in the origin.
     if (pinned) {
+      PrettyPrinter.log(logger, TreeLogger.DEBUG,
+          PrettyPrinter.format("Forcing %s to be installed in %s due to a pin.", key,
+              initialPosition));
       installOverrides.put(key, initialPosition);
     }
 
     while (canExposeKeyFrom(key, initialPosition, pinned)) {
+      PrettyPrinter.log(logger, TreeLogger.SPAM,
+          "Moving the highest visible position of %s from %s to %s.", key, initialPosition,
+          initialPosition.getParent());
       initialPosition = initialPosition.getParent();
     }
     return initialPosition;
@@ -226,11 +244,18 @@ class BindingPositioner {
       injectors.add(positions.get(key));
       GinjectorBindings newPosition = lowest(injectors);
       
-      if (positions.put(key, newPosition) != newPosition) {
+      GinjectorBindings oldPosition = positions.put(key, newPosition);
+      if (oldPosition != newPosition) {
+        PrettyPrinter.log(logger, TreeLogger.DEBUG,
+            "Moved the highest visible position of %s from %s to %s, the lowest injector of %s.",
+            key, oldPosition, newPosition, injectors);
+
         // We don't care if GINJECTOR is present, as its Ginjector will resolve to "null", which
         // will never be reached on the path from the origin up to the root, therefore it won't
         // actually constrain anything.
         for (Dependency dependency : output.getGraph().getDependenciesTargeting(key)) {
+          PrettyPrinter.log(logger, TreeLogger.DEBUG, "Re-enqueuing %s due to %s",
+              dependency.getSource(), dependency);
           workqueue.add(dependency.getSource());
         }
       }
@@ -257,5 +282,9 @@ class BindingPositioner {
       lowest = lowest.getParent();
     }
     return Preconditions.checkNotNull(lowest, "Should never make it to null");
+  }
+
+  interface Factory {
+    BindingPositioner create(TreeLogger logger);
   }
 }

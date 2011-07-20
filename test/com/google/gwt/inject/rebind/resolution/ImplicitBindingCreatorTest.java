@@ -19,6 +19,7 @@ package com.google.gwt.inject.rebind.resolution;
 import static org.easymock.classextension.EasyMock.expect;
 
 import com.google.gwt.core.ext.GeneratorContext;
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.CallGwtDotCreateBinding;
 import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCreationException;
@@ -37,6 +38,7 @@ public class ImplicitBindingCreatorTest extends TestCase {
   // Mocks:
   private BindingFactory bindingFactory;
   private GeneratorContext generatorContext;
+  private TreeLogger treeLogger;
 
   private void replay() {
     control.replay();
@@ -54,8 +56,9 @@ public class ImplicitBindingCreatorTest extends TestCase {
     this.bindingFactory = control.createMock(BindingFactory.class);
     this.callGwtDotCreateBinding = control.createMock(CallGwtDotCreateBinding.class);
     this.generatorContext = control.createMock(GeneratorContext.class);
+    this.treeLogger = control.createMock(TreeLogger.class);
 
-    bindingCreator = new ImplicitBindingCreator(bindingFactory, this.generatorContext);
+    bindingCreator = new ImplicitBindingCreator(bindingFactory, this.generatorContext, treeLogger);
   }
 
   protected void tearDown() throws Exception {

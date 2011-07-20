@@ -21,7 +21,10 @@ import static com.google.gwt.inject.rebind.resolution.TestUtils.foo;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
+import static org.easymock.classextension.EasyMock.createControl;
+import static org.easymock.classextension.EasyMock.createNiceMock;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
@@ -46,6 +49,7 @@ public class BindingInstallerTest extends TestCase {
    
   private IMocksControl control;
   private BindingPositioner positions;
+  private BindingPositioner.Factory positionsFactory;
   private DependencyGraph graph;
   private DependencyExplorerOutput output;
   
@@ -54,23 +58,31 @@ public class BindingInstallerTest extends TestCase {
   
   private BindingFactory bindingFactory;
   private BindingInstaller installer;
+  private TreeLogger treeLogger;
   
   @SuppressWarnings("unchecked")
   @Override
   protected void setUp() throws Exception {
-    control = EasyMock.createControl();
+    control = createControl();
     positions = control.createMock(BindingPositioner.class);
     graph = control.createMock(DependencyGraph.class);
     output = control.createMock(DependencyExplorerOutput.class);
+    treeLogger = createNiceMock(TreeLogger.class);
+    positionsFactory = control.createMock("positionsFactory", BindingPositioner.Factory.class);
     
     root = control.createMock("root", GinjectorBindings.class);
     child = control.createMock("child", GinjectorBindings.class);
     
     bindingFactory = control.createMock(BindingFactory.class);
 
+    expect(positionsFactory.create(treeLogger)).andStubReturn(positions);
+    control.replay();
+    installer = new BindingInstaller(positionsFactory, bindingFactory, treeLogger);
+    control.verify();
+    control.reset();
+
     expect(output.getGraph()).andStubReturn(graph);
     positions.position(output);
-    installer = new BindingInstaller(positions, bindingFactory);
     expect(graph.getOrigin()).andStubReturn(child);
   }
   

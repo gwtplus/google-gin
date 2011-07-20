@@ -15,10 +15,12 @@
  */
 package com.google.gwt.inject.rebind.resolution;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
 import com.google.gwt.inject.rebind.resolution.UnresolvedBindingValidator.InvalidKeys;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
@@ -42,30 +44,36 @@ import com.google.inject.Provider;
  */
 public class BindingResolver {
  
-  private final Provider<DependencyExplorer> explorerProvider;
-  private final Provider<UnresolvedBindingValidator> validatorProvider;
-  private final Provider<BindingInstaller> installerProvider;
+  private final DependencyExplorer.Factory explorerFactory;
+  private final UnresolvedBindingValidator.Factory validatorFactory;
+  private final BindingInstaller.Factory installerFactory;
+  private final TreeLogger logger;
   
   @Inject
-  public BindingResolver(Provider<DependencyExplorer> explorerProvider,
-      Provider<UnresolvedBindingValidator> validatorProvider,
-      Provider<BindingInstaller> installerProvider) {
-    this.explorerProvider = explorerProvider;
-    this.validatorProvider = validatorProvider;
-    this.installerProvider = installerProvider;
+  public BindingResolver(DependencyExplorer.Factory explorerFactory,
+      UnresolvedBindingValidator.Factory validatorFactory,
+      BindingInstaller.Factory installerFactory,
+      TreeLogger logger) {
+    this.explorerFactory = explorerFactory;
+    this.validatorFactory = validatorFactory;
+    this.installerFactory = installerFactory;
+    this.logger = logger;
   }
   
   public void resolveBindings(GinjectorBindings origin) {
+    TreeLogger branch = logger.branch(TreeLogger.DEBUG, PrettyPrinter.format(
+        "Resolving bindings for %s", origin));
+
     // Use providers so that the instances are cleaned up after this method.  This ensures that even
     // though BindingResolver may be held on to (eg, {@link GinjectorBindings}, we won't leak
     // memory used for temporary storage during resolution.
-    DependencyExplorerOutput output = explorerProvider.get().explore(origin);
+    DependencyExplorerOutput output = explorerFactory.create(branch).explore(origin);
     
-    UnresolvedBindingValidator validator = validatorProvider.get();
+    UnresolvedBindingValidator validator = validatorFactory.create(branch);
     InvalidKeys invalidKeys = validator.getInvalidKeys(output);
     if (validator.validate(output, invalidKeys)) {
       validator.pruneInvalidOptional(output, invalidKeys);
-      installerProvider.get().installBindings(output);
+      installerFactory.create(branch).installBindings(output);
     }
   }
 }

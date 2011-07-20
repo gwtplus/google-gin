@@ -7,6 +7,7 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
@@ -39,6 +40,8 @@ public class BindingPositionerTest extends TestCase {
   private GinjectorBindings child;
   private GinjectorBindings grandchild;
   private GinjectorBindings othergrandchild; // Only used as the source of an ExposedChildBinding.
+
+  private final TreeLogger treeLogger = TreeLogger.NULL;
     
   @Override
   protected void setUp() throws Exception {
@@ -48,6 +51,7 @@ public class BindingPositionerTest extends TestCase {
     child = control.createMock("child", GinjectorBindings.class);
     grandchild = control.createMock("grandchild", GinjectorBindings.class);
     othergrandchild = control.createMock("other", GinjectorBindings.class);
+
     expect(grandchild.getParent()).andStubReturn(child);
     expect(child.getParent()).andStubReturn(root);
     expect(root.getParent()).andStubReturn(null);
@@ -364,7 +368,7 @@ public class BindingPositionerTest extends TestCase {
       expectExposedBindingsExist();
       expectNotExposedBindingsExist();
       control.replay();
-      BindingPositioner positioner = new BindingPositioner();
+      BindingPositioner positioner = new BindingPositioner(treeLogger);
 
       RuntimeException actuallyThrownException = null;
       try {

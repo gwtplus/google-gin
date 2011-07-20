@@ -23,8 +23,10 @@ import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCreationException;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
+import com.google.inject.assistedinject.Assisted;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -48,8 +50,9 @@ public class DependencyExplorer {
   private final ImplicitBindingCreator bindingCreator;
   
   @Inject
-  public DependencyExplorer(ImplicitBindingCreator bindingCreator, TreeLogger logger) {
-    this.bindingCreator = bindingCreator;
+  public DependencyExplorer(ImplicitBindingCreator.Factory bindingCreatorFactory,
+      @Assisted TreeLogger logger) {
+    this.bindingCreator = bindingCreatorFactory.create(logger);
     this.logger = logger;
   }
   
@@ -73,10 +76,15 @@ public class DependencyExplorer {
         // Need to register where we can find the "source".  Note that this will be always be
         // available somewhere, because it's already available at the origin (that's how we found
         // this dependency).
+        PrettyPrinter.log(logger, TreeLogger.DEBUG,
+              "Registering %s as available at %s because of the dependency %s", edge.getSource(),
+              origin, edge);
         output.preExistingBindings.put(edge.getSource(), 
             locateHighestAccessibleSource(edge.getSource(), origin));
-      }     
-      
+      }
+
+      PrettyPrinter.log(logger, TreeLogger.DEBUG,
+          "Exploring from %s in %s because of the dependency %s", edge.getTarget(), origin, edge);
       // Visit the target of the dependency to find additional bindings
       visit(edge.getTarget(), builder, output, origin);
     }
@@ -90,12 +98,17 @@ public class DependencyExplorer {
     if (visited.add(key)) {
       GinjectorBindings accessibleSource = locateHighestAccessibleSource(key, origin);
       if (accessibleSource != null) {
+        PrettyPrinter.log(logger, TreeLogger.DEBUG, "Using binding of %s in %s.", key,
+            accessibleSource);
         output.preExistingBindings.put(key, accessibleSource);
       } else {
         try {
           Binding binding = bindingCreator.create(key);
+          PrettyPrinter.log(logger, TreeLogger.DEBUG, "Implicitly bound %s in %s using %s.", key,
+              origin, binding);
           
           for (Dependency edge : binding.getDependencies()) {
+            PrettyPrinter.log(logger, TreeLogger.DEBUG, "Following %s", edge);
             builder.addEdge(edge);
             visit(edge.getTarget(), builder, output, origin);
           }
@@ -103,6 +116,8 @@ public class DependencyExplorer {
           // Do this *after* visiting all dependencies so that that the ordering is post-order
           output.implicitBindings.put(key, binding);
         } catch (BindingCreationException e) {
+          PrettyPrinter.log(logger, TreeLogger.DEBUG, "Implicit binding failed for %s: %s", key,
+              e.getMessage());
           output.bindingErrors.put(key, e.getMessage());
         } catch (RuntimeException e) {
           logger.log(Type.ERROR, "Exception while visiting " + key);
@@ -210,5 +225,9 @@ public class DependencyExplorer {
     public DependencyGraph getGraph() {
       return graph;
     }
+  }
+
+  public interface Factory {
+    DependencyExplorer create(TreeLogger logger);
   }
 }

@@ -25,6 +25,7 @@ import com.google.gwt.inject.rebind.binding.BindingIndex;
 import com.google.gwt.inject.rebind.binding.Injectable;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.inject.rebind.resolution.ResolutionModule;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.inject.AbstractModule;
@@ -61,6 +62,8 @@ class GinjectorGeneratorModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    install(new ResolutionModule());
+
     bind(TreeLogger.class).toInstance(logger);
     bind(GeneratorContext.class).toInstance(ctx);
     bind(new TypeLiteral<Class<? extends Ginjector>>(){})

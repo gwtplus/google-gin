@@ -16,6 +16,7 @@
 package com.google.gwt.inject.rebind.resolution;
 
 import com.google.gwt.core.ext.GeneratorContext;
+import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.client.AsyncProvider;
 import com.google.gwt.inject.rebind.binding.BindClassBinding;
 import com.google.gwt.inject.rebind.binding.BindConstantBinding;
@@ -33,6 +34,7 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.ProvidedBy;
 import com.google.inject.TypeLiteral;
+import com.google.inject.assistedinject.Assisted;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
@@ -64,11 +66,14 @@ public class ImplicitBindingCreator {
 
   private final BindingFactory bindingFactory;
   private final GeneratorContext generatorContext;
+  private final TreeLogger logger;
 
   @Inject
-  public ImplicitBindingCreator(BindingFactory bindingFactory, GeneratorContext generatorContext) {
+  public ImplicitBindingCreator(BindingFactory bindingFactory, GeneratorContext generatorContext,
+      @Assisted TreeLogger logger) {
     this.bindingFactory = bindingFactory;
     this.generatorContext = generatorContext;
+    this.logger = logger;
   }
 
   /**
@@ -276,6 +281,10 @@ public class ImplicitBindingCreator {
       }
     }
     return injectConstructor;
+  }
+
+  public interface Factory {
+    ImplicitBindingCreator create(TreeLogger logger);
   }
 }
 

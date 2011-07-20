@@ -24,6 +24,7 @@ import static com.google.gwt.inject.rebind.resolution.TestUtils.fooImpl;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.providerBar;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.providerBaz;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.providerFoo;
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
@@ -77,24 +78,69 @@ public class BindingResolverTest extends TestCase {
   }
   
   private void verify() {
+    EasyMock.verify(treeLogger);
     control.verify();
   }
   
   protected void setUp() throws Exception {
     super.setUp();
 
-    treeLogger = EasyMock.createNiceMock(TreeLogger.class);
+    treeLogger = EasyMock.createNiceMock("treeLogger", TreeLogger.class);
+    // Ensure that branches get the same mock logger and not a null pointer.
+    expect(treeLogger.branch(EasyMock.<TreeLogger.Type>anyObject(), EasyMock.<String>anyObject(),
+        EasyMock.<Throwable>anyObject(), EasyMock.<TreeLogger.HelpInfo>anyObject()))
+        .andReturn(treeLogger)
+        .anyTimes();
+    EasyMock.replay(treeLogger);
+
     control = createControl();
     parentBinding = control.createMock("parentBinding", ParentBinding.class);
     bindingCreator = control.createMock("bindingCreator", ImplicitBindingCreator.class);
     errorManager = control.createMock("errorManager", ErrorManager.class);
     bindingFactory = control.createMock("bindingFactory", BindingFactory.class);
 
+    final ImplicitBindingCreator.Factory bindingCreatorFactory =
+        new ImplicitBindingCreator.Factory() {
+          @Override
+          public ImplicitBindingCreator create(TreeLogger logger) {
+            return bindingCreator;
+          }
+        };
+    DependencyExplorer.Factory dependencyExplorerFactory =
+        new DependencyExplorer.Factory() {
+          @Override
+          public DependencyExplorer create(TreeLogger logger) {
+            return new DependencyExplorer(bindingCreatorFactory, logger);
+          }
+        };
+    UnresolvedBindingValidator.Factory unresolvedBindingValidatorFactory =
+        new UnresolvedBindingValidator.Factory() {
+          @Override
+          public UnresolvedBindingValidator create(TreeLogger logger) {
+            return new UnresolvedBindingValidator(new EagerCycleFinder(errorManager), errorManager,
+                logger);
+          }
+        };
+    final BindingPositioner.Factory bindingPositionerFactory =
+        new BindingPositioner.Factory() {
+          @Override
+          public BindingPositioner create(TreeLogger logger) {
+            return new BindingPositioner(logger);
+          }
+        };
+    BindingInstaller.Factory bindingInstallerFactory =
+        new BindingInstaller.Factory() {
+          @Override
+          public BindingInstaller create(TreeLogger logger) {
+            return new BindingInstaller(bindingPositionerFactory, bindingFactory, logger);
+          }
+        };
+
     bindingResolver = new BindingResolver(
-        Providers.of(new DependencyExplorer(bindingCreator, treeLogger)), 
-        Providers.of(new UnresolvedBindingValidator(
-            new EagerCycleFinder(errorManager), errorManager)),
-        Providers.of(new BindingInstaller(new BindingPositioner(), bindingFactory)));
+        dependencyExplorerFactory,
+        unresolvedBindingValidatorFactory,
+        bindingInstallerFactory,
+        treeLogger);
   }
   
   private GinjectorBindings createInjectorNode(String name) {
