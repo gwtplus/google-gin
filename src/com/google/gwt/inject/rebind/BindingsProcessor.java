@@ -16,8 +16,12 @@
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.PrivateGinModule;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
+import com.google.gwt.inject.rebind.adapter.GinModuleAdapter;
+import com.google.gwt.inject.rebind.adapter.PrivateGinModuleAdapter;
 import com.google.gwt.inject.rebind.binding.BindingFactory;
 import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.binding.FactoryBinding;
@@ -32,10 +36,14 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.spi.Elements;
 
-import java.lang.reflect.Method;
-import java.util.List;
-
 import javax.inject.Provider;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Builds up the bindings and scopes for this {@code Ginjector}.  This uses
@@ -60,7 +68,7 @@ class BindingsProcessor {
   private final GinjectorBindings rootGinjectorBindings;
   private final GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory;
 
-  private final ModuleInstantiator instantiator;
+  private final Set<Class<? extends GinModule>> moduleClasses;
 
   @Inject
   BindingsProcessor(Provider<MemberCollector> collectorProvider,
@@ -69,9 +77,9 @@ class BindingsProcessor {
       @RootBindings GinjectorBindings rootGinjectorBindings,
       GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory,
       BindingFactory bindingFactory,
-      ModuleInstantiator instantiator) {
+      @ModuleClasses Set<Class<? extends GinModule>> moduleClasses) {
     this.bindingFactory = bindingFactory;
-    this.instantiator = instantiator;
+    this.moduleClasses = moduleClasses;
     this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
     this.errorManager = errorManager;
     this.rootGinjectorBindings = rootGinjectorBindings;
@@ -87,7 +95,7 @@ class BindingsProcessor {
     rootGinjectorBindings.addUnresolvedEntriesForInjectorInterface();
     registerGinjectorBinding();
 
-    createBindingsForModules(instantiator.instantiateModulesForGinjector(rootGinjectorBindings));
+    createBindingsForModules(instantiateModules());
     errorManager.checkForError();
     
     resolveAllUnresolvedBindings(rootGinjectorBindings);
@@ -184,5 +192,43 @@ class BindingsProcessor {
   private void createBindingsForModules(List<Module> modules) {
     GuiceElementVisitor visitor = guiceElementVisitorFactory.create(rootGinjectorBindings);
     visitor.visitElementsAndReportErrors(Elements.getElements(modules));
+  }
+
+  private List<Module> instantiateModules() {
+    List<Module> modules = new ArrayList<Module>();
+    for (Class<? extends GinModule> clazz : moduleClasses) {
+      Module module = instantiateModuleClass(clazz);
+      if (module != null) {
+        modules.add(module);
+      }
+    }
+    return modules;
+  }
+
+  private Module instantiateModuleClass(Class<? extends GinModule> moduleClass) {
+    try {
+      Constructor<? extends GinModule> constructor = moduleClass.getDeclaredConstructor();
+      try {
+        constructor.setAccessible(true);
+        if (PrivateGinModule.class.isAssignableFrom(moduleClass)) {
+          return new PrivateGinModuleAdapter((PrivateGinModule) constructor.newInstance(),
+              rootGinjectorBindings);
+        } else {
+          return new GinModuleAdapter(constructor.newInstance(), rootGinjectorBindings);
+        }
+      } finally {
+        constructor.setAccessible(false);
+      }
+    } catch (IllegalAccessException e) {
+      errorManager.logError("Error creating module: " + moduleClass, e);
+    } catch (InstantiationException e) {
+      errorManager.logError("Error creating module: " + moduleClass, e);
+    } catch (NoSuchMethodException e) {
+      errorManager.logError("Error creating module: " + moduleClass, e);
+    } catch (InvocationTargetException e) {
+      errorManager.logError("Error creating module: " + moduleClass, e);
+    }
+
+    return null;
   }
 }

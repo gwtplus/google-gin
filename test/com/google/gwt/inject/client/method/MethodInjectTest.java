@@ -20,6 +20,7 @@ import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.gwt.inject.client.CreationException;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.NoGinModules;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
@@ -165,6 +166,7 @@ public class MethodInjectTest extends GWTTestCase {
     assertEquals(ShapeGinModule.COLOR, circle.getColor());
   }
 
+  @NoGinModules
   interface DangerousGinjector extends Ginjector {
     Dangerous getDangerous();
     VeryDangerous getVeryDangerous();

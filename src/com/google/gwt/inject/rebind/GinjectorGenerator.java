@@ -17,7 +17,6 @@
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.BadPropertyValueException;
-import com.google.gwt.core.ext.ConfigurationProperty;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.PropertyOracle;
@@ -26,13 +25,13 @@ import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.NoGinModules;
 import com.google.inject.Guice;
 import com.google.inject.Module;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -71,7 +70,7 @@ public class GinjectorGenerator extends Generator {
     // This is the Injector we use for the Generator internally,
     // it has nothing to do with user code.
     Module module = new GinjectorGeneratorModule(logger, context, ginjectorInterface,
-        getConfigurationModules(ginjectorInterface));
+        getModuleClasses(ginjectorInterface));
     return Guice.createInjector(module).getInstance(GinjectorGeneratorImpl.class).generate();
   }
 
@@ -96,8 +95,7 @@ public class GinjectorGenerator extends Generator {
   }
 
   @SuppressWarnings("unchecked")
-  // Due to deferred binding we assume that the requested class has to be a
-  // ginjector.
+  // Due to deferred binding we assume that the requested class has to be a ginjector.
   private Class<? extends Ginjector> getGinjectorType(String requestedClass)
       throws ClassNotFoundException {
 
@@ -112,28 +110,26 @@ public class GinjectorGenerator extends Generator {
     return (Class<? extends Ginjector>) type;
   }
 
-  @SuppressWarnings("unchecked")
-  // We check that the class is a GinModule before casting it.
-  private Set<Class<? extends GinModule>> getConfigurationModules(
-      Class<? extends Ginjector> ginjectorInterface) throws UnableToCompleteException {
+  private Set<Class<? extends GinModule>> getModuleClasses(Class<? extends Ginjector> ginjectorType)
+      throws UnableToCompleteException {
+    Set<Class<? extends GinModule>> ginModules = new HashSet<Class<? extends GinModule>>();
+    getPropertyModuleClasses(ginjectorType, ginModules);
+    getModuleClassesFromInjectorInterface(ginjectorType, ginModules);
 
-    Set<String> propertyNames = new HashSet<String>();
-    getPropertyNamesFromInjectorInterface(ginjectorInterface, propertyNames);
-
-    Set<String> configurationModuleNames = new HashSet<String>();
-    for (String propertyName : propertyNames) {
-      Set<String> moduleNames = getValuesForProperty(propertyName);
-      if (moduleNames.isEmpty()) {
-        logger.log(TreeLogger.Type.ERROR, String.format("The GinModules annotation requests "
-            + "property %s, but this property cannot be found in the GWT module.", propertyName));
-        throw new UnableToCompleteException();
-      }
-      configurationModuleNames.addAll(moduleNames);
+    if (ginModules.isEmpty() && !ginjectorType.isAnnotationPresent(NoGinModules.class)) {
+      logger.log(TreeLogger.Type.WARN,
+          String.format("No gin modules are annotated on Ginjector %s, "
+              + "did you forget the @GinModules annotation?", ginjectorType));
     }
 
-    Set<Class<? extends GinModule>> ginModules =
-          new HashSet<Class<? extends GinModule>>(configurationModuleNames.size());
-    for (String moduleName : configurationModuleNames) {
+    return ginModules;
+  }
+
+  @SuppressWarnings("unchecked") // We check that the class is a GinModule before casting it.
+  private void getPropertyModuleClasses(Class<?> ginjectorType,
+      Set<Class<? extends GinModule>> ginModules) throws UnableToCompleteException {
+    Set<String> propertyModuleNames = getPropertyModuleNames(ginjectorType);
+    for (String moduleName : propertyModuleNames) {
       try {
 
         // Gin modules must be initialized when loading since we will instantiate it. It is
@@ -151,7 +147,24 @@ public class GinjectorGenerator extends Generator {
         throw new UnableToCompleteException();
       }
     }
-    return ginModules;
+  }
+
+  private Set<String> getPropertyModuleNames(Class<?> ginjectorType)
+      throws UnableToCompleteException {
+    Set<String> propertyNames = new HashSet<String>();
+    getPropertyNamesFromInjectorInterface(ginjectorType, propertyNames);
+
+    Set<String> configurationModuleNames = new HashSet<String>();
+    for (String propertyName : propertyNames) {
+      Set<String> moduleNames = getValuesForProperty(propertyName);
+      if (moduleNames.isEmpty()) {
+        logger.log(TreeLogger.Type.ERROR, String.format("The GinModules annotation requests "
+            + "property %s, but this property cannot be found in the GWT module.", propertyName));
+        throw new UnableToCompleteException();
+      }
+      configurationModuleNames.addAll(moduleNames);
+    }
+    return configurationModuleNames;
   }
 
   private Set<String> getValuesForProperty(String propertyName) {
@@ -164,15 +177,27 @@ public class GinjectorGenerator extends Generator {
     }
   }
 
-  private void getPropertyNamesFromInjectorInterface(Class<?> ginjectorInterface,
+  private void getPropertyNamesFromInjectorInterface(Class<?> ginjectorType,
       Set<String> propertyNames) {
-    GinModules ginModulesAnnotation = ginjectorInterface.getAnnotation(GinModules.class);
+    GinModules ginModulesAnnotation = ginjectorType.getAnnotation(GinModules.class);
     if (ginModulesAnnotation != null) {
       propertyNames.addAll(Arrays.asList(ginModulesAnnotation.properties()));
     }
 
-    for (Class<?> ancestor : ginjectorInterface.getInterfaces()) {
+    for (Class<?> ancestor : ginjectorType.getInterfaces()) {
       getPropertyNamesFromInjectorInterface(ancestor, propertyNames);
+    }
+  }
+
+  private void getModuleClassesFromInjectorInterface(Class<?> ginjectorType,
+      Set<Class<? extends GinModule>> moduleClasses) {
+    GinModules ginModulesAnnotation = ginjectorType.getAnnotation(GinModules.class);
+    if (ginModulesAnnotation != null) {
+      moduleClasses.addAll(Arrays.asList(ginModulesAnnotation.value()));
+    }
+
+    for (Class<?> ancestor : ginjectorType.getInterfaces()) {
+      getModuleClassesFromInjectorInterface(ancestor, moduleClasses);
     }
   }
 

@@ -49,15 +49,15 @@ class GinjectorGeneratorModule extends AbstractModule {
   private final TreeLogger logger;
   private final GeneratorContext ctx;
   private final Class<? extends Ginjector> ginjectorInterface;
-  private final Set<Class<? extends GinModule>> configurationModules;
+  private final Set<Class<? extends GinModule>> moduleClasses;
 
   public GinjectorGeneratorModule(TreeLogger logger, GeneratorContext ctx,
       Class<? extends Ginjector> ginjectorInterface, 
-      Set<Class<? extends GinModule>> configurationModules) {
+      Set<Class<? extends GinModule>> moduleClasses) {
     this.logger = logger;
     this.ctx = ctx;
     this.ginjectorInterface = ginjectorInterface;
-    this.configurationModules = configurationModules;
+    this.moduleClasses = moduleClasses;
   }
 
   @Override
@@ -77,8 +77,8 @@ class GinjectorGeneratorModule extends AbstractModule {
     install(new FactoryModuleBuilder()
         .build(GuiceElementVisitor.GuiceElementVisitorFactory.class));
     bind(new TypeLiteral<Set<Class<? extends GinModule>>>(){})
-        .annotatedWith(ConfigurationModuleTypes.class)
-        .toInstance(configurationModules);
+        .annotatedWith(ModuleClasses.class)
+        .toInstance(moduleClasses);
     bind(BindingFactory.class).to(BindingFactoryImpl.class);
   }
 

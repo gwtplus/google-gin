@@ -18,6 +18,7 @@ package com.google.gwt.inject.client.gwtdotcreate;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.NoGinModules;
 import com.google.gwt.junit.client.GWTTestCase;
 
 public class BusTest extends GWTTestCase {
@@ -29,6 +30,7 @@ public class BusTest extends GWTTestCase {
     assertTrue(bus instanceof Metro);
   }
 
+  @NoGinModules
   interface BusGinjector extends Ginjector {
     Bus getBus();
   }

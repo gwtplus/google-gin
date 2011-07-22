@@ -17,8 +17,8 @@
 package com.google.gwt.inject.client.gwtdotcreate;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.inject.client.CreationException;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.NoGinModules;
 import com.google.gwt.junit.client.GWTTestCase;
 
 public class BikeTest extends GWTTestCase {
@@ -36,6 +36,7 @@ public class BikeTest extends GWTTestCase {
     }
   }
 
+  @NoGinModules
   interface CarGinjector extends Ginjector {
     Car getCar();
   }

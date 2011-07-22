@@ -13,9 +13,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.gwt.inject.rebind;
 
-import com.google.inject.BindingAnnotation;
+package com.google.gwt.inject.client;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -23,11 +22,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A binding annotation to be applied to a {@code List} containing the classes
- * the gin modules defined via a GWT configuration property.
+ * Gin warns in cases where no {@link GinModule} is registered with a Ginjector via a
+ * {@literal @}{@link GinModules} annotation. Annotating the Ginjector with this annotation instead
+ * suppresses the warning.
  */
-@BindingAnnotation
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER, ElementType.METHOD})
-public @interface ConfigurationModuleTypes {
-}
+@Target({ElementType.TYPE})
+public @interface NoGinModules {}

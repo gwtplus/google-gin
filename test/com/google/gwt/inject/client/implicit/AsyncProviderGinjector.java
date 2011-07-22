@@ -17,7 +17,9 @@ package com.google.gwt.inject.client.implicit;
 
 import com.google.gwt.inject.client.AsyncProvider;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.NoGinModules;
 
+@NoGinModules
 public interface AsyncProviderGinjector extends Ginjector {
   
   AsyncProvider<Foo> getFooAsyncProvider();

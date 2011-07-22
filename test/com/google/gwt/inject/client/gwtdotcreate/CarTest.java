@@ -18,6 +18,7 @@ package com.google.gwt.inject.client.gwtdotcreate;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.NoGinModules;
 import com.google.gwt.junit.client.GWTTestCase;
 
 public class CarTest extends GWTTestCase {
@@ -29,6 +30,7 @@ public class CarTest extends GWTTestCase {
     assertTrue(car instanceof Beetle);
   }
 
+  @NoGinModules
   interface CarGinjector extends Ginjector {
     Car getCar();
   }

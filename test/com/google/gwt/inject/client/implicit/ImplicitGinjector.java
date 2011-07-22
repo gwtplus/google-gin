@@ -16,7 +16,9 @@
 package com.google.gwt.inject.client.implicit;
 
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.NoGinModules;
 
+@NoGinModules
 public interface ImplicitGinjector extends Ginjector {
   Foo getFoo();
   
