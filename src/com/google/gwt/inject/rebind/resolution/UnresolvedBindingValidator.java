@@ -130,13 +130,18 @@ public class UnresolvedBindingValidator {
     GinjectorBindings origin = output.getGraph().getOrigin();
     for (Key<?> key : output.getImplicitlyBoundKeys()) {
       if (origin.isBoundInChild(key)) {
-        invalidKeys.put(key, "Already bound in child Ginjector.  Consider exposing it?");
+
+        // TODO(schmitt): Determine path to binding in child ginjector (requires different
+        // DependencyExplorerOutput).
+        invalidKeys.put(key,
+            PrettyPrinter.format("Already bound in child Ginjector %s. Consider exposing it?",
+                origin.getChildWhichBinds(key)));
       }
     }
     
     return invalidKeys;
   }
-  
+
   /**
    * Remove optional keys from the {@code invalidKeys} map, and return the the set of optional keys
    * that had problems.

@@ -37,7 +37,7 @@ public class PrivateGinModuleAdapter extends PrivateModule {
 
   public void configure() {
     Binder binder = binder().skipSources(PrivateGinModuleAdapter.class,
-        BinderAdapter.class, PrivateGinModule.class);
+        BinderAdapter.class, PrivateBinderAdapter.class, PrivateGinModule.class);
 
     ginModule.configure(new PrivateBinderAdapter((PrivateBinder) binder,
         bindings == null ? null : bindings.createChildGinjectorBindings(ginModule.getClass())));

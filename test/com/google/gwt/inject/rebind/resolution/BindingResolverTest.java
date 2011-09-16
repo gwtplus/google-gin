@@ -24,7 +24,7 @@ import static com.google.gwt.inject.rebind.resolution.TestUtils.fooImpl;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.providerBar;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.providerBaz;
 import static com.google.gwt.inject.rebind.resolution.TestUtils.providerFoo;
-import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
@@ -40,9 +40,7 @@ import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCreationException;
-import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Key;
-import com.google.inject.util.Providers;
 import junit.framework.TestCase;
 import org.easymock.Capture;
 import org.easymock.classextension.EasyMock;
@@ -369,6 +367,7 @@ public class BindingResolverTest extends TestCase {
     // the position of foo(), and we should place it in the root.
     bind(baz(), tree.childLL);
     expect(tree.childL.isBoundInChild(baz())).andReturn(true);
+    expect(tree.childL.getChildWhichBinds(baz())).andReturn(tree.childLL);
 
     tree.root.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), tree.root, tree.childL);
@@ -456,19 +455,23 @@ public class BindingResolverTest extends TestCase {
   
   public void testDepHiddenInChildBlocksResolvingInRoot() throws Exception {
     GinjectorBindings root = createInjectorNode("root");
-    GinjectorBindings child = createInjectorNode("child");
+    GinjectorBindings child = createInjectorNode("child_module");
     setChildren(root, child);
     
     bind(baz(), root);
     bind(bar(), child);
     expect(root.isBoundInChild(bar())).andReturn(true).anyTimes();
+    expect(root.getChildWhichBinds(bar())).andReturn(child);
     
     expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
     expectCreateBinding(bar());
-    errorManager.logError(isA(String.class), isA(Object.class), isA(Object.class),
+    Capture<String> errorMessage = new Capture<String>();
+    errorManager.logError(isA(String.class), isA(Object.class), capture(errorMessage),
         isA(Object.class)); // failure to create bar b/c already bound
 
     replayAndResolve(root, required(Dependency.GINJECTOR, foo()));
+
+    assertTrue(errorMessage.getValue().contains("child_module"));
   }
   
   public void testDepHiddenInChildBlocksResolvingInRoot_NoErrorIfOptional() throws Exception {
@@ -479,6 +482,7 @@ public class BindingResolverTest extends TestCase {
     bind(baz(), root);
     bind(bar(), child);
     expect(root.isBoundInChild(bar())).andReturn(true).anyTimes();
+    expect(root.getChildWhichBinds(bar())).andReturn(child);
     
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), baz()), optional(foo(), bar()));
     expectCreateBinding(bar());

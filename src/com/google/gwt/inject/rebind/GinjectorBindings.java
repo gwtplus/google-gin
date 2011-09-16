@@ -18,7 +18,6 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.dev.util.Preconditions;
-import com.google.gwt.inject.client.GinModule;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.gwt.inject.rebind.binding.Binding;
@@ -40,6 +39,8 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.spi.InjectionPoint;
 
+import javax.inject.Provider;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -53,8 +54,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.inject.Provider;
 
 /**
  * Stores information that describes the bindings present in a given injector,
@@ -127,12 +126,13 @@ public class GinjectorBindings implements BindingIndex {
   private final Set<Class<?>> staticInjectionRequests = new HashSet<Class<?>>();
   
   /**
-   * The set of all keys that are bound in children of this ginjector.  This is used when creating
-   * implicit bindings.  Specifically, we can't create an implicit binding here if any of the 
-   * children already bind it (even if its not exposed) because it would lead to a double binding
-   * error.
+   * The map of all keys that are bound in children of this ginjector to the child binding it. This
+   * is used when creating implicit bindings. Specifically, we can't create an implicit binding here
+   * if any of the children already bind it (even if its not exposed) because it would lead to a
+   * double binding error.
    */
-  private final Set<Key<?>> boundInChildren = new HashSet<Key<?>>();
+  private final Map<Key<?>, GinjectorBindings> boundInChildren =
+      new HashMap<Key<?>, GinjectorBindings>();
   
   /**
    * Set of key's that *must* be bound here.  This corresponds to things that are explicitly bound
@@ -373,7 +373,7 @@ public class GinjectorBindings implements BindingIndex {
 
     bindings.put(key, binding);
     if (parent != null) {      
-      parent.registerChildBinding(key);
+      parent.registerChildBinding(key, this);
     }
 
     logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
@@ -393,15 +393,23 @@ public class GinjectorBindings implements BindingIndex {
    * Register the key in the "boundInChildren" set for this injector, and recursively
    * register it with all of the ancestors.
    */
-  private void registerChildBinding(Key<?> key) {
-    boundInChildren.add(key);
+  private void registerChildBinding(Key<?> key, GinjectorBindings binding) {
+    boundInChildren.put(key, binding);
     if (parent != null) {
-      parent.registerChildBinding(key);
+      parent.registerChildBinding(key, binding);
     }
   }
  
   public boolean isBoundInChild(Key<?> key) {
-    return boundInChildren.contains(key);
+    return boundInChildren.containsKey(key);
+  }
+
+  /**
+   * Returns the child injector which binds the given key. If no child binds the key, returns
+   * {@code null}.
+   */
+  public GinjectorBindings getChildWhichBinds(Key<?> key) {
+    return boundInChildren.get(key);
   }
 
   private boolean isClassAccessibleFromGinjector(TypeLiteral<?> type) {
