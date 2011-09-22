@@ -47,6 +47,10 @@ public interface FruitGinjector extends Ginjector {
 
   @Named("family") Fruit.Family getFamily();
 
+  @Named("color-class") Class getColorClass();
+
+  @Named("family-class") Class getFamilyClass();
+
   FruitGinjector getGinjector();
 
   Plant getPlant();

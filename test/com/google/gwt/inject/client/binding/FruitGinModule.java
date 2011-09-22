@@ -51,6 +51,9 @@ public class FruitGinModule extends AbstractGinModule {
     // Bind enum with custom implementation.
     bindConstant().annotatedWith(Names.named("alternativeColor")).to(ALTERNATIVE_COLOR);
     bindConstant().annotatedWith(Names.named("family")).to(FAMILY);
+    
+    bindConstant().annotatedWith(Names.named("color-class")).to(Color.class);
+    bindConstant().annotatedWith(Names.named("family-class")).to(Fruit.Family.class);
 
     bind(Plant.class).to(Tree.class).asEagerSingleton();
   }

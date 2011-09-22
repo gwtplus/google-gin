@@ -50,9 +50,9 @@ public class BindConstantBinding<T> extends AbstractBinding implements Binding {
     }
 
     Class clazz = (Class) type;
-    return clazz == String.class || clazz.isPrimitive() || Number.class.isAssignableFrom(clazz)
-        || Character.class.isAssignableFrom(clazz) || Boolean.class.isAssignableFrom(clazz)
-        || clazz.isEnum();
+    return clazz == String.class || clazz == Class.class || clazz.isPrimitive()
+        || Number.class.isAssignableFrom(clazz) || Character.class.isAssignableFrom(clazz)
+        || Boolean.class.isAssignableFrom(clazz) || clazz.isEnum();
   }
 
   BindConstantBinding(SourceWriteUtil sourceWriteUtil, Key<T> key, T instance, Context context) {
@@ -68,6 +68,8 @@ public class BindConstantBinding<T> extends AbstractBinding implements Binding {
 
     if (type == String.class) {
       return "\"" + Generator.escape(instance.toString()) + "\"";
+    } else if (type == Class.class) {
+      return toClassReference((Class<?>) instance);
     } else if (type == Character.class) {
       return "'" + (Character.valueOf('\'').equals(instance) ? "\\" : "") + instance + "'";
     } else if (type == Float.class) {
@@ -79,19 +81,7 @@ public class BindConstantBinding<T> extends AbstractBinding implements Binding {
     } else if (instance instanceof Number || instance instanceof Boolean) {
       return instance.toString(); // Includes int & short.
     } else if (instance instanceof Enum) {
-      Class<?> clazz = instance.getClass();
-
-      // Enums become anonymous inner classes if they have a custom
-      // implementation. Their classname is then of the form "com.foo.Bar$1".
-      // We need to be careful here to not clobber inner enums (which also
-      // have a $ in their classname). The regex below matches any classname
-      // that terminates in a $ followed by a number, i.e. an anonymous class.
-      if (clazz.getName().matches(".+\\$\\d+\\z")) {
-        clazz = instance.getClass().getEnclosingClass();
-      }
-      String className = clazz.getCanonicalName();
-
-      return className + "." + ((Enum) instance).name();
+      return toEnumReference(((Enum<?>) instance));
     } else {
       throw new IllegalArgumentException("Attempted to create a constant binding with a "
           + "non-constant type: " + type);
@@ -106,5 +96,18 @@ public class BindConstantBinding<T> extends AbstractBinding implements Binding {
   public Collection<Dependency> getDependencies() {
     return Collections.singletonList(
         new Dependency(Dependency.GINJECTOR, key, getContext().toString()));
+  }
+
+  private static String toEnumReference(Enum<?> instance) {
+    return instance.getDeclaringClass().getCanonicalName() + "." + instance.name();
+  }
+
+  private static String toClassReference(Class<?> instance) {
+    String canonicalName = instance.getCanonicalName();
+    if (canonicalName == null) {
+      throw new IllegalArgumentException("Attempted to create a constant binding with a "
+          + "a local or anonymous class: " + instance);
+    }
+    return canonicalName + ".class";
   }
 }

@@ -73,6 +73,15 @@ public class ConstantBindingTest extends GWTTestCase {
     assertEquals(FruitGinModule.FAMILY, injector.getFamily());
   }
 
+  public void testClass() {
+    assertEquals(Color.class, injector.getColorClass());
+  }
+
+  public void testInnerClass() {
+    assertEquals(Fruit.Family.class, injector.getFamilyClass());
+  }
+
+  @Override
   public String getModuleName() {
     return "com.google.gwt.inject.InjectTest";
   }
