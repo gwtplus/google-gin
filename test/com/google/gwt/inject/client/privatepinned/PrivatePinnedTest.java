@@ -33,9 +33,18 @@ import com.google.inject.Singleton;
  */
 public class PrivatePinnedTest extends GWTTestCase {
 
-  public void testBindingsStayInSubModules() throws Exception {
-    TestGinjector ginjector = GWT.create(TestGinjector.class);
+  public void testBindingsStayInSubModulesA() throws Exception {
+    // Both Module1 and Module2 are installed in the Ginjector
+    verifyBindingsStayInSubModules((TestInterface) GWT.create(TestGinjectorA.class));
+  }
 
+  public void testBindingsStayInSubModulesB() throws Exception {
+    // Both Module1 is installed in the ginjector, and Module2 is installed
+    // through an extra layer of indirection.  Verifies that the pins work.
+    verifyBindingsStayInSubModules((TestInterface) GWT.create(TestGinjectorB.class));
+  }
+
+  private void verifyBindingsStayInSubModules(TestInterface ginjector) throws Exception {
     Interface1 interface1 = ginjector.getInterface1();
     Interface2 interface2 = ginjector.getInterface2();
 
@@ -60,10 +69,24 @@ public class PrivatePinnedTest extends GWTTestCase {
     assertNotSame(subImplementation1, subImplementation2);
   }
 
-  @GinModules({Module1.class, Module2.class})
-  interface TestGinjector extends Ginjector {
+  interface TestInterface {
     Interface1 getInterface1();
     Interface2 getInterface2();
+  }
+
+  @GinModules({Module1.class, Module2a.class})
+  interface TestGinjectorA extends Ginjector, TestInterface {}
+
+  @GinModules({Module1.class, TopModule.class})
+  interface TestGinjectorB extends Ginjector, TestInterface {}
+
+  static class TopModule extends PrivateGinModule {
+    @Override
+    protected void configure() {
+      bind(SubImplementation.class).in(Singleton.class);
+      install(new Module2b());
+      expose(Interface2.class);
+    }
   }
 
   static class Module1 extends PrivateGinModule {
@@ -75,12 +98,20 @@ public class PrivatePinnedTest extends GWTTestCase {
     }
   }
 
-  static class Module2 extends PrivateGinModule {
+  static class Module2a extends PrivateGinModule {
     @Override
     protected void configure() {
       bind(Interface2.class).to(Implementation2.class);
       expose(Interface2.class);
       bind(SubImplementation.class).in(Singleton.class);
+    }
+  }
+
+  static class Module2b extends PrivateGinModule {
+    @Override
+    protected void configure() {
+      bind(Interface2.class).to(Implementation2.class);
+      expose(Interface2.class);
     }
   }
 

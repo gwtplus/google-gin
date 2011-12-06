@@ -94,8 +94,8 @@ public class DependencyExplorerTest extends TestCase {
         new Dependency(Dependency.GINJECTOR, foo(), SOURCE));
     control.verify();
   }
-  
-  public void testAlreadyPositionedInParent() throws Exception {
+
+  public void testAlreadyBoundInParent() throws Exception {
     GinjectorBindings parent = control.createMock("parent", GinjectorBindings.class);
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
         new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
@@ -104,6 +104,22 @@ public class DependencyExplorerTest extends TestCase {
     expect(origin.getParent()).andReturn(parent).anyTimes();
     expect(parent.getParent()).andReturn(null);
     expect(parent.isBound(foo())).andReturn(true);
+    control.replay();
+    DependencyExplorerOutput output = dependencyExplorer.explore(origin);
+    assertSame(parent, output.getPreExistingLocations().get(foo()));
+    control.verify();
+  }
+
+  public void testWillBeBoundBoundInParent() throws Exception {
+    GinjectorBindings parent = control.createMock("parent", GinjectorBindings.class);
+    expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
+        new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
+    expect(origin.isPinned(foo())).andReturn(false).anyTimes();
+    expect(origin.isBound(foo())).andReturn(false).anyTimes();
+    expect(origin.getParent()).andReturn(parent).anyTimes();
+    expect(parent.getParent()).andReturn(null);
+    expect(parent.isBound(foo())).andReturn(false);
+    expect(parent.isPinned(foo())).andReturn(true);
     control.replay();
     DependencyExplorerOutput output = dependencyExplorer.explore(origin);
     assertSame(parent, output.getPreExistingLocations().get(foo()));
@@ -126,6 +142,7 @@ public class DependencyExplorerTest extends TestCase {
     expect(origin.getParent()).andReturn(parent).anyTimes();
     expect(parent.getParent()).andReturn(null).times(2);
     expect(parent.isBound(foo())).andReturn(false);
+    expect(parent.isPinned(foo())).andReturn(false);
     expect(parent.isBound(bar())).andReturn(true);
     control.replay();
     DependencyExplorerOutput output = dependencyExplorer.explore(origin);
@@ -167,7 +184,7 @@ public class DependencyExplorerTest extends TestCase {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
         new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.isBound(foo())).andReturn(false).anyTimes();
-    expect(origin.isPinned(foo())).andReturn(true);
+    expect(origin.isPinned(foo())).andReturn(true).anyTimes();
     expect(origin.getParent()).andReturn(parent).anyTimes();
     expect(bindingCreator.create(foo())).andReturn(binding);
     expect(binding.getDependencies()).andReturn(TestUtils.dependencyList());
@@ -187,7 +204,7 @@ public class DependencyExplorerTest extends TestCase {
     expect(origin.getDependencies()).andStubReturn(TestUtils.dependencyList(
         new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.isBound(foo())).andReturn(false).anyTimes();
-    expect(origin.isPinned(foo())).andReturn(false);
+    expect(origin.isPinned(foo())).andReturn(false).anyTimes();
     expect(origin.getParent()).andReturn(parent).anyTimes();
     expect(parent.getParent()).andReturn(null);
     expect(parent.isBound(foo())).andReturn(true);
@@ -202,7 +219,7 @@ public class DependencyExplorerTest extends TestCase {
             new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.getParent()).andStubReturn(null);
     expect(origin.isBound(foo())).andReturn(false).anyTimes();
-    expect(origin.isPinned(foo())).andReturn(false);
+    expect(origin.isPinned(foo())).andReturn(false).anyTimes();
     expect(bindingCreator.create(foo())).andReturn(binding);
     expect(binding.getDependencies()).andReturn(TestUtils.dependencyList(
         new Dependency(foo(), bar(), SOURCE)));
@@ -227,7 +244,7 @@ public class DependencyExplorerTest extends TestCase {
         new Dependency(Dependency.GINJECTOR, foo(), SOURCE)));
     expect(origin.getParent()).andStubReturn(null);
     expect(origin.isBound(foo())).andReturn(false).anyTimes();
-    expect(origin.isPinned(foo())).andReturn(false);
+    expect(origin.isPinned(foo())).andReturn(false).anyTimes();
     expect(bindingCreator.create(foo())).andThrow(new BindingCreationException("failed"));
     control.replay();
     DependencyExplorerOutput output = dependencyExplorer.explore(origin);
@@ -243,7 +260,7 @@ public class DependencyExplorerTest extends TestCase {
     expect(origin.getParent()).andStubReturn(null);
     expect(origin.isBound(foo())).andReturn(true).anyTimes();
     expect(origin.isBound(bar())).andReturn(false).anyTimes();
-    expect(origin.isPinned(bar())).andReturn(false);
+    expect(origin.isPinned(bar())).andReturn(false).anyTimes();
     expect(origin.isBound(baz())).andReturn(true).anyTimes();
     expect(bindingCreator.create(bar())).andReturn(binding);
     expect(binding.getDependencies()).andReturn(TestUtils.dependencyList(

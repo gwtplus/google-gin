@@ -147,7 +147,10 @@ public class DependencyExplorer {
 
     GinjectorBindings source = null;
     for (GinjectorBindings iter = origin; iter != null; iter = iter.getParent()) {
-      if (iter.isBound(key)) {
+      // If the key is already explicitly bound, or has a pin indicating that it
+      // will be explicitly bound once it gets visited (we visit children before
+      // parents) then we can access the binding from the given location.
+      if (iter.isBound(key) || iter.isPinned(key)) {
         source = iter;
       }
     }
