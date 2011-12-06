@@ -70,6 +70,8 @@ class BindingsProcessor {
 
   private final Set<Class<? extends GinModule>> moduleClasses;
 
+  private DoubleBindingChecker doubleBindingChecker;
+
   @Inject
   BindingsProcessor(Provider<MemberCollector> collectorProvider,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
@@ -77,13 +79,15 @@ class BindingsProcessor {
       @RootBindings GinjectorBindings rootGinjectorBindings,
       GuiceElementVisitor.GuiceElementVisitorFactory guiceElementVisitorFactory,
       BindingFactory bindingFactory,
-      @ModuleClasses Set<Class<? extends GinModule>> moduleClasses) {
+      @ModuleClasses Set<Class<? extends GinModule>> moduleClasses,
+      DoubleBindingChecker doubleBindingChecker) {
     this.bindingFactory = bindingFactory;
     this.moduleClasses = moduleClasses;
     this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
     this.errorManager = errorManager;
     this.rootGinjectorBindings = rootGinjectorBindings;
     this.guiceElementVisitorFactory = guiceElementVisitorFactory;
+    this.doubleBindingChecker = doubleBindingChecker;
 
     completeCollector = collectorProvider.get();
     completeCollector.setMethodFilter(MemberCollector.ALL_METHOD_FILTER);
@@ -99,6 +103,9 @@ class BindingsProcessor {
     errorManager.checkForError();
     
     resolveAllUnresolvedBindings(rootGinjectorBindings);
+    errorManager.checkForError();
+
+    doubleBindingChecker.checkBindings(rootGinjectorBindings);
     errorManager.checkForError();
   }
   

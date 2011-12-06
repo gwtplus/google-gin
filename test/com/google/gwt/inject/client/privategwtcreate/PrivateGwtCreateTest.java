@@ -55,16 +55,25 @@ public class PrivateGwtCreateTest extends GWTTestCase {
     UiView getView();
   }
 
-  @GinModules({TopModule.class, ViewModule2.class})
+  @GinModules({TopModule1.class, ViewModule2.class})
   interface ViewGinjector2 extends Ginjector {
-    UiView getView();
+    @Named("1") UiView getView();
     @Named("2") UiView getView2();
   }
 
+  // We need to use separate view modules in the two different cases to avoid
+  // double bindings.
   static class TopModule extends AbstractGinModule {
     @Override
     protected void configure() {
       install(new ViewModule());
+    }
+  }
+
+  static class TopModule1 extends AbstractGinModule {
+    @Override
+    protected void configure() {
+      install(new ViewModule1());
     }
   }
 
@@ -73,6 +82,14 @@ public class PrivateGwtCreateTest extends GWTTestCase {
     protected void configure() {
       bind(UiView.class);
       expose(UiView.class);
+    }
+  }
+
+  static class ViewModule1 extends PrivateGinModule {
+    @Override
+    protected void configure() {
+      bind(UiView.class).annotatedWith(Names.named("1")).to(UiView.class);
+      expose(UiView.class).annotatedWith(Names.named("1"));
     }
   }
 

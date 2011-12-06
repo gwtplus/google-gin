@@ -17,8 +17,10 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
+import com.google.inject.Key;
 import com.google.inject.Singleton;
 
 /**
@@ -35,6 +37,12 @@ public class ErrorManager {
   @Inject
   public ErrorManager(TreeLogger logger) {
     this.logger = logger;
+  }
+
+  public void logDoubleBind(Key<?> key, Binding binding1, GinjectorBindings ginjector1,
+      Binding binding2, GinjectorBindings ginjector2) {
+    logError("Key %s is Double-bound: Bound at %s in %s and %s in %s", key,
+        binding1.getContext(), ginjector1, binding2.getContext(), ginjector2);
   }
 
   public void logError(String message, Object... args) {

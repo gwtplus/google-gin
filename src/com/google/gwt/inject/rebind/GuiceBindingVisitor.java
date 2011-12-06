@@ -77,7 +77,7 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
     if (provider instanceof ProviderMethod) {
       Context context = Context.forElement(providerInstanceBinding);
       bindingsCollection.addBinding(targetKey,
-          bindingFactory.getProviderMethodBinding((ProviderMethod) provider, context));
+          bindingFactory.getProviderMethodBinding((ProviderMethod<?>) provider, context));
       return null;
     }
 

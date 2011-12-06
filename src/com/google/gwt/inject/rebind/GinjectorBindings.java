@@ -236,10 +236,14 @@ public class GinjectorBindings implements BindingIndex {
     // can be added.
     finalized = true;
   }
-  
+
   public Iterable<Dependency> getDependencies() {
     assertNotFinalized();
     return Collections.unmodifiableCollection(dependencies);
+  }
+
+  public Iterable<Key<?>> getBoundKeys() {
+    return Collections.unmodifiableCollection(bindings.keySet());
   }
 
   public Iterable<Map.Entry<Key<?>, Binding>> getBindings() {
@@ -361,8 +365,7 @@ public class GinjectorBindings implements BindingIndex {
   public void addBinding(Key<?> key, Binding binding) {
     assertNotFinalized();
     if (bindings.containsKey(key)) {
-      errorManager.logError("Double-bound: %s.  Bound at %s and %s", key,
-          bindings.get(key).getContext(), binding.getContext());
+      errorManager.logDoubleBind(key, bindings.get(key), this, binding, this);
       return;
     }
 
