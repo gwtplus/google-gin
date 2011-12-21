@@ -18,7 +18,6 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
 import com.google.gwt.dev.util.Preconditions;
-import com.google.gwt.dev.util.collect.HashSet;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.ExposedChildBinding;
 import com.google.gwt.inject.rebind.binding.ParentBinding;
@@ -28,6 +27,7 @@ import com.google.inject.Key;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,13 +91,16 @@ public class DoubleBindingChecker {
    * if it is inherited from a child/parent, return that injector.
    */
   private GinjectorBindings findSource(GinjectorBindings ginjector, Key<?> key) {
-    Set<GinjectorBindings> visited = new HashSet<GinjectorBindings>();
+    Set<GinjectorBindings> visited = new LinkedHashSet<GinjectorBindings>();
 
     GinjectorBindings lastGinjector = null;
     while (ginjector != null) {
       if (!visited.add(ginjector)) {
         logger.log(Type.ERROR, PrettyPrinter.format(
           "Cycle detected in bindings for %s", key));
+        for (GinjectorBindings visitedBindings : visited) {
+          PrettyPrinter.log(logger, Type.ERROR, "  %s", visitedBindings);
+        }
         return ginjector; // at this point, just return *something*
       }
       
