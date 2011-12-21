@@ -149,7 +149,7 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
           bindingFactory.getExposedChildBinding(key, childCollection,
               Context.forElement(privateElements));
 
-      PrettyPrinter.log(logger, TreeLogger.TRACE, "Child binding for %s: %s", key, childBinding);
+      PrettyPrinter.log(logger, TreeLogger.TRACE, "Child binding for %s in %s: %s", key, bindings, childBinding);
 
       bindings.addBinding(key, childBinding);
     }
