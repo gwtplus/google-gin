@@ -44,6 +44,13 @@ public class PrivatePinnedTest extends GWTTestCase {
     verifyBindingsStayInSubModules((TestInterface) GWT.create(TestGinjectorB.class));
   }
 
+  public void testNoDoubleBindingFromInheritedImplicitBinding() {
+    // Verifies that if the parent pins a singleton that it also implicitly
+    // requires, and a child implicitly requires it, the singleton is
+    // instantiated in the parent and doesn't cause a double binding error.
+    GWT.create(TestGinjectorC.class);
+  }
+
   private void verifyBindingsStayInSubModules(TestInterface ginjector) throws Exception {
     Interface1 interface1 = ginjector.getInterface1();
     Interface2 interface2 = ginjector.getInterface2();
@@ -80,11 +87,33 @@ public class PrivatePinnedTest extends GWTTestCase {
   @GinModules({Module1.class, TopModule.class})
   interface TestGinjectorB extends Ginjector, TestInterface {}
 
+  @GinModules({TopModuleCheckForDoubleBinding.class})
+  interface TestGinjectorC extends Ginjector, TestInterface {}
+
   static class TopModule extends PrivateGinModule {
     @Override
     protected void configure() {
       bind(SubImplementation.class).in(Singleton.class);
       install(new Module2b());
+      expose(Interface2.class);
+    }
+  }
+
+  // Verifies that nothing bad happens if the parent requires the same key that
+  // it promises to bind.
+  static class TopModuleCheckForDoubleBinding extends PrivateGinModule {
+    @Override
+    protected void configure() {
+      bind(Interface1.class).to(Implementation1.class);
+      bind(Implementation1.class);
+      // This is the pinned binding that the child will require.  The parent
+      // requires it because Implementation1 is pinned here (see above), while
+      // the child requires it because Implementation2 is pinned there (see
+      // below).
+      bind(SubImplementation.class);
+      install(new Module2b());
+
+      expose(Interface1.class);
       expose(Interface2.class);
     }
   }
@@ -111,6 +140,9 @@ public class PrivatePinnedTest extends GWTTestCase {
     @Override
     protected void configure() {
       bind(Interface2.class).to(Implementation2.class);
+      // If we don't pin this here, it floats out of the module, so we don't
+      // need a local binding for Subimplementation.
+      bind(Implementation2.class);
       expose(Interface2.class);
     }
   }

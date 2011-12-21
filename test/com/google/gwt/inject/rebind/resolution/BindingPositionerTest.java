@@ -55,9 +55,9 @@ public class BindingPositionerTest extends TestCase {
     expect(grandchild.getParent()).andStubReturn(child);
     expect(child.getParent()).andStubReturn(root);
     expect(root.getParent()).andStubReturn(null);
-    expect(root.isBoundInChild(isA(Key.class))).andStubReturn(false);
-    expect(child.isBoundInChild(isA(Key.class))).andStubReturn(false);
-    expect(grandchild.isBoundInChild(isA(Key.class))).andStubReturn(false);
+    expect(root.isBoundLocallyInChild(isA(Key.class))).andStubReturn(false);
+    expect(child.isBoundLocallyInChild(isA(Key.class))).andStubReturn(false);
+    expect(grandchild.isBoundLocallyInChild(isA(Key.class))).andStubReturn(false);
     expect(root.getBinding(isA(Key.class))).andStubReturn(null);
     expect(child.getBinding(isA(Key.class))).andStubReturn(null);
     expect(grandchild.getBinding(isA(Key.class))).andStubReturn(null);
@@ -94,7 +94,7 @@ public class BindingPositionerTest extends TestCase {
   
   public void testPositionTree_BoundInChild() throws Exception {
     // Bar can't be placed at root (already bound in child), so it and foo get placed in child. 
-    expect(root.isBoundInChild(bar())).andReturn(true).anyTimes(); // bar() must be in child
+    expect(root.isBoundLocallyInChild(bar())).andReturn(true).anyTimes(); // bar() must be in child
     testTree()
         .implicitlyBoundAt(child, foo(), bar())
         .implicitlyBoundAt(root, baz())
@@ -114,8 +114,8 @@ public class BindingPositionerTest extends TestCase {
   }
 
   public void testPositionChain_FooBoundInSibling() throws Exception {
-    expect(root.isBoundInChild(foo())).andReturn(true).anyTimes();
-    expect(child.isBoundInChild(foo())).andReturn(true).anyTimes();
+    expect(root.isBoundLocallyInChild(foo())).andReturn(true).anyTimes();
+    expect(child.isBoundLocallyInChild(foo())).andReturn(true).anyTimes();
     testChain()
         .implicitlyBoundAt(root, bar(), baz())
         .implicitlyBoundAt(grandchild, foo())
@@ -145,7 +145,7 @@ public class BindingPositionerTest extends TestCase {
   public void testPositionCycle_BarBoundInSibling() throws Exception {
     // Cycle through foo -> bar -> baz, and bar must be placed in child, so everything is placed
     // in child.
-    expect(root.isBoundInChild(bar())).andReturn(true).anyTimes(); // bar() must be in child
+    expect(root.isBoundLocallyInChild(bar())).andReturn(true).anyTimes(); // bar() must be in child
     testCycle()
         .implicitlyBoundAt(child, bar(), baz(), foo())
         .test();
@@ -159,9 +159,9 @@ public class BindingPositionerTest extends TestCase {
   }
   
   public void testPositionCycle_BarAndBazBoundInSibling() throws Exception {
-    expect(root.isBoundInChild(bar())).andReturn(true).anyTimes();
-    expect(root.isBoundInChild(baz())).andReturn(true).anyTimes();
-    expect(child.isBoundInChild(baz())).andReturn(true).anyTimes();
+    expect(root.isBoundLocallyInChild(bar())).andReturn(true).anyTimes();
+    expect(root.isBoundLocallyInChild(baz())).andReturn(true).anyTimes();
+    expect(child.isBoundLocallyInChild(baz())).andReturn(true).anyTimes();
     testCycle()
         .implicitlyBoundAt(grandchild, foo(), bar(), baz())
         .test();

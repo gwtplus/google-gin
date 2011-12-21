@@ -202,7 +202,7 @@ class BindingPositioner {
     if (parent == null) {
       // Can't move above the root.
       return false;
-    } else if (parent.isBoundInChild(key)) {
+    } else if (parent.isBoundLocallyInChild(key)) {
       // If a sibling module already materialized a binding for this key, we
       // can't float over it.
       return false;

@@ -16,9 +16,12 @@
 package com.google.gwt.inject.rebind.resolution;
 
 import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
+import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
 import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
@@ -129,13 +132,20 @@ public class UnresolvedBindingValidator {
     
     GinjectorBindings origin = output.getGraph().getOrigin();
     for (Key<?> key : output.getImplicitlyBoundKeys()) {
-      if (origin.isBoundInChild(key)) {
+      if (origin.isBoundLocallyInChild(key)) {
 
-        // TODO(schmitt): Determine path to binding in child ginjector (requires different
-        // DependencyExplorerOutput).
+        GinjectorBindings child = origin.getChildWhichBindsLocally(key);
+        Binding childBinding = child.getBinding(key);
+
+        PrettyPrinter.log(logger, TreeLogger.DEBUG,
+            "Marking the key %s as bound in the ginjector %s (implicitly), and in the child"
+                + " %s (%s)", key, origin, child, childBinding.getContext());
+
+        // TODO(schmitt): Determine path to binding in child ginjector (requires
+        // different DependencyExplorerOutput).
         invalidKeys.put(key,
             PrettyPrinter.format("Already bound in child Ginjector %s. Consider exposing it?",
-                origin.getChildWhichBinds(key)));
+                child));
       }
     }
     

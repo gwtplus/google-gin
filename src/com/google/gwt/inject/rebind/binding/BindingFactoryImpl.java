@@ -44,8 +44,9 @@ public class BindingFactoryImpl implements BindingFactory {
 
   private final Class<? extends Ginjector> ginjectorInterface;
 
+  // Visible for testing.
   @Inject
-  BindingFactoryImpl(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
+  public BindingFactoryImpl(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
       GinjectorNameGenerator ginjectorNameGenerator,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface) {
     this.sourceWriteUtil = sourceWriteUtil;

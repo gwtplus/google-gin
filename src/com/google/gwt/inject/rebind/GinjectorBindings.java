@@ -126,12 +126,15 @@ public class GinjectorBindings implements BindingIndex {
   private final Set<Class<?>> staticInjectionRequests = new HashSet<Class<?>>();
   
   /**
-   * The map of all keys that are bound in children of this ginjector to the child binding it. This
-   * is used when creating implicit bindings. Specifically, we can't create an implicit binding here
-   * if any of the children already bind it (even if its not exposed) because it would lead to a
-   * double binding error.
+   * The map of all keys that are bound locally in children of this ginjector to
+   * the child binding it. "Locally" here means that they aren't inherited from
+   * this ginjector or from one of its parents (speaking more pragmatically:
+   * they aren't ParentBindings).  This is used when creating implicit
+   * bindings. Specifically, we can't create an implicit binding here if any of
+   * the children already bind it (even if its not exposed) because it would
+   * lead to a double binding error.
    */
-  private final Map<Key<?>, GinjectorBindings> boundInChildren =
+  private final Map<Key<?>, GinjectorBindings> boundLocallyInChildren =
       new HashMap<Key<?>, GinjectorBindings>();
   
   /**
@@ -375,8 +378,8 @@ public class GinjectorBindings implements BindingIndex {
     }
 
     bindings.put(key, binding);
-    if (parent != null) {      
-      parent.registerChildBinding(key, this);
+    if (parent != null && !(binding instanceof ParentBinding)) {
+      parent.registerLocalChildBinding(key, this);
     }
 
     logger.log(TreeLogger.TRACE, "bound " + key + " to " + binding);
@@ -393,26 +396,28 @@ public class GinjectorBindings implements BindingIndex {
   }
   
   /**
-   * Register the key in the "boundInChildren" set for this injector, and recursively
-   * register it with all of the ancestors.
+   * Register the key in the "boundLocallyInChildren" set for this injector, and
+   * recursively register it with all of the ancestors.  The caller is
+   * responsible for ensuring that the binding being registered is actually
+   * local (i.e., not a ParentBinding).
    */
-  private void registerChildBinding(Key<?> key, GinjectorBindings binding) {
-    boundInChildren.put(key, binding);
+  private void registerLocalChildBinding(Key<?> key, GinjectorBindings binding) {
+    boundLocallyInChildren.put(key, binding);
     if (parent != null) {
-      parent.registerChildBinding(key, binding);
+      parent.registerLocalChildBinding(key, binding);
     }
   }
  
-  public boolean isBoundInChild(Key<?> key) {
-    return boundInChildren.containsKey(key);
+  public boolean isBoundLocallyInChild(Key<?> key) {
+    return boundLocallyInChildren.containsKey(key);
   }
 
   /**
    * Returns the child injector which binds the given key. If no child binds the key, returns
    * {@code null}.
    */
-  public GinjectorBindings getChildWhichBinds(Key<?> key) {
-    return boundInChildren.get(key);
+  public GinjectorBindings getChildWhichBindsLocally(Key<?> key) {
+    return boundLocallyInChildren.get(key);
   }
 
   private boolean isClassAccessibleFromGinjector(TypeLiteral<?> type) {

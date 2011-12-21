@@ -147,7 +147,7 @@ public class BindingResolverTest extends TestCase {
     expect(node.getParent()).andStubReturn(null);
     expect(node.getChildren()).andStubReturn(new ArrayList<GinjectorBindings>());
     expect(node.isBound(isA(Key.class))).andStubReturn(false);
-    expect(node.isBoundInChild(isA(Key.class))).andStubReturn(false);
+    expect(node.isBoundLocallyInChild(isA(Key.class))).andStubReturn(false);
     expect(node.getBinding(isA(Key.class))).andStubReturn(null);
     expect(node.getModuleName()).andStubReturn(name);
     expect(node.isPinned(isA(Key.class))).andStubReturn(false);
@@ -192,6 +192,7 @@ public class BindingResolverTest extends TestCase {
   
   private void bind(Key<?> key, GinjectorBindings in) {
     Binding binding = control.createMock(Binding.class);
+    expect(binding.getContext()).andReturn(Context.forText("")).anyTimes();
     expect(in.isBound(key)).andReturn(true).anyTimes();
     expect(in.getBinding(key)).andReturn(binding).anyTimes();
     bindings.add(binding);
@@ -199,6 +200,7 @@ public class BindingResolverTest extends TestCase {
   
   private void bindChild(Key<?> key, GinjectorBindings parent, GinjectorBindings child) {
     ExposedChildBinding binding = control.createMock(ExposedChildBinding.class);
+    expect(binding.getContext()).andReturn(Context.forText("")).anyTimes();
     expect(parent.isBound(key)).andReturn(true).anyTimes();
     expect(parent.getBinding(key)).andReturn(binding).anyTimes();
     expect(child.isPinned(key)).andReturn(true).anyTimes();
@@ -208,6 +210,7 @@ public class BindingResolverTest extends TestCase {
   
   private void bindParent(Key<?> key, GinjectorBindings parent, GinjectorBindings child) {
     ParentBinding binding = control.createMock(ParentBinding.class);
+    expect(binding.getContext()).andReturn(Context.forText("")).anyTimes();
     expect(binding.getParentBindings()).andReturn(parent).anyTimes();
     expect(child.isBound(key)).andReturn(true).anyTimes();
     expect(child.getBinding(key)).andReturn(binding).anyTimes();
@@ -366,8 +369,8 @@ public class BindingResolverTest extends TestCase {
     // Can't bar() because baz() is already bound in childLL.  Therefore, bar() should not constrain
     // the position of foo(), and we should place it in the root.
     bind(baz(), tree.childLL);
-    expect(tree.childL.isBoundInChild(baz())).andReturn(true);
-    expect(tree.childL.getChildWhichBinds(baz())).andReturn(tree.childLL);
+    expect(tree.childL.isBoundLocallyInChild(baz())).andReturn(true);
+    expect(tree.childL.getChildWhichBindsLocally(baz())).andReturn(tree.childLL);
 
     tree.root.addBinding(foo(), fooBinding);
     expectParentBinding(foo(), tree.root, tree.childL);
@@ -441,7 +444,7 @@ public class BindingResolverTest extends TestCase {
     
     bind(baz(), root);
     bind(bar(), childL);
-    expect(root.isBoundInChild(bar())).andReturn(true).anyTimes();
+    expect(root.isBoundLocallyInChild(bar())).andReturn(true).anyTimes();
     
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
     Binding barBinding = expectCreateBinding(bar());
@@ -460,8 +463,8 @@ public class BindingResolverTest extends TestCase {
     
     bind(baz(), root);
     bind(bar(), child);
-    expect(root.isBoundInChild(bar())).andReturn(true).anyTimes();
-    expect(root.getChildWhichBinds(bar())).andReturn(child);
+    expect(root.isBoundLocallyInChild(bar())).andReturn(true).anyTimes();
+    expect(root.getChildWhichBindsLocally(bar())).andReturn(child);
     
     expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
     expectCreateBinding(bar());
@@ -481,8 +484,8 @@ public class BindingResolverTest extends TestCase {
     
     bind(baz(), root);
     bind(bar(), child);
-    expect(root.isBoundInChild(bar())).andReturn(true).anyTimes();
-    expect(root.getChildWhichBinds(bar())).andReturn(child);
+    expect(root.isBoundLocallyInChild(bar())).andReturn(true).anyTimes();
+    expect(root.getChildWhichBindsLocally(bar())).andReturn(child);
     
     Binding fooBinding = expectCreateBinding(foo(), required(foo(), baz()), optional(foo(), bar()));
     expectCreateBinding(bar());
