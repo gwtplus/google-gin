@@ -27,8 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.assistedinject.Assisted;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -89,7 +88,7 @@ class BindingPositioner {
   /**
    * Map containing the current (and eventually correct) positions for each key.
    */
-  private Map<Key<?>, GinjectorBindings> positions = new HashMap<Key<?>, GinjectorBindings>();
+  private Map<Key<?>, GinjectorBindings> positions = new LinkedHashMap<Key<?>, GinjectorBindings>();
   
   /**
    * Stores positions for keys that need to be placed below where they are actually installed.  This
@@ -98,7 +97,7 @@ class BindingPositioner {
    * by Bar) can still be created in the parent).
    */
   private Map<Key<?>, GinjectorBindings> installOverrides =
-      new HashMap<Key<?>, GinjectorBindings>();
+      new LinkedHashMap<Key<?>, GinjectorBindings>();
 
   /**
    * The output from {@link DependencyExplorer} which includes the dependency graph, and also the
@@ -266,7 +265,7 @@ class BindingPositioner {
    * Returns the injectors where the dependencies for node are currently placed.
    */
   private Set<GinjectorBindings> getSourceGinjectors(Key<?> key) {
-    Set<GinjectorBindings> sourceInjectors = new HashSet<GinjectorBindings>();
+    Set<GinjectorBindings> sourceInjectors = new LinkedHashSet<GinjectorBindings>();
     for (Dependency dep : output.getGraph().getDependenciesOf(key)) {
       sourceInjectors.add(positions.get(dep.getTarget()));
     }

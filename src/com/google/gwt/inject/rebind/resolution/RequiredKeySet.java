@@ -3,7 +3,7 @@ package com.google.gwt.inject.rebind.resolution;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.inject.Key;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -28,14 +28,14 @@ public class RequiredKeySet {
   }
   
   private void computeRequiredKeys() {
-    requiredKeys = new HashSet<Key<?>>(graph.size());
+    requiredKeys = new LinkedHashSet<Key<?>>(graph.size());
     
-    Set<Key<?>> newKeys = new HashSet<Key<?>>();
+    Set<Key<?>> newKeys = new LinkedHashSet<Key<?>>();
     addRequiredKeysFor(graph.getOrigin().getDependencies(), newKeys);
     
     while (!newKeys.isEmpty()) {
       requiredKeys.addAll(newKeys);
-      Set<Key<?>> discoveredKeys = new HashSet<Key<?>>();
+      Set<Key<?>> discoveredKeys = new LinkedHashSet<Key<?>>();
       for (Key<?> key : newKeys) {
         addRequiredKeysFor(graph.getDependenciesOf(key), discoveredKeys);
       }

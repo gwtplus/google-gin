@@ -29,7 +29,7 @@ import com.google.inject.TypeLiteral;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -42,7 +42,7 @@ abstract class CreatorBinding extends AbstractBinding implements Binding {
 
   private final SourceWriteUtil sourceWriteUtil;
   private final GuiceUtil guiceUtil;
-  private final Set<Dependency> dependencies = new HashSet<Dependency>();
+  private final Set<Dependency> dependencies = new LinkedHashSet<Dependency>();
   private final TypeLiteral<?> type;
 
   protected CreatorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,

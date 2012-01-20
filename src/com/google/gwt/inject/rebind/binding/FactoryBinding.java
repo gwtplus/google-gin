@@ -41,7 +41,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +99,7 @@ public class FactoryBinding extends AbstractBinding implements Binding {
    * Collection of all implementations produced by this factory, each annotated
    * with @Assisted. This is used to gather all required member-inject methods.
    */
-  private final Set<TypeLiteral<?>> implementations = new HashSet<TypeLiteral<?>>();
+  private final Set<TypeLiteral<?>> implementations = new LinkedHashSet<TypeLiteral<?>>();
 
   FactoryBinding(SourceWriteUtil sourceWriteUtil, Map<Key<?>, TypeLiteral<?>> collector,
       Key<?> factoryKey, Context context) {

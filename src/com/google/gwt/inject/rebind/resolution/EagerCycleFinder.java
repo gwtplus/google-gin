@@ -22,8 +22,8 @@ import com.google.inject.Key;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,7 +52,7 @@ public class EagerCycleFinder {
    * Nodes that are active in the current DFS.  Revisiting any of these nodes indicates an eager
    * cycle, and should be reported as a problem.
    */
-  private Set<Key<?>> dfsStack = new HashSet<Key<?>>();
+  private Set<Key<?>> dfsStack = new LinkedHashSet<Key<?>>();
   
   private final ErrorManager errorManager;
 
@@ -72,7 +72,7 @@ public class EagerCycleFinder {
   public boolean findAndReportCycles(DependencyGraph graph) {
     this.graph = graph;
     cycleDetected = false;
-    visitedEdge = new HashMap<Key<?>, Dependency>(graph.size());
+    visitedEdge = new LinkedHashMap<Key<?>, Dependency>(graph.size());
     
     for (Key<?> key : graph.getAllKeys()) {
       visit(key, null);

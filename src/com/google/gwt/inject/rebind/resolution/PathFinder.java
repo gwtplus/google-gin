@@ -22,8 +22,8 @@ import com.google.inject.Key;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +38,8 @@ import java.util.Queue;
 public class PathFinder {
   
   private DependencyGraph graph;
-  private Collection<Key<?>> destinations = new HashSet<Key<?>>();
-  private Collection<Key<?>> roots = new HashSet<Key<?>>();
+  private Collection<Key<?>> destinations = new LinkedHashSet<Key<?>>();
+  private Collection<Key<?>> roots = new LinkedHashSet<Key<?>>();
   private boolean onlyRequiredEdges;
 
   /**
@@ -101,7 +101,7 @@ public class PathFinder {
     Preconditions.checkState(!destinations.isEmpty(),
         "Must call addDestinations(Key<?>...) before findShortestPath");
     
-    visited = new HashMap<Key<?>, Dependency>();
+    visited = new LinkedHashMap<Key<?>, Dependency>();
     workQueue = new LinkedList<Key<?>>();
     
     // Populate the workqueue with our initial destination keys.  If any of them are in the root

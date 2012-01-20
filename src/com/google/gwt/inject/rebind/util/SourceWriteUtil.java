@@ -38,7 +38,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -581,7 +581,7 @@ public class SourceWriteUtil {
 
   private Set<FieldLiteral<?>> getFieldsToInject(TypeLiteral<?> type) {
     // Only inject fields that are non optional or where the key is bound.
-    Set<FieldLiteral<?>> fields = new HashSet<FieldLiteral<?>>();
+    Set<FieldLiteral<?>> fields = new LinkedHashSet<FieldLiteral<?>>();
     for (FieldLiteral<?> field : memberCollector.getFields(type)) {
       if (!guiceUtil.isOptional(field) || bindingIndex.isBound(guiceUtil.getKey(field))) {
         fields.add(field);
@@ -591,7 +591,7 @@ public class SourceWriteUtil {
   }
 
   private Set<MethodLiteral<?, Method>> getMethodsToInject(TypeLiteral<?> type) {
-    Set<MethodLiteral<?, Method>> methods = new HashSet<MethodLiteral<?, Method>>();
+    Set<MethodLiteral<?, Method>> methods = new LinkedHashSet<MethodLiteral<?, Method>>();
     for (MethodLiteral<?, Method> method : memberCollector.getMethods(type)) {
       if (shouldInject(method)) {
         methods.add(method);

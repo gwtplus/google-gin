@@ -30,7 +30,7 @@ import com.google.inject.assistedinject.Assisted;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -159,7 +159,7 @@ public class UnresolvedBindingValidator {
   private Set<Key<?>> removeOptionalKeys(
       DependencyExplorerOutput output, Map<Key<?>, String> invalidKeys) {
     RequiredKeySet requiredKeys = new RequiredKeySet(output.getGraph());
-    Set<Key<?>> optionalKeys = new HashSet<Key<?>>();
+    Set<Key<?>> optionalKeys = new LinkedHashSet<Key<?>>();
     // We need to use a for loop instead of a foreach loop because we remove
     // entries as we go (see the call to iterator.remove() below).
     for (Iterator<Map.Entry<Key<?>, String>> iterator = invalidKeys.entrySet().iterator();
@@ -187,7 +187,7 @@ public class UnresolvedBindingValidator {
    * our definition Y would also be required.
    */
   private Set<Key<?>> getKeysToRemove(DependencyGraph graph, Collection<Key<?>> discovered) {
-    Set<Key<?>> toRemove = new HashSet<Key<?>>();
+    Set<Key<?>> toRemove = new LinkedHashSet<Key<?>>();
     while (!discovered.isEmpty()) {
       toRemove.addAll(discovered);
       discovered = getRequiredSourcesTargeting(graph, discovered);
@@ -201,7 +201,7 @@ public class UnresolvedBindingValidator {
    */
   private Collection<Key<?>> getRequiredSourcesTargeting(
       DependencyGraph graph, Iterable<Key<?>> targets) {
-    Collection<Key<?>> requiredSources = new HashSet<Key<?>>();
+    Collection<Key<?>> requiredSources = new LinkedHashSet<Key<?>>();
     for (Key<?> target : targets) {
       for (Dependency edge : graph.getDependenciesTargeting(target)) {
         if (!edge.isOptional()) {

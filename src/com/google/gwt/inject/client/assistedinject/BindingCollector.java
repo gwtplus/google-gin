@@ -22,7 +22,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.spi.Message;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -31,7 +31,8 @@ import java.util.Map;
  */
 class BindingCollector {
 
-  private final Map<Key<?>, TypeLiteral<?>> bindings = new HashMap<Key<?>, TypeLiteral<?>>();
+  private final Map<Key<?>, TypeLiteral<?>> bindings =
+      new LinkedHashMap<Key<?>, TypeLiteral<?>>();
 
   public BindingCollector addBinding(Key<?> key, TypeLiteral<?> target) {
     if (bindings.containsKey(key)) {

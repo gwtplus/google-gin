@@ -47,8 +47,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -105,25 +103,31 @@ public class GinjectorBindings implements BindingIndex {
   /**
    * Map from key to scope for all types we have a binding for.
    */
-  private final Map<Key<?>, GinScope> scopes = new HashMap<Key<?>, GinScope>();
+  private final Map<Key<?>, GinScope> scopes = new LinkedHashMap<Key<?>, GinScope>();
 
   /**
    * Collection of keys for which the ginjector interface provides member inject
    * methods. If a regular binding is defined for the same key, no special
    * member inject handling is required - a member inject method will be created
    * as part of a regular binding.
+   * 
+   * <p>We use a LinkedHashSet so that error reporting (and tests) will be deterministic.
    */
-  private final Set<TypeLiteral<?>> memberInjectRequests = new HashSet<TypeLiteral<?>>();
+  private final Set<TypeLiteral<?>> memberInjectRequests = new LinkedHashSet<TypeLiteral<?>>();
 
   /**
    * Collection of all factory modules configured for this ginjector.
+   * 
+   * <p>We use a LinkedHashSet so that error reporting (and tests) will be deterministic.
    */
-  private final Set<FactoryModule<?>> factoryModules = new HashSet<FactoryModule<?>>();
+  private final Set<FactoryModule<?>> factoryModules = new LinkedHashSet<FactoryModule<?>>();
 
   /**
    * All types for which static injection has been requested.
+   * 
+   * <p>We use a LinkedHashSet so that error reporting (and tests) will be deterministic.
    */
-  private final Set<Class<?>> staticInjectionRequests = new HashSet<Class<?>>();
+  private final Set<Class<?>> staticInjectionRequests = new LinkedHashSet<Class<?>>();
   
   /**
    * The map of all keys that are bound locally in children of this ginjector to
@@ -135,13 +139,13 @@ public class GinjectorBindings implements BindingIndex {
    * lead to a double binding error.
    */
   private final Map<Key<?>, GinjectorBindings> boundLocallyInChildren =
-      new HashMap<Key<?>, GinjectorBindings>();
+      new LinkedHashMap<Key<?>, GinjectorBindings>();
   
   /**
    * Set of key's that *must* be bound here.  This corresponds to things that are explicitly bound
    * here. 
    */
-  private final Set<Key<?>> pinned = new HashSet<Key<?>>();
+  private final Set<Key<?>> pinned = new LinkedHashSet<Key<?>>();
 
   /**
    * Collector that gathers all methods from an injector.

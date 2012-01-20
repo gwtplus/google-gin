@@ -18,8 +18,8 @@ package com.google.gwt.inject.rebind.util;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -56,12 +56,12 @@ public class NameGenerator {
   /**
    * "Mangled key name" cache:  Key -> mangled name
    */
-  private final Map<CacheKey, String> methodKeyCache = new HashMap<CacheKey, String>();
+  private final Map<CacheKey, String> methodKeyCache = new LinkedHashMap<CacheKey, String>();
   
   /**
    * Map of known method names.
    */
-  private final Set<String> methodNames = new HashSet<String>();
+  private final Set<String> methodNames = new LinkedHashSet<String>();
 
   /**
    * Returns the key's getter method name.  The method with that name can be

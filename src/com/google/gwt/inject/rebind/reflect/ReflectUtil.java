@@ -30,7 +30,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -147,7 +147,7 @@ public class ReflectUtil {
    * which to manipulate a type.
    */
   public static String getUserPackageName(TypeLiteral<?> typeLiteral) {
-    Map<String, Class<?>> packageNames = new HashMap<String, Class<?>>();
+    Map<String, Class<?>> packageNames = new LinkedHashMap<String, Class<?>>();
     getTypePackageNames(typeLiteral.getType(), packageNames);
 
     if (packageNames.size() == 0) {

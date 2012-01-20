@@ -31,7 +31,7 @@ import com.google.inject.Module;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -84,7 +84,7 @@ public class GinjectorGenerator extends Generator {
    * @see GinBridgeClassLoader
    */
   private ClassLoader createGinClassLoader(TreeLogger logger, GeneratorContext context) {
-    HashSet<String> exceptions = new HashSet<String>();
+    Set<String> exceptions = new LinkedHashSet<String>();
     exceptions.add("com.google.inject"); // Need the non-super-source version during generation.
     exceptions.add("javax.inject"); // Need the non-super-source version during generation.
     exceptions.add("com.google.gwt.inject.client"); // Excluded to allow class-literal comparison.
@@ -112,7 +112,7 @@ public class GinjectorGenerator extends Generator {
 
   private Set<Class<? extends GinModule>> getModuleClasses(Class<? extends Ginjector> ginjectorType)
       throws UnableToCompleteException {
-    Set<Class<? extends GinModule>> ginModules = new HashSet<Class<? extends GinModule>>();
+    Set<Class<? extends GinModule>> ginModules = new LinkedHashSet<Class<? extends GinModule>>();
     getPropertyModuleClasses(ginjectorType, ginModules);
     getModuleClassesFromInjectorInterface(ginjectorType, ginModules);
 
@@ -151,10 +151,10 @@ public class GinjectorGenerator extends Generator {
 
   private Set<String> getPropertyModuleNames(Class<?> ginjectorType)
       throws UnableToCompleteException {
-    Set<String> propertyNames = new HashSet<String>();
+    Set<String> propertyNames = new LinkedHashSet<String>();
     getPropertyNamesFromInjectorInterface(ginjectorType, propertyNames);
 
-    Set<String> configurationModuleNames = new HashSet<String>();
+    Set<String> configurationModuleNames = new LinkedHashSet<String>();
     for (String propertyName : propertyNames) {
       Set<String> moduleNames = getValuesForProperty(propertyName);
       if (moduleNames.isEmpty()) {
@@ -170,7 +170,8 @@ public class GinjectorGenerator extends Generator {
   private Set<String> getValuesForProperty(String propertyName) {
     try {
       // Result of getConfigurationProperty can never be null.
-      return new HashSet<String>(propertyOracle.getConfigurationProperty(propertyName).getValues());
+      return new LinkedHashSet<String>(
+          propertyOracle.getConfigurationProperty(propertyName).getValues());
     } catch (BadPropertyValueException e) {
       // Thrown when the configuration property is not defined.
       return Collections.emptySet();

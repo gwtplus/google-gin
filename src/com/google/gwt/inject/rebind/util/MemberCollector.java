@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -139,13 +139,13 @@ public class MemberCollector {
    * Internal method cache: Type name -> Method Set
    */
   private final Map<TypeLiteral<?>, Set<MethodLiteral<?, Method>>> methodMultiMap =
-      new HashMap<TypeLiteral<?>, Set<MethodLiteral<?, Method>>>();
+      new LinkedHashMap<TypeLiteral<?>, Set<MethodLiteral<?, Method>>>();
 
   /**
    * Internal field cache: Type name -> Method Set
    */
   private final Map<TypeLiteral<?>, Set<FieldLiteral<?>>> fieldMultiMap =
-      new HashMap<TypeLiteral<?>, Set<FieldLiteral<?>>>();
+      new LinkedHashMap<TypeLiteral<?>, Set<FieldLiteral<?>>>();
 
   private final TreeLogger logger;
 
@@ -241,7 +241,7 @@ public class MemberCollector {
     // Type hasn't been collected yet.
     Set<MethodLiteral<?, Method>> typeMethods =
         new TreeSet<MethodLiteral<?, Method>>(METHOD_COMPARATOR);
-    Set<FieldLiteral<?>> typeFields = new HashSet<FieldLiteral<?>>();
+    Set<FieldLiteral<?>> typeFields = new LinkedHashSet<FieldLiteral<?>>();
     accumulateMembers(typeLiteral, typeMethods, typeFields);
     methodMultiMap.put(typeLiteral, typeMethods);
     fieldMultiMap.put(typeLiteral, typeFields);

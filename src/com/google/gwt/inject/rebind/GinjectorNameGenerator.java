@@ -18,7 +18,7 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.inject.Singleton;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -26,8 +26,9 @@ import java.util.Map;
  */
 @Singleton
 public class GinjectorNameGenerator {
-  private final Map<String, Integer> numberOfAppearances = new HashMap<String, Integer>();
-  private final Map<GinjectorBindings, String> nameCache = new HashMap<GinjectorBindings, String>();
+  private final Map<String, Integer> numberOfAppearances = new LinkedHashMap<String, Integer>();
+  private final Map<GinjectorBindings, String> nameCache =
+      new LinkedHashMap<GinjectorBindings, String>();
  
   /**
    * Register a specific name for use with the given ginjector.  This is used on the root injector
