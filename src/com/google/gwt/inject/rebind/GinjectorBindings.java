@@ -457,6 +457,9 @@ public class GinjectorBindings implements BindingIndex {
 
   public void addFactoryModule(FactoryModule<?> install) {
     factoryModules.add(install);
+    // Prevent the factory interface from floating away or being
+    // implicitly instantiated.
+    addPin(install.getFactoryType());
   }
 
   @Override

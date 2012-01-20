@@ -149,6 +149,24 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
           bindingFactory.getExposedChildBinding(key, childCollection,
               Context.forElement(privateElements));
 
+      // The child must have an explicit binding or pin for anything it exposes.
+      //
+      // Note that this is correct only because the
+      // GuiceElementVisitor runs before any synthetic bindings are
+      // inserted into the GinjectorBindings (more specifically,
+      // before implicit bindings are generated).  Otherwise,
+      // isBound() might return true for keys that weren't explicitly bound.
+      //
+      // If the above invariant is violated, the effect will be to
+      // bypass this error in some cases.  The offending key should
+      // still generate an error, but it will not be as clearly
+      // described.
+      if (!(childCollection.isBound(key) || childCollection.isPinned(key))) {
+        errorManager.logError(
+            "Key %s was exposed from but not bound in %s.  Did you forget to call bind()?",
+            key, childCollection);
+      }
+
       PrettyPrinter.log(logger, TreeLogger.TRACE, "Child binding for %s in %s: %s", key, bindings, childBinding);
 
       bindings.addBinding(key, childBinding);
