@@ -19,11 +19,15 @@ package com.google.gwt.inject.rebind.util;
 import com.google.gwt.inject.client.MyBindingAnnotation;
 import com.google.gwt.inject.client.nested.Outer;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.inject.BindingAnnotation;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
 import junit.framework.TestCase;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.List;
 
@@ -73,6 +77,24 @@ public class PrettyPrinterTest extends TestCase {
         "X: @com.google.gwt.inject.client.MyBindingAnnotation"
             + " com.google.gwt.inject.client.nested.Outer",
         PrettyPrinter.format("X: %s", Key.get(Outer.class, MyBindingAnnotation.class)));
+  }
+
+  @BindingAnnotation
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface MyComplexBindingAnnotation {
+    int field1();
+    int field2();
+  }
+
+  @MyComplexBindingAnnotation(field1=1, field2=2)
+  private int dummyField;
+
+  public void testPrettyPrinterKey_instanceAnnotated_outer() throws Exception {
+    Annotation annotation = getClass().getDeclaredField("dummyField").getAnnotations()[0];
+    assertEquals(
+        "X: @com.google.gwt.inject.rebind.util.PrettyPrinterTest$MyComplexBindingAnnotation"
+            + "(field1=1, field2=2) com.google.gwt.inject.client.nested.Outer",
+            PrettyPrinter.format("X: %s", Key.get(Outer.class, annotation)));
   }
 
   public void testPrettyPrintKey_notAnnotated_inner() {

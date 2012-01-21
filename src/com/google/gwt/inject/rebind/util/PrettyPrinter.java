@@ -20,9 +20,7 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.binding.Dependency;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
-import com.google.inject.name.Named;
 
-import java.lang.StringBuilder;
 import java.lang.annotation.Annotation;
 import java.util.List;
 
@@ -130,12 +128,7 @@ public final class PrettyPrinter {
 
   private static void formatArgTo(Key<?> key, StringBuilder builder) {
     Annotation annotation = key.getAnnotation();
-    if (annotation instanceof Named) {
-      // Specially handle Named annotations to ensure that the name gets
-      // printed.
-      //
-      // TODO: write code to do this in general (turns out that it's tricky to
-      // enumerate the fields of an annotation).
+    if (annotation != null) {
       builder.append(annotation);
       builder.append(" ");
     } else if (key.getAnnotationType() != null) {
