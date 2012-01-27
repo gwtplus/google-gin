@@ -136,6 +136,16 @@ public class MemberCollector {
       };
 
   /**
+   * Comparator which compares fields by their name.
+   */
+  private static final Comparator<FieldLiteral<?>> FIELD_COMPARATOR =
+      new Comparator<FieldLiteral<?>>() {
+        public int compare(FieldLiteral<?> f1, FieldLiteral<?> f2) {
+          return f1.getName().compareTo(f2.getName());
+        }
+      };
+
+  /**
    * Internal method cache: Type name -> Method Set
    */
   private final Map<TypeLiteral<?>, Set<MethodLiteral<?, Method>>> methodMultiMap =
@@ -300,6 +310,7 @@ public class MemberCollector {
     for (Method method : typeLiteral.getRawType().getDeclaredMethods()) {
       methods.add(MethodLiteral.get(method, typeLiteral));
     }
+    Collections.sort(methods, METHOD_COMPARATOR);
     return methods;
   }
   
@@ -308,6 +319,7 @@ public class MemberCollector {
     for (Field field : typeLiteral.getRawType().getDeclaredFields()) {
       fields.add(FieldLiteral.get(field, typeLiteral));
     }
+    Collections.sort(fields, FIELD_COMPARATOR);
     return fields;
   }
 }
