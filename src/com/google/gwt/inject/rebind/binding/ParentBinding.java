@@ -17,10 +17,8 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
-import com.google.gwt.inject.rebind.GinjectorNameGenerator;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
 
 import java.util.Collection;
@@ -33,19 +31,14 @@ import java.util.Collections;
  * paradigm for parent and child bindings, but it is the easiest way to add this
  * to Gin.
  */
-public class ParentBinding extends AbstractBinding implements Binding {
+public class ParentBinding extends AbstractSingleMethodBinding implements Binding {
 
   private final Key<?> key;
   private final GinjectorBindings parentBindings;
-  private SourceWriteUtil sourceWriteUtil;
-  private GinjectorNameGenerator ginjectorNameGenerator;
 
-  ParentBinding(SourceWriteUtil sourceWriteUtil, GinjectorNameGenerator ginjectorNameGenerator,
-      Key<?> key, GinjectorBindings parentBindings, Context context) {
+  ParentBinding(Key<?> key, GinjectorBindings parentBindings, Context context) {
     super(context);
 
-    this.sourceWriteUtil = sourceWriteUtil;
-    this.ginjectorNameGenerator = ginjectorNameGenerator;
     this.key = Preconditions.checkNotNull(key);
     this.parentBindings = Preconditions.checkNotNull(parentBindings);
   }
@@ -54,12 +47,10 @@ public class ParentBinding extends AbstractBinding implements Binding {
     return parentBindings;
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
-      NameGenerator nameGenerator) {
-    String parentMethodName = parentBindings.getNameGenerator().getGetterMethodName(key);
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, 
-        String.format("return %s.this.%s();", ginjectorNameGenerator.getClassName(parentBindings),
-            parentMethodName));
+  public void appendCreatorMethodBody(StringBuilder builder,
+      InjectorWriteContext injectorWriteContext) {
+    String parentMethodCall = injectorWriteContext.callParentGetter(key, parentBindings);
+    builder.append("return ").append(parentMethodCall).append(";");
   }
 
   public Collection<Dependency> getDependencies() {

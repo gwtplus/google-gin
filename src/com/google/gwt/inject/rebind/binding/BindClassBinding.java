@@ -16,9 +16,7 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.dev.util.Preconditions;
-import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.inject.Key;
 
 import java.util.ArrayList;
@@ -27,26 +25,21 @@ import java.util.Collection;
 /**
  * Binding implementation that replaces one type with another.
  */
-public class BindClassBinding extends AbstractBinding implements Binding {
-
-  private final SourceWriteUtil sourceWriteUtil;
+public class BindClassBinding extends AbstractSingleMethodBinding implements Binding {
 
   private final Key<?> sourceClassKey;
   private final Key<?> boundClassKey;
 
-  BindClassBinding(SourceWriteUtil sourceWriteUtil, Key<?> boundClassKey, Key<?> sourceClassKey,
-      Context context) {
+  BindClassBinding(Key<?> boundClassKey, Key<?> sourceClassKey, Context context) {
     super(context);
 
-    this.sourceWriteUtil = sourceWriteUtil;
     this.boundClassKey = Preconditions.checkNotNull(boundClassKey);
     this.sourceClassKey = Preconditions.checkNotNull(sourceClassKey);
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
-      NameGenerator nameGenerator) {
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
-        "return " + nameGenerator.getGetterMethodName(boundClassKey) + "();");
+  public void appendCreatorMethodBody(StringBuilder builder,
+      InjectorWriteContext injectorWriteContext) {
+    builder.append("return ").append(injectorWriteContext.callGetter(boundClassKey)).append(";");
   }
 
   public Collection<Dependency> getDependencies() {

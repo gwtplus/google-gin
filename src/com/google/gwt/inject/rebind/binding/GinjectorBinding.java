@@ -17,9 +17,8 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.GinjectorInterfaceType;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 
@@ -29,14 +28,12 @@ import java.util.Collections;
 /**
  * Simple binding that allows injection of the ginjector.
  */
-public class GinjectorBinding extends AbstractBinding implements Binding {
+public class GinjectorBinding extends AbstractSingleMethodBinding implements Binding {
 
-  private final SourceWriteUtil sourceWriteUtil;
   private final Class<? extends Ginjector> ginjectorInterface;
 
   @Inject
-  public GinjectorBinding(SourceWriteUtil sourceWriteUtil,
-      @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface) {
+  public GinjectorBinding(@GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface) {
     // This message is used to generate double-binding errors.  We output a very
     // specific message, because people were confused and tried to bind their
     // Ginjectors manually.
@@ -47,13 +44,12 @@ public class GinjectorBinding extends AbstractBinding implements Binding {
     super(Context.format("Automatic binding for %s; you should not need to bind this manually.",
         ginjectorInterface));
 
-    this.sourceWriteUtil = sourceWriteUtil;
     this.ginjectorInterface = ginjectorInterface;
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
-      NameGenerator nameGenerator) {
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return this;");
+  public void appendCreatorMethodBody(StringBuilder builder,
+      InjectorWriteContext injectorWriteContext) {
+    builder.append("return ").append(injectorWriteContext.getGinjectorInterface()).append(";");
   }
 
   public Collection<Dependency> getDependencies() {

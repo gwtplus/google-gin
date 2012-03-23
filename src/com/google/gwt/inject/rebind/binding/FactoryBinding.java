@@ -22,10 +22,13 @@ import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
+import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.PrettyPrinter;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
@@ -89,7 +92,6 @@ public class FactoryBinding extends AbstractBinding implements Binding {
   };
 
 
-  private final SourceWriteUtil sourceWriteUtil;
   private final List<AssistData> assistData = new ArrayList<AssistData>();
   private final Map<Key<?>, TypeLiteral<?>> collector;
   private final TypeLiteral<?> factoryType;
@@ -101,13 +103,15 @@ public class FactoryBinding extends AbstractBinding implements Binding {
    */
   private final Set<TypeLiteral<?>> implementations = new LinkedHashSet<TypeLiteral<?>>();
 
-  FactoryBinding(SourceWriteUtil sourceWriteUtil, Map<Key<?>, TypeLiteral<?>> collector,
-      Key<?> factoryKey, Context context) {
+  private final MethodCallUtil methodCallUtil;
+
+  FactoryBinding(Map<Key<?>, TypeLiteral<?>> collector, Key<?> factoryKey, Context context,
+      MethodCallUtil methodCallUtil) {
     super(context);
 
-    this.sourceWriteUtil = sourceWriteUtil;
     this.collector = Preconditions.checkNotNull(collector);
     this.factoryType = factoryKey.getTypeLiteral();
+    this.methodCallUtil = methodCallUtil;
 
     try {
       matchMethods(Preconditions.checkNotNull(factoryKey));
@@ -116,34 +120,39 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     }
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
+  public Iterable<InjectorMethod> getCreatorMethods(final String creatorMethodSignature,
       NameGenerator nameGenerator) throws NoSourceNameException {
+
+    List<InjectorMethod> methods = new ArrayList<InjectorMethod>();
+
     String factoryTypeName = ReflectUtil.getSourceName(factoryType);
-    StringBuilder sb = new StringBuilder();
+    SourceSnippetBuilder sb = new SourceSnippetBuilder();
 
     sb.append("return new ").append(factoryTypeName).append("() {");
 
     for (AssistData assisted : assistData) {
       String returnName = ReflectUtil.getSourceName(assisted.implementation);
 
-      String memberInjectMethodName =
-          nameGenerator.getMemberInjectMethodName(assisted.implementation);
-      String methodCall = sourceWriteUtil.createMethodCallWithInjection(writer,
-          assisted.constructor, null, assisted.parameterNames, nameGenerator);
+      SourceSnippet memberInjectCall =
+          SourceSnippets.callMemberInject(assisted.implementation, "result");
+      SourceSnippet methodCall = methodCallUtil.createMethodCallWithInjection(
+          assisted.constructor, null, assisted.parameterNames, nameGenerator, methods);
 
       String signature = ReflectUtil.getSignature(assisted.method,
           ReflectUtil.nonAbstractModifiers(assisted.method));
 
       sb.append("\n\n    ").append(signature).append(" {")
           .append("\n      ").append(returnName).append(" result = ").append(methodCall)
-          .append("\n      ").append(memberInjectMethodName).append("(result);")
+          .append("\n      ").append(memberInjectCall)
           .append("\n      ").append("return result;")
           .append("\n    }"); // End method.
     }
 
     sb.append("\n};"); // End factory implementation.
 
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, sb.toString());
+    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, sb.build()));
+
+    return Collections.unmodifiableCollection(methods);
   }
 
   public Collection<Dependency> getDependencies() {

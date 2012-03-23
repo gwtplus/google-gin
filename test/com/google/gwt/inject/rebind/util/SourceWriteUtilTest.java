@@ -65,7 +65,9 @@ public class SourceWriteUtilTest extends TestCase {
 
     NameGenerator nameGenerator = new NameGenerator();
     GuiceUtil guiceUtil = new GuiceUtil(createInjectableCollector());
-    sourceWriteUtil = new SourceWriteUtil(guiceUtil, createInjectableCollector(), bindingIndex);
+    MethodCallUtil methodCallUtil = new MethodCallUtil();
+    sourceWriteUtil = new SourceWriteUtil(guiceUtil, createInjectableCollector(), methodCallUtil,
+        bindingIndex);
   }
 
   // TODO(schmitt): same collector as in the guice module, centralize.

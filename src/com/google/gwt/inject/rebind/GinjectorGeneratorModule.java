@@ -27,7 +27,9 @@ import com.google.gwt.inject.rebind.reflect.FieldLiteral;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.resolution.ResolutionModule;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
@@ -80,6 +82,11 @@ class GinjectorGeneratorModule extends AbstractModule {
         .annotatedWith(ModuleClasses.class)
         .toInstance(moduleClasses);
     bind(BindingFactory.class).to(BindingFactoryImpl.class);
+    install(new FactoryModuleBuilder()
+        .implement(InjectorWriteContext.class, GinjectorOutputterWriteContext.class)
+        .build(GinjectorOutputterWriteContext.Factory.class));
+    install(new FactoryModuleBuilder()
+        .build(SourceWriteUtil.Factory.class));
   }
 
   @Provides

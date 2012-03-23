@@ -427,8 +427,7 @@ public class BindingPositionerTest extends TestCase {
           GinjectorBindings child = keyAndChild.getValue();
 
           expect(parent.getBinding(key))
-              .andReturn(new ExposedChildBinding(
-                  null, null, Key.get(Long.class), child, Context.forText("")))
+              .andReturn(new ExposedChildBinding(Key.get(Long.class), child, Context.forText("")))
               .anyTimes();
         }
       }

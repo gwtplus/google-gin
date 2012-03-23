@@ -41,10 +41,8 @@ public class RemoteServiceProxyBinding extends CallGwtDotCreateBinding {
         && hasSynchronousServiceInterface(type);
   }
 
-  RemoteServiceProxyBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
-      TypeLiteral<?> type) {
-    super(sourceWriteUtil, guiceUtil, type,
-          Context.format("Implicit remote service proxy binding for %s", type));
+  RemoteServiceProxyBinding(GuiceUtil guiceUtil, TypeLiteral<?> type) {
+    super(guiceUtil, type, Context.format("Implicit remote service proxy binding for %s", type));
   }
 
   @Override

@@ -19,11 +19,14 @@ import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
+import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
 
 import java.lang.reflect.Constructor;
+import java.util.List;
 
 /**
  * A binding that calls a single constructor directly. Values for constructor
@@ -31,23 +34,24 @@ import java.lang.reflect.Constructor;
  */
 public class CallConstructorBinding extends CreatorBinding {
 
-  private final SourceWriteUtil sourceWriteUtil;
   private final MethodLiteral<?, Constructor<?>> constructor;
+  private final MethodCallUtil methodCallUtil;
 
-  CallConstructorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
-      MethodLiteral<?, Constructor<?>> constructor) {
-    super(sourceWriteUtil, guiceUtil, constructor.getDeclaringType(),
+  CallConstructorBinding(GuiceUtil guiceUtil, MethodLiteral<?, Constructor<?>> constructor,
+      MethodCallUtil methodCallUtil) {
+    super(guiceUtil, constructor.getDeclaringType(),
           Context.format("Implicit binding for %s", constructor.getDeclaringType()));
-    this.sourceWriteUtil = sourceWriteUtil;
     this.constructor = Preconditions.checkNotNull(constructor);
+    this.methodCallUtil = methodCallUtil;
     addParamTypes(constructor);
   }
 
-  @Override protected void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb,
+  @Override protected SourceSnippet getCreationStatement(List<InjectorMethod> methodsOutput,
       NameGenerator nameGenerator) throws NoSourceNameException {
-    Preconditions.checkNotNull(constructor);
-    sb.append(getTypeName()).append(" result = ")
-        .append(sourceWriteUtil.createConstructorInjection(
-            sourceWriter, constructor, nameGenerator));
+    return new SourceSnippetBuilder()
+        .append(getTypeName()).append(" result = ")
+        .append(
+            methodCallUtil.createConstructorInjection(constructor, nameGenerator, methodsOutput))
+        .build();
   }
 }

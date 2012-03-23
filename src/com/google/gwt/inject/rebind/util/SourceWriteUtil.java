@@ -26,18 +26,12 @@ import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
-import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.assistedinject.Assisted;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -46,18 +40,19 @@ import java.util.Set;
 /**
  * Helper object for source writing.
  */
-@Singleton
 public class SourceWriteUtil {
 
   private final GuiceUtil guiceUtil;
   private final MemberCollector memberCollector;
+  private final MethodCallUtil methodCallUtil;
   private final BindingIndex bindingIndex;
 
   @Inject
-  protected SourceWriteUtil(GuiceUtil guiceUtil,
-      @Injectable MemberCollector memberCollector, BindingIndex bindingIndex) {
+  protected SourceWriteUtil(GuiceUtil guiceUtil, @Injectable MemberCollector memberCollector,
+      MethodCallUtil methodCallUtil, @Assisted BindingIndex bindingIndex) {
     this.guiceUtil = guiceUtil;
     this.memberCollector = memberCollector;
+    this.methodCallUtil = methodCallUtil;
     this.bindingIndex = bindingIndex;
   }
 
@@ -66,56 +61,55 @@ public class SourceWriteUtil {
    * {@code sourceWriter} and returns a string that invokes all written
    * methods.
    *
-   * @param sourceWriter writer to which the injecting method is written
    * @param fields fields to be injected
    * @param injecteeName variable that references the object into which values
    *          are injected, in the context of the returned call string
    * @return string calling the generated method
    */
-  public String appendFieldInjection(SourceWriter sourceWriter, Iterable<FieldLiteral<?>> fields,
-      String injecteeName, NameGenerator nameGenerator) throws NoSourceNameException {
+  public SourceSnippet createFieldInjections(Iterable<FieldLiteral<?>> fields, String injecteeName,
+      NameGenerator nameGenerator, List<InjectorMethod> methodsOutput)
+      throws NoSourceNameException {
 
-    StringBuilder methodInvocations = new StringBuilder();
+    SourceSnippetBuilder methodInvocations = new SourceSnippetBuilder();
 
     for (FieldLiteral<?> field : fields) {
       methodInvocations
-          .append(createFieldInjection(sourceWriter, field, injecteeName, nameGenerator))
+          .append(createFieldInjection(field, injecteeName, nameGenerator, methodsOutput))
           .append("\n");
     }
 
-    return methodInvocations.toString();
+    return methodInvocations.build();
   }
 
   /**
-   * Appends a field injecting method to the {@code sourceWriter} and returns a
-   * string that invokes the written method.
+   * Creates a field injecting method and returns a string that invokes the
+   * written method.
    *
-   * @param sourceWriter writer to which the injecting method is written
    * @param field field to be injected
    * @param injecteeName variable that references the object into which values
    *          are injected, in the context of the returned call string
    * @param nameGenerator NameGenerator to be used for ensuring method name uniqueness
    * @return string calling the generated method
    */
-  public String createFieldInjection(SourceWriter sourceWriter, FieldLiteral<?> field, 
-      String injecteeName, NameGenerator nameGenerator) throws NoSourceNameException {
-    boolean hasInjectee = injecteeName != null;
+  public SourceSnippet createFieldInjection(final FieldLiteral<?> field, final String injecteeName,
+      NameGenerator nameGenerator, List<InjectorMethod> methodsOutput)
+      throws NoSourceNameException {
+    final boolean hasInjectee = injecteeName != null;
     Class<?> fieldDeclaringType = field.getRawDeclaringType();
-    boolean isPublic = field.isPublic() && ReflectUtil.isPublic(field.getDeclaringType());
+    final boolean isPublic = field.isPublic() && ReflectUtil.isPublic(field.getDeclaringType());
 
     // Determine method signature parts.
-    String injecteeTypeName = ReflectUtil.getSourceName(fieldDeclaringType);
+    final String injecteeTypeName = ReflectUtil.getSourceName(fieldDeclaringType);
     String fieldTypeName = ReflectUtil.getSourceName(field.getFieldType());
     String methodBaseName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
         + field.getName() + "_fieldInjection");
-    String methodName = nameGenerator.createMethodName(methodBaseName);
+    final String methodName = nameGenerator.createMethodName(methodBaseName);
+
     String signatureParams = fieldTypeName + " value";
-    String callParams = nameGenerator.getGetterMethodName(guiceUtil.getKey(field)) + "()";
     boolean isLongAcccess = field.getFieldType().getRawType().equals(Long.TYPE);
 
     if (hasInjectee) {
-      signatureParams = injecteeTypeName + " injectee, " + signatureParams;
-      callParams = injecteeName + ", " + callParams;
+        signatureParams = injecteeTypeName + " injectee, " + signatureParams;
     }
 
     // Compose method implementation and invocation.
@@ -132,25 +126,35 @@ public class SourceWriteUtil {
     }
     String signature = header + "void " + methodName + "(" + signatureParams + ")";
 
-    String call = methodName + "(" + callParams + ");";
+    InjectorMethod injectionMethod = new AbstractInjectorMethod(!isPublic, signature) {
+        public String getMethodBody(InjectorWriteContext writeContext)
+            throws NoSourceNameException {
+          if (isPublic) {
+            return (hasInjectee
+                ? "injectee." : injecteeTypeName + ".") + field.getName() + " = value;";
+          } else {
+            return (hasInjectee ? "injectee." : "") + getJsniSignature(field) + " = value;";
+          }
+        }
+      };
+    methodsOutput.add(injectionMethod);
 
-    if (isPublic) {
-      String body =
-          (hasInjectee ? "injectee." : injecteeTypeName + ".") + field.getName() + " = value;";
-      writeMethod(sourceWriter, signature, body);
-    } else {
-      String body = (hasInjectee ? "injectee." : "") + getJsniSignature(field) + " = value;";
-      writeNativeMethod(sourceWriter, signature, body);
-    }
+    return new SourceSnippet() {
+      public String getSource(InjectorWriteContext writeContext) {
+        String callParams = writeContext.callGetter(guiceUtil.getKey(field));
+        if (hasInjectee) {
+          callParams = injecteeName + ", " + callParams;
+        }
 
-    return call;
+        return methodName + "(" + callParams + ");";
+      }
+    };
   }
 
   /**
-   * Appends a method injecting method to the {@code sourceWriter} and returns
-   * a string that invokes the written method.  The values for the passed
-   * method's parameters are retrieved through the
-   * {@link com.google.gwt.inject.client.Ginjector}.
+   * Creates a method injecting method and returns a string that invokes the new
+   * method.  The values for the passed method's parameters are retrieved
+   * through the {@link com.google.gwt.inject.client.Ginjector}.
    * <p/>
    * If the passed method collection contains only one actual method, the native
    * method will pass on (i.e. return) the result of the actual method's
@@ -163,204 +167,29 @@ public class SourceWriteUtil {
    * If a method without parameters is provided, that method will be called and
    * no parameters will be passed.
    *
-   * @param sourceWriter writer to which the injecting method is written
    * @param methods methods to be called & injected
    * @param injecteeName variable that references the object into which values
-   *            are injected, in the context of the returned call string. If
-   *            {@code null} all passed methods are called as static/constructors.
+   *     are injected, in the context of the returned call string. If
+   *     {@code null} all passed methods are called as static/constructors.
    * @param nameGenerator NameGenerator to be used for ensuring method name uniqueness
-   * @return string calling the generated method
+   * @param methodsOutput a list where all new methods created by this
+   *     call are added
+   * @return source snippet calling the generated method
    */
-  public String createMethodInjection(SourceWriter sourceWriter,
-      Iterable<? extends MethodLiteral<?, ?>> methods, String injecteeName, 
-      NameGenerator nameGenerator) throws NoSourceNameException {
+  public SourceSnippet createMethodInjections(Iterable<? extends MethodLiteral<?, ?>> methods,
+      String injecteeName, NameGenerator nameGenerator, List<InjectorMethod> methodsOutput)
+      throws NoSourceNameException {
 
-    StringBuilder methodInvocations = new StringBuilder();
+    SourceSnippetBuilder methodInvocations = new SourceSnippetBuilder();
 
     for (MethodLiteral<?, ?> method : methods) {
       methodInvocations
-          .append(createMethodCallWithInjection(sourceWriter, method, injecteeName, nameGenerator))
+          .append(methodCallUtil.createMethodCallWithInjection(method, injecteeName, nameGenerator,
+              methodsOutput))
           .append("\n");
     }
 
-    return methodInvocations.toString();
-  }
-
-  /**
-   * Appends a constructor injecting method to the {@code sourceWriter} and
-   * returns a string that invokes the written method.  The written method
-   * returns the constructed object.
-   *
-   * @param sourceWriter writer to which the injecting method is written
-   * @param constructor constructor to call
-   * @param nameGenerator NameGenerator to be used for ensuring method name uniqueness
-   * @return string calling the generated method
-   */
-  public String createConstructorInjection(SourceWriter sourceWriter,
-      MethodLiteral<?, Constructor<?>> constructor, NameGenerator nameGenerator) 
-      throws NoSourceNameException {
-    return createMethodCallWithInjection(sourceWriter, constructor, null, nameGenerator);
-  }
-
-  /**
-   * Appends a new method to the {@code sourceWriter} that calls the passed
-   * method and returns a string that invokes the written method.  The written
-   * method returns the passed method's return value, if any.
-   * <p/>
-   * If a method without parameters is provided, that method will be called and
-   * no parameters will be passed.
-   *
-   * @param sourceWriter writer to which the injecting method is written
-   * @param method method to call (can be constructor)
-   * @param injecteeName variable that references the object into which values
-   *          are injected, in the context of the returned call string. If null
-   *          all passed methods are called as static/constructors.
-   * @param nameGenerator NameGenerator to be used for ensuring method name uniqueness
-   * @return string calling the generated method
-   */
-  public String createMethodCallWithInjection(SourceWriter sourceWriter, MethodLiteral<?, ?> method,
-      String injecteeName, NameGenerator nameGenerator) throws NoSourceNameException {
-    String[] params = new String[method.getParameterTypes().size()];
-    return createMethodCallWithInjection(sourceWriter, method, injecteeName, params, nameGenerator);
-  }
-
-  /**
-   * Appends a new method to the {@code sourceWriter} that calls the passed
-   * method and returns a string that invokes the written method.  The written
-   * method returns the passed method's return value, if any.
-   * <p/>
-   * If a method without parameters is provided, that method will be called and
-   * no parameters will be passed. If the passed method declared any checked
-   * exceptions, the generated method will catch and rethrow those as
-   * {@link com.google.gwt.inject.client.CreationException}.
-   *
-   * @param sourceWriter writer to which the injecting method is written
-   * @param method method to call (can be constructor)
-   * @param injecteeName variable that references the object into which values
-   *          are injected, in the context of the returned call string. If null
-   *          all passed methods are called as static/constructors.
-   * @param parameterNames array with parameter names that can replace getter
-   *          methods (usually used to fetch injected values) in the returned
-   *          string. The array length must match the number of method
-   *          parameters. A {@code null} value denotes that the getter method
-   *          should be used.
-   * @param nameGenerator NameGenerator to use for ensuring method name uniqueness
-   * @return string calling the generated method
-   */
-  public String createMethodCallWithInjection(SourceWriter sourceWriter, MethodLiteral<?, ?> method,
-      String injecteeName, String[] parameterNames, NameGenerator nameGenerator) 
-      throws NoSourceNameException {
-    boolean hasInjectee = injecteeName != null;
-    Class<?> methodDeclaringType = method.getRawDeclaringType();
-    boolean isPublic = method.isPublic() && ReflectUtil.isPublic(method.getDeclaringType());
-    boolean isThrowing = hasCheckedExceptions(method);
-
-    // Determine method signature parts.
-    String injecteeTypeName = ReflectUtil.getSourceName(methodDeclaringType);
-    String methodBaseName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
-        + method.getName() + "_methodInjection");
-    String methodName = nameGenerator.createMethodName(methodBaseName);
-    TypeLiteral<?> returnType = method.getReturnType();
-    String returnTypeString = ReflectUtil.getSourceName(returnType);
-    boolean returning = !returnType.getRawType().equals(Void.TYPE);
-    boolean isLongAcccess = returnType.getRawType().equals(Long.TYPE);
-
-    // Collect method parameters to be passed to the native and actual method.
-    int invokerParamCount = method.getParameterTypes().size() + (hasInjectee ? 1 : 0);
-    List<String> invokerCallParams = new ArrayList<String>(invokerParamCount);
-    List<String> invokerSignatureParams = new ArrayList<String>(invokerParamCount);
-    List<String> invokeeCallParams = new ArrayList<String>(method.getParameterTypes().size());
-
-    if (hasInjectee) {
-      invokerCallParams.add(injecteeName);
-      invokerSignatureParams.add(injecteeTypeName + " injectee");
-    }
-
-    int paramCount = 0;
-    for (Key<?> paramKey : method.getParameterKeys()) {
-      String paramName = ReflectUtil.formatParameterName(paramCount);
-      if (parameterNames[paramCount] != null) {
-        invokerCallParams.add(parameterNames[paramCount]);
-      } else {
-        invokerCallParams.add(nameGenerator.getGetterMethodName(paramKey) + "()");
-      }
-
-      // We cannot use the type literal of the key here: It is canonicalized
-      // during key creation, destroying some information, for example
-      // auto-boxing any primitives. This leads to type-mismatches when calling
-      // into JSNI. Instead we'll access the parameter's original type.
-      TypeLiteral<?> paramLiteral = method.getParameterTypes().get(paramCount);
-      invokerSignatureParams.add(ReflectUtil.getSourceName(paramLiteral) + " " + paramName);
-      invokeeCallParams.add(paramName);
-      paramCount++;
-      isLongAcccess |= paramLiteral.getRawType().equals(Long.TYPE);
-    }
-
-    // Compose method implementation and invocation.
-    String header;
-    if (isPublic) {
-      header = "private ";
-    } else {
-      // GWT JSNI to violate access restriction.
-      if (isLongAcccess) {
-        header = "@com.google.gwt.core.client.UnsafeNativeLong private native ";
-      } else {
-        header = "private native ";
-      }
-    }
-    String invokerSignature = header + returnTypeString + " " + methodName
-        + "(" + join(", ", invokerSignatureParams) + ")";
-
-    String invokerCall = methodName + "(" + join(", ", invokerCallParams) + ");";
-
-    StringBuilder invokerBody = new StringBuilder();
-    if (isThrowing) {
-      invokerBody.append("try {\n  ");
-    }
-
-    if (returning) {
-      invokerBody.append("return ");
-    }
-    if (isPublic) {
-      if (hasInjectee) {
-        invokerBody.append("injectee.").append(method.getName());
-      } else if (method.isConstructor()) {
-        invokerBody.append("new ").append(injecteeTypeName);
-      } else {
-        invokerBody.append(injecteeTypeName).append(".").append(method.getName());
-      }
-    } else {
-      if (hasInjectee) {
-        invokerBody.append("injectee.");
-      }
-      invokerBody.append(getJsniSignature(method));
-    }
-    invokerBody.append("(").append(join(", ", invokeeCallParams)).append(");");
-
-    if (isThrowing) {
-      if (isPublic) {
-        invokerBody.append("\n} catch (Exception e) {\n")
-            .append("  throw new com.google.gwt.inject.client.CreationException(e);\n")
-            .append("}");
-      } else {
-        invokerBody.append("\n} catch (e) {\n")
-            .append("  throw @com.google.gwt.inject.client.CreationException")
-            .append("::new(Ljava/lang/Throwable;)(e);\n")
-            .append("}");
-      }
-    }
-
-    if (isPublic) {
-      writeMethod(sourceWriter, invokerSignature, invokerBody.toString());
-    } else {
-      writeNativeMethod(sourceWriter, invokerSignature, invokerBody.toString());
-    }
-
-    return invokerCall;
-  }
-
-  private boolean hasCheckedExceptions(MethodLiteral<?, ?> method) {
-    return method.getExceptionTypes().size() > 0;
+    return methodInvocations.build();
   }
 
   /**
@@ -452,109 +281,50 @@ public class SourceWriteUtil {
   }
 
   /**
-   * Appends a full member injection (methods and fields) to the provided
-   * writer.
+   * Writes the given methods to the given source writer.
    *
-   * @param writer source writer to write to
+   * @param methods the methods to write
+   * @param writer the source writer to which the methods should be written
+   * @param writeContext the context in which to write the methods
+   */
+  public void writeMethods(Iterable<InjectorMethod> methods, SourceWriter writer,
+      InjectorWriteContext writeContext) throws NoSourceNameException {
+    for (InjectorMethod method : methods) {
+      if (method.isNative()) {
+        writeNativeMethod(writer, method.getMethodSignature(), method.getMethodBody(writeContext));
+      } else {
+        writeMethod(writer, method.getMethodSignature(), method.getMethodBody(writeContext));
+      }
+    }
+  }
+
+  /**
+   * Generates all the required injector methods to inject members of the given
+   * type, and a standard member-inject method that invokes them.
+   *
    * @param type type for which the injection is performed
+   * @param nameGenerator the name generator used to create method names
+   * @param methodsOutput a list to which the new injection method and all its
+   *     helpers are added
    * @return name of the method created
    */
-  public String appendMemberInjection(SourceWriter writer, TypeLiteral<?> type,
-      NameGenerator nameGenerator) throws NoSourceNameException {
+  public String createMemberInjection(TypeLiteral<?> type, NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
     String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(type);
+    String memberInjectMethodSignature = "private void " + memberInjectMethodName + "("
+        + ReflectUtil.getSourceName(type) + " injectee)";
 
-    StringBuilder sb = new StringBuilder();
+    SourceSnippetBuilder sb = new SourceSnippetBuilder();
 
-    sb.append(createMethodInjection(writer, getMethodsToInject(type), "injectee", nameGenerator));
-    sb.append(appendFieldInjection(writer, getFieldsToInject(type), "injectee", nameGenerator));
+    sb.append(createMethodInjections(getMethodsToInject(type), "injectee", nameGenerator,
+        methodsOutput));
+    sb.append(createFieldInjections(getFieldsToInject(type), "injectee", nameGenerator,
+        methodsOutput));
 
-    writeMethod(writer,
-        "private void " + memberInjectMethodName +
-            "(" + ReflectUtil.getSourceName(type) + " injectee)",
-        sb.toString());
+    // Generate the top-level member inject method:
+    methodsOutput.add(SourceSnippets.asMethod(false, memberInjectMethodSignature, sb.build()));
 
     return memberInjectMethodName;
-  }
-
-  private String getJsniSignature(MethodLiteral<?, ?> method) throws NoSourceNameException {
-    StringBuilder signature = new StringBuilder();
-    signature.append("@");
-    signature.append(ReflectUtil.getSourceName(method.getRawDeclaringType()));
-
-    String name = method.isConstructor() ? "new" : method.getName();
-    signature.append("::").append(name).append("(");
-
-    // Using raw parameter types here since JNI doesn't know about
-    // parametrization at lookup time.
-    for (Type param : method.getRawParameterTypes()) {
-      signature.append(getJniSignature(param));
-    }
-
-    signature.append(")");
-
-    return signature.toString();
-  }
-
-  private String getJniSignature(Type type) throws NoSourceNameException {
-    if (type instanceof Class<?>) {
-      if (((Class) type).isPrimitive()) {
-        if (type.equals(Boolean.TYPE)) {
-          return "Z";
-        } else if (type.equals(Byte.TYPE)) {
-          return "B";
-        } else if (type.equals(Character.TYPE)) {
-          return "C";
-        } else if (type.equals(Double.TYPE)) {
-          return "D";
-        } else if (type.equals(Float.TYPE)) {
-          return "F";
-        } else if (type.equals(Integer.TYPE)) {
-          return "I";
-        } else if (type.equals(Long.TYPE)) {
-          return "J";
-        } else if (type.equals(Short.TYPE)) {
-          return "S";
-        }
-      }
-
-      return "L" + getBinaryName((Class) type) + ";";
-    }
-
-    if (type instanceof GenericArrayType) {
-      return "[" + getJniSignature(((GenericArrayType) type).getGenericComponentType());
-    }
-
-    if (type instanceof ParameterizedType) {
-      return getJniSignature(((ParameterizedType) type).getRawType());
-    }
-
-    if (type instanceof WildcardType) {
-
-      // TODO(schmitt): This is likely incorrect in some cases.
-      return getJniSignature(((WildcardType) type).getUpperBounds()[0]);
-    }
-
-    if (type instanceof TypeVariable) {
-
-      // TODO(schmitt): This is likely incorrect in some cases.
-      return getJniSignature(((TypeVariable) type).getBounds()[0]);
-    }
-
-    throw new NoSourceNameException(type);
-  }
-
-  private String getBinaryName(Class<?> type) {
-    List<String> classes = new ArrayList<String>();
-    for (Class<?> clazz = type; clazz != null; clazz = clazz.getEnclosingClass()) {
-      classes.add(clazz.getSimpleName());
-    }
-    Collections.reverse(classes);
-
-    String packageName = type.getPackage().getName().replace('.', '/');
-    if (packageName.length() > 0) {
-      packageName += "/";
-    }
-    return packageName + join("$", classes);
   }
 
   private String getJsniSignature(FieldLiteral<?> field) throws NoSourceNameException {
@@ -611,5 +381,12 @@ public class SourceWriteUtil {
     }
 
     return true;
+  }
+
+  /**
+   * Factory for {@link SourceWriteUtil}.
+   */
+  public interface Factory {
+    SourceWriteUtil create(BindingIndex bindingIndex);
   }
 }

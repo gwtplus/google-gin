@@ -17,9 +17,8 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.dev.util.Preconditions;
-import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.GinjectorBindings;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.inject.Key;
 
 import java.lang.reflect.Type;
@@ -29,9 +28,8 @@ import java.util.Collections;
 /**
  * Binding for a constant value.
  */
-public class BindConstantBinding<T> extends AbstractBinding implements Binding {
+public class BindConstantBinding<T> extends AbstractSingleMethodBinding implements Binding {
 
-  private final SourceWriteUtil sourceWriteUtil;
   private final String valueToOutput;
   private final Key<?> key;
 
@@ -55,10 +53,9 @@ public class BindConstantBinding<T> extends AbstractBinding implements Binding {
         || Boolean.class.isAssignableFrom(clazz) || clazz.isEnum();
   }
 
-  BindConstantBinding(SourceWriteUtil sourceWriteUtil, Key<T> key, T instance, Context context) {
+  BindConstantBinding(Key<T> key, T instance, Context context) {
     super(context);
 
-    this.sourceWriteUtil = sourceWriteUtil;
     this.key = Preconditions.checkNotNull(key);
     this.valueToOutput = getValueToOutput(key, Preconditions.checkNotNull(instance));
   }
@@ -88,9 +85,8 @@ public class BindConstantBinding<T> extends AbstractBinding implements Binding {
     }
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
-      NameGenerator nameGenerator) {
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, "return " + valueToOutput + ";");
+  public void appendCreatorMethodBody(StringBuilder builder, InjectorWriteContext writeContext) {
+    builder.append("return ").append(valueToOutput).append(";");
   }
 
   public Collection<Dependency> getDependencies() {

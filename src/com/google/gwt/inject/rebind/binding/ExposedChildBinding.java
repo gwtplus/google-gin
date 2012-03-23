@@ -18,9 +18,7 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.GinjectorNameGenerator;
-import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.inject.Key;
 
 import java.util.Collection;
@@ -32,21 +30,14 @@ import java.util.Collections;
  * TODO(bchambers): As with {@link ParentBinding} it would be nice if this didn't need the
  * no-op creator method.
  */
-public class ExposedChildBinding extends AbstractBinding implements Binding {
+public class ExposedChildBinding extends AbstractSingleMethodBinding implements Binding {
 
   private final Key<?> key;
   private final GinjectorBindings childBindings;
-  private final SourceWriteUtil sourceWriteUtil;
-  private final GinjectorNameGenerator ginjectorNameGenerator;
 
-  // Visible for testing.
-  public ExposedChildBinding(SourceWriteUtil sourceWriteUtil,
-      GinjectorNameGenerator ginjectorNameGenerator, Key<?> key, GinjectorBindings childBindings,
-      Context context) {
+  public ExposedChildBinding(Key<?> key, GinjectorBindings childBindings, Context context) {
     super(context);
 
-    this.sourceWriteUtil = sourceWriteUtil;
-    this.ginjectorNameGenerator = ginjectorNameGenerator;
     this.key = Preconditions.checkNotNull(key);
     this.childBindings = Preconditions.checkNotNull(childBindings);
   }
@@ -55,11 +46,9 @@ public class ExposedChildBinding extends AbstractBinding implements Binding {
     return childBindings;
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
-      NameGenerator nameGenerator) {
-    String childMethodName = childBindings.getNameGenerator().getGetterMethodName(key);
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, String.format("return %s.%s();",
-        ginjectorNameGenerator.getFieldName(childBindings), childMethodName));
+  public void appendCreatorMethodBody(StringBuilder sb, InjectorWriteContext injectorWriteContext) {
+    sb.append("return ").append(injectorWriteContext.callChildGetter(childBindings, key))
+        .append(";");
   }
 
   public Collection<Dependency> getDependencies() {

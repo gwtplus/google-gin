@@ -27,8 +27,13 @@ import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
@@ -42,6 +47,8 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Provider;
@@ -54,6 +61,7 @@ class GinjectorOutputter {
   private final TreeLogger logger;
   private final GeneratorContext ctx;
   private final GinjectorBindings rootBindings;
+  private final GinjectorOutputterWriteContext.Factory ginjectorOutputterWriteContextFactory;
 
   /**
    * Collector that gathers methods from an injector interface and its
@@ -73,9 +81,10 @@ class GinjectorOutputter {
    */
   private final MemberCollector memberInjectCollector;
 
-  private final SourceWriteUtil sourceWriteUtil;
+  private final SourceWriteUtil.Factory sourceWriteUtilFactory;
 
   private final GuiceUtil guiceUtil;
+  private final MethodCallUtil methodCallUtil;
 
   /**
    * Interface of the injector that this class is implementing.
@@ -92,18 +101,22 @@ class GinjectorOutputter {
   
   @Inject
   GinjectorOutputter(TreeLogger logger,
-      Provider<MemberCollector> collectorProvider, SourceWriteUtil sourceWriteUtil,
-      final GuiceUtil guiceUtil, GeneratorContext ctx,
+      Provider<MemberCollector> collectorProvider,
+      SourceWriteUtil.Factory sourceWriteUtilFactory,
+      final GuiceUtil guiceUtil, MethodCallUtil methodCallUtil, GeneratorContext ctx,
       @RootBindings GinjectorBindings bindingsCollection,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
       GinjectorNameGenerator ginjectorNameGenerator,
+      GinjectorOutputterWriteContext.Factory ginjectorOutputterWriteContextFactory,
       ErrorManager errorManager) {
     this.logger = logger;
-    this.sourceWriteUtil = sourceWriteUtil;
+    this.sourceWriteUtilFactory = sourceWriteUtilFactory;
     this.guiceUtil = guiceUtil;
+    this.methodCallUtil = methodCallUtil;
     this.ctx = ctx;
     this.rootBindings = bindingsCollection;
     this.ginjectorNameGenerator = ginjectorNameGenerator;
+    this.ginjectorOutputterWriteContextFactory = ginjectorOutputterWriteContextFactory;
     this.errorManager = errorManager;
     this.ginjectorInterface = TypeLiteral.get(ginjectorInterface);
 
@@ -133,10 +146,12 @@ class GinjectorOutputter {
 
       writer = composerFactory.createSourceWriter(ctx, printWriter);
 
-      outputInterfaceMethods();
+      SourceWriteUtil rootSourceWriteUtil = sourceWriteUtilFactory.create(rootBindings);
+      outputInterfaceMethods(rootSourceWriteUtil);
       ginjectorNameGenerator.registerName(rootBindings, implClassName);
       outputBindings(rootBindings);
-      writeToplevelConstructor(ginjectorNameGenerator.getClassName(rootBindings));
+      writeToplevelConstructor(ginjectorNameGenerator.getClassName(rootBindings),
+          rootSourceWriteUtil);
 
       errorManager.checkForError();
     } catch (NoSourceNameException e) {
@@ -152,6 +167,8 @@ class GinjectorOutputter {
    * in the hierarchy, it will first output the necessary classes. 
    */
   private void outputBindings(GinjectorBindings bindings) {
+    SourceWriteUtil sourceWriteUtil = sourceWriteUtilFactory.create(bindings);
+
     // Collects the text of the body of initialize().  initialize() contains
     // code that needs to run before the root injector is returned to the
     // client, but after the injector hierarchy is fully constructed.  See
@@ -185,24 +202,26 @@ class GinjectorOutputter {
 
     initializeBody.append("\n");
 
-    
-    outputMemberInjections(bindings);
-    outputStaticInjections(bindings, initializeBody);
+    InjectorWriteContext writeContext = ginjectorOutputterWriteContextFactory.create(bindings);
+
+    outputMemberInjections(bindings, sourceWriteUtil, writeContext);
+    outputStaticInjections(bindings, initializeBody, sourceWriteUtil, writeContext);
 
     // Output the actual bindings
     for (Map.Entry<Key<?>, Binding> entry : bindings.getBindings()) {
       outputBinding(bindings.getNameGenerator(), entry.getKey(), entry.getValue(),
-          bindings.determineScope(entry.getKey()), initializeBody);
+          bindings.determineScope(entry.getKey()), writeContext, sourceWriteUtil, initializeBody);
     }
 
-    writeInitialize(initializeBody);
+    writeInitialize(initializeBody, sourceWriteUtil);
   }
 
   /**
    * Output the the creator/getter methods for the given binding.
    */
   private void outputBinding(NameGenerator nameGenerator, Key<?> key, Binding binding,
-      GinScope scope, StringBuilder initializeBody) {
+      GinScope scope, InjectorWriteContext writeContext, SourceWriteUtil sourceWriteUtil,
+      StringBuilder initializeBody) {
     Context bindingContext = binding.getContext();
 
     String getter = nameGenerator.getGetterMethodName(key);
@@ -214,9 +233,9 @@ class GinjectorOutputter {
 
       sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
 
-      // Regardless of the scope, we have a creator method.
-      binding.writeCreatorMethods(writer, "private " + typeName + " " + creator + "()", 
-          nameGenerator);
+      // Regardless of the scope, we have one or more creator methods.
+      sourceWriteUtil.writeMethods(binding.getCreatorMethods(
+          "private " + typeName + " " + creator + "()", nameGenerator), writer, writeContext);
     } catch (NoSourceNameException e) {
       errorManager.logError("Error trying to write source for [%s] -> [%s];"
           + " binding declaration: %s", e, key, binding, bindingContext);
@@ -280,7 +299,8 @@ class GinjectorOutputter {
     }
   }
 
-  private void outputInterfaceMethods() throws NoSourceNameException {
+  private void outputInterfaceMethods(SourceWriteUtil sourceWriteUtil)
+      throws NoSourceNameException {
     NameGenerator nameGenerator = rootBindings.getNameGenerator();
     // Add a forwarding method for each zero-arg method in the ginjector interface
     for (MethodLiteral<?, Method> method :
@@ -308,40 +328,51 @@ class GinjectorOutputter {
   }
 
   // Visible for tests.
-  void outputStaticInjections(GinjectorBindings bindings, StringBuilder initializeBody) {
+  void outputStaticInjections(GinjectorBindings bindings, StringBuilder initializeBody,
+      SourceWriteUtil sourceWriteUtil, InjectorWriteContext writeContext) {
     NameGenerator nameGenerator = bindings.getNameGenerator();
 
     for (Class<?> type : bindings.getStaticInjectionRequests()) {
       String methodName = nameGenerator.convertToValidMemberName("injectStatic_" + type.getName());
-      StringBuilder body = new StringBuilder();
+      SourceSnippetBuilder body = new SourceSnippetBuilder();
       for (InjectionPoint injectionPoint : InjectionPoint.forStaticMethodsAndFields(type)) {
         Member member = injectionPoint.getMember();
         try {
+          List<InjectorMethod> staticInjectionHelpers = new ArrayList<InjectorMethod>();
+
           if (member instanceof Method) {
             MethodLiteral<?, Method> method =
                 MethodLiteral.get((Method) member, TypeLiteral.get(member.getDeclaringClass()));
-            body.append(sourceWriteUtil.createMethodCallWithInjection(writer, method, null,
-                nameGenerator));
+            body.append(methodCallUtil.createMethodCallWithInjection(method, null, nameGenerator,
+                staticInjectionHelpers));
           } else if (member instanceof Field) {
             FieldLiteral<?> field =
                 FieldLiteral.get((Field) member, TypeLiteral.get(member.getDeclaringClass()));
-            body.append(sourceWriteUtil.createFieldInjection(writer, field, null, nameGenerator));
+            body.append(sourceWriteUtil.createFieldInjection(field, null, nameGenerator,
+                staticInjectionHelpers));
           }
+
+          sourceWriteUtil.writeMethods(staticInjectionHelpers, writer, writeContext);
         } catch (NoSourceNameException e) {
           errorManager.logError(e.getMessage(), e);
         }
       }
 
-      sourceWriteUtil.writeMethod(writer, "private void " + methodName + "()", body.toString());
+      sourceWriteUtil.writeMethod(writer, "private void " + methodName + "()",
+          body.build().getSource(writeContext));
       initializeBody.append(methodName).append("();\n");
     }
   }
 
-  private void outputMemberInjections(GinjectorBindings bindings) {
+  private void outputMemberInjections(GinjectorBindings bindings, SourceWriteUtil sourceWriteUtil,
+      InjectorWriteContext writeContext) {
     NameGenerator nameGenerator = bindings.getNameGenerator();
     for (TypeLiteral<?> type : bindings.getMemberInjectRequests()) {
+      List<InjectorMethod> staticInjectionHelpers = new ArrayList<InjectorMethod>();
+
       try {
-        sourceWriteUtil.appendMemberInjection(writer, type, nameGenerator);
+        sourceWriteUtil.createMemberInjection(type, nameGenerator, staticInjectionHelpers);
+        sourceWriteUtil.writeMethods(staticInjectionHelpers, writer, writeContext);
       } catch (NoSourceNameException e) {
         errorManager.logError(e.getMessage(), e);
       }
@@ -358,11 +389,11 @@ class GinjectorOutputter {
   // invoke any injection method to, e.g., create eager singletons.  For more
   // details, see <http://code.google.com/p/google-gin/issues/detail?id=156>.
 
-  private void writeToplevelConstructor(String implClassName) {
+  private void writeToplevelConstructor(String implClassName, SourceWriteUtil sourceWriteUtil) {
     sourceWriteUtil.writeMethod(writer, "public " + implClassName + "()", "initialize();");
   }
 
-  private void writeInitialize(StringBuilder initializeBody) {
+  private void writeInitialize(StringBuilder initializeBody, SourceWriteUtil sourceWriteUtil) {
     sourceWriteUtil.writeMethod(writer, "private void initialize()", initializeBody.toString());
   }
 

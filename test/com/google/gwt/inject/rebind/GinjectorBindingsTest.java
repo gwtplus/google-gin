@@ -32,8 +32,8 @@ import com.google.gwt.inject.rebind.binding.Context;
 import com.google.gwt.inject.rebind.resolution.BindingResolver;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 import junit.framework.TestCase;
@@ -55,8 +55,7 @@ public class GinjectorBindingsTest extends TestCase {
   private ErrorManager errorManager;
   private BindingResolver bindingResolver;
 
-  private SourceWriteUtil sourceWriteUtil;
-  private GinjectorNameGenerator ginjectorNameGenerator;
+  private MethodCallUtil methodCallUtil;
 
   private final Context context = Context.forText("");
 
@@ -79,12 +78,10 @@ public class GinjectorBindingsTest extends TestCase {
     errorManager = control.createMock("errorManager", ErrorManager.class);
     bindingResolver = control.createMock("bindingResolver", BindingResolver.class);
 
-    sourceWriteUtil = control.createMock("sourceWriteUtil", SourceWriteUtil.class);
-    ginjectorNameGenerator = control.createMock("ginjectorNameGenerator",
-        GinjectorNameGenerator.class);
+    methodCallUtil = control.createMock("methodCallUtil", MethodCallUtil.class);
 
     bindingFactory = new BindingFactoryImpl(
-        sourceWriteUtil, guiceUtil, ginjectorNameGenerator, DummyInjectorInterface.class);
+        guiceUtil, DummyInjectorInterface.class, methodCallUtil);
   }
 
   /** Replay all mocks. */

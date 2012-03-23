@@ -18,9 +18,7 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
-import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.inject.Key;
 
 import java.lang.reflect.ParameterizedType;
@@ -31,17 +29,15 @@ import java.util.Collections;
  * Binding implementation for {@code Provider<T>} that just uses the binding
  * to {@code T}.
  */
-public class ImplicitProviderBinding extends AbstractBinding implements Binding {
+public class ImplicitProviderBinding extends AbstractSingleMethodBinding implements Binding {
 
-  private final SourceWriteUtil sourceWriteUtil;
   private final ParameterizedType providerType;
   private final Key<?> targetKey;
   private final Key<?> providerKey;
 
-  ImplicitProviderBinding(SourceWriteUtil sourceWriteUtil, Key<?> providerKey) {
+  ImplicitProviderBinding(Key<?> providerKey) {
     super(Context.format("Implicit provider for %s", providerKey));
 
-    this.sourceWriteUtil = sourceWriteUtil;
     this.providerKey = Preconditions.checkNotNull(providerKey);
     this.providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
 
@@ -49,16 +45,18 @@ public class ImplicitProviderBinding extends AbstractBinding implements Binding 
     this.targetKey = ReflectUtil.getProvidedKey(providerKey);
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
-      NameGenerator nameGenerator) throws NoSourceNameException {
+  public void appendCreatorMethodBody(StringBuilder builder, InjectorWriteContext writeContext)
+      throws NoSourceNameException {
+
     String providerTypeName = ReflectUtil.getSourceName(providerType);
     String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
-        "return new " + providerTypeName + "() { \n"
-        + "  public " + targetKeyName + " get() { \n"
-        + "    return " + nameGenerator.getGetterMethodName(targetKey) + "();\n"
-        + "  }\n"
-        + "};");
+    builder
+        .append("return new ")
+        .append(providerTypeName).append("() { \n")
+        .append("  public ").append(targetKeyName).append(" get() { \n")
+        .append("    return ").append(writeContext.callGetter(targetKey)).append(";\n")
+        .append("  }\n")
+        .append("};");
   }
 
   public Collection<Dependency> getDependencies() {

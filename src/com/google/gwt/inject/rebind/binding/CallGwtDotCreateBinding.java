@@ -18,10 +18,13 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
 import com.google.inject.TypeLiteral;
+
+import java.util.List;
 
 /**
  * A binding that just calls {@code GWT.create()} for the requested type.
@@ -30,22 +33,22 @@ import com.google.inject.TypeLiteral;
  */
 public class CallGwtDotCreateBinding extends CreatorBinding {
 
-  CallGwtDotCreateBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil, TypeLiteral<?> type,
-      Context context) {
-    super(sourceWriteUtil, guiceUtil, type, context);
+  CallGwtDotCreateBinding(GuiceUtil guiceUtil, TypeLiteral<?> type, Context context) {
+    super(guiceUtil, type, context);
   }
 
-  @Override protected final void appendCreationStatement(SourceWriter sourceWriter,
-      StringBuilder sb, NameGenerator nameGenerator) throws NoSourceNameException {
+  @Override protected final SourceSnippet getCreationStatement(List<InjectorMethod> methodsOutput,
+      NameGenerator nameGenerator) throws NoSourceNameException {
 
-    sb.append("Object created = GWT.create(").append(getTypeNameToCreate()).append(".class);\n");
-
-    // Gin cannot deal with cases where the type returned by GWT.create is not
-    // equal or a subtype of the requested type. Assert this here, in
-    // production code (without asserts) the line below the assert will throw a
-    // ClassCastException instead.
-    sb.append("assert created instanceof ").append(getExpectedTypeName()).append(";\n")
-        .append(getTypeName()).append(" result = (").append(getTypeName()).append(") created;\n");
+    return new SourceSnippetBuilder()
+        .append("Object created = GWT.create(").append(getTypeNameToCreate()).append(".class);\n")
+        // Gin cannot deal with cases where the type returned by GWT.create is
+        // not equal or a subtype of the requested type. Assert this here, in
+        // production code (without asserts) the line below the assert will
+        // throw a ClassCastException instead.
+        .append("assert created instanceof ").append(getExpectedTypeName()).append(";\n")
+        .append(getTypeName()).append(" result = (").append(getTypeName()).append(") created;\n")
+        .build();
   }
 
   protected String getTypeNameToCreate() throws NoSourceNameException {

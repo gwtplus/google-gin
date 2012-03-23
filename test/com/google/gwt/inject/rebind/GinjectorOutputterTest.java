@@ -20,6 +20,7 @@ import static org.easymock.classextension.EasyMock.capture;
 import static org.easymock.classextension.EasyMock.createMock;
 import static org.easymock.classextension.EasyMock.createNiceMock;
 import static org.easymock.classextension.EasyMock.expect;
+import static org.easymock.classextension.EasyMock.expectLastCall;
 import static org.easymock.classextension.EasyMock.isNull;
 import static org.easymock.classextension.EasyMock.replay;
 import static org.easymock.classextension.EasyMock.verify;
@@ -28,8 +29,12 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.reflect.FieldLiteral;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.MemberCollector;
+import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
@@ -41,6 +46,7 @@ import org.easymock.Capture;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.List;
 
 public class GinjectorOutputterTest extends TestCase {
 
@@ -59,21 +65,34 @@ public class GinjectorOutputterTest extends TestCase {
     Capture<MethodLiteral<SuperClass, Method>> methodCapture =
         new Capture<MethodLiteral<SuperClass, Method>>();
 
+    MethodCallUtil methodCallUtil = createMock(MethodCallUtil.class);
     SourceWriteUtil sourceWriteUtil = createMock(SourceWriteUtil.class);
-    expect(sourceWriteUtil.createMethodCallWithInjection((SourceWriter) isNull(),
-        capture(methodCapture), (String) anyObject(), (NameGenerator) anyObject())).andReturn("");
-    expect(sourceWriteUtil.createFieldInjection((SourceWriter) isNull(),
-        capture(fieldCapture), (String) anyObject(), (NameGenerator) anyObject())).andReturn("");
+    expect(methodCallUtil.createMethodCallWithInjection(capture(methodCapture),
+        (String) anyObject(), (NameGenerator) anyObject(), (List<InjectorMethod>) anyObject()))
+        .andReturn(SourceSnippets.forText(""));
+    expect(sourceWriteUtil.createFieldInjection(capture(fieldCapture), (String) anyObject(),
+        (NameGenerator) anyObject(), (List<InjectorMethod>) anyObject()))
+        .andReturn(SourceSnippets.forText(""));
+
     sourceWriteUtil.writeMethod((SourceWriter) isNull(), (String) anyObject(),
         (String) anyObject());
+    expectLastCall().anyTimes();
 
-    replay(bindings, sourceWriteUtil);
+    sourceWriteUtil.writeMethods((Iterable<InjectorMethod>) anyObject(), (SourceWriter) isNull(),
+        (InjectorWriteContext) anyObject());
+    expectLastCall().anyTimes();
+
+    InjectorWriteContext writeContext = createMock(InjectorWriteContext.class);
+
+    replay(bindings, methodCallUtil, sourceWriteUtil, writeContext);
 
     GinjectorOutputter ginjectorOutputter = new GinjectorOutputter(TreeLogger.NULL,
-        collectorProvider, sourceWriteUtil, null, null, null, FakeGinjector.class, null, null);
-    ginjectorOutputter.outputStaticInjections(bindings, new StringBuilder());
+        collectorProvider, null, null, methodCallUtil, null, null, FakeGinjector.class, null, null,
+        null);
+    ginjectorOutputter.outputStaticInjections(bindings, new StringBuilder(), sourceWriteUtil,
+        writeContext);
 
-    verify(sourceWriteUtil);
+    verify(sourceWriteUtil, methodCallUtil, writeContext);
 
     assertEquals(superClass, methodCapture.getValue().getDeclaringType());
     assertEquals(superClass, fieldCapture.getValue().getDeclaringType());

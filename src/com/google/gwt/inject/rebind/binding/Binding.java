@@ -16,8 +16,8 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.TypeLiteral;
 
 import java.util.Collection;
@@ -29,16 +29,15 @@ import java.util.Collection;
 public interface Binding {
 
   /**
-   * Writes the method necessary to create the binding's type to the writer.
-   * A method with the {@code creatorMethodSignature} <b>must</b> be written,
-   * other methods are optional.
+   * Gets the methods that should be written to the injector to create the bound
+   * key.  A method with the given {@code creatorMethodSignature} <b>must</b> be
+   * returned; other methods are optional.  If additional methods are to be
+   * created, the given {@link NameGenerator} should be used to choose their
+   * names.
    *
-   * @param writer writer that methods are written to
-   * @param creatorMethodSignature signature of method that needs to be created
-   * @param nameGenerator {@link NameGenerator} to use
    * @throws NoSourceNameException if source name is not available for type
    */
-  void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
+  Iterable<InjectorMethod> getCreatorMethods(String creatorMethodSignature,
       NameGenerator nameGenerator) throws NoSourceNameException;
 
   /**

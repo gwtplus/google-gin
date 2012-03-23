@@ -19,15 +19,20 @@ import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
+import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.ProviderMethod;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * A binding that calls a provider method. This binding depends on
@@ -37,19 +42,19 @@ import java.util.Collection;
  */
 public class ProviderMethodBinding extends AbstractBinding implements Binding {
   private final GuiceUtil guiceUtil;
-  private final SourceWriteUtil sourceWriteUtil;
 
   private MethodLiteral<?, Method> providerMethod;
+  private final MethodCallUtil methodCallUtil;
   private final Class<?> moduleType;
   private final Key<?> targetKey;
   
-  ProviderMethodBinding(GuiceUtil guiceUtil, SourceWriteUtil sourceWriteUtil,
+  ProviderMethodBinding(GuiceUtil guiceUtil, MethodCallUtil methodCallUtil,
       ProviderMethod<?> providerMethod, Context context) {
     super(context);
 
     this.guiceUtil = guiceUtil;
-    this.sourceWriteUtil = sourceWriteUtil;
 
+    this.methodCallUtil = methodCallUtil;
     this.moduleType = providerMethod.getInstance().getClass();
     Method method = providerMethod.getMethod();
     this.providerMethod = MethodLiteral.get(method, TypeLiteral.get(method.getDeclaringClass()));
@@ -60,13 +65,22 @@ public class ProviderMethodBinding extends AbstractBinding implements Binding {
   // every provider method invocation. Instead we should likely create just a
   // single instance of the module, invoke it repeatedly and share it between
   // provider methods.
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
+  public List<InjectorMethod> getCreatorMethods(String creatorMethodSignature,
       NameGenerator nameGenerator) throws NoSourceNameException {
+    List<InjectorMethod> methods = new ArrayList<InjectorMethod>();
+
     String moduleSourceName = ReflectUtil.getSourceName(moduleType);
     String createModule = "new " + moduleSourceName + "()";
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
-        "return " + sourceWriteUtil.createMethodCallWithInjection(writer, providerMethod,
-            createModule, nameGenerator));
+
+    SourceSnippet creatorMethodBody = new SourceSnippetBuilder()
+        .append("return ")
+        .append(methodCallUtil.createMethodCallWithInjection(providerMethod, createModule,
+            nameGenerator, methods))
+        .build();
+
+    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, creatorMethodBody));
+
+    return methods;
   }
 
   public Collection<Dependency> getDependencies() {

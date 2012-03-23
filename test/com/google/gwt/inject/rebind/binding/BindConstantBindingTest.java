@@ -19,6 +19,7 @@ import static org.easymock.classextension.EasyMock.createMock;
 import static org.easymock.classextension.EasyMock.replay;
 import static org.easymock.classextension.EasyMock.verify;
 
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
@@ -33,16 +34,12 @@ public class BindConstantBindingTest extends TestCase {
 
   public void testEnum() {
     Key<Color> colorKey = Key.get(Color.class);
-    SourceWriteUtil utilMock = createMock(SourceWriteUtil.class);
-    SourceWriter writerMock = createMock(SourceWriter.class);
+    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
 
-    String signature = "";
-    utilMock.writeMethod(writerMock, signature,
-        "return com.google.gwt.inject.rebind.binding.Color.Green;");
-    replay(utilMock);
+    replay(writeContextMock);
 
     BindConstantBinding<Color> binding =
-        new BindConstantBinding<Color>(utilMock, colorKey, Color.Green, CONTEXT);
+        new BindConstantBinding<Color>(colorKey, Color.Green, CONTEXT);
 
     assertEquals(1, binding.getDependencies().size());
     // This doesn't actually check that the source is passed along, due to
@@ -50,60 +47,57 @@ public class BindConstantBindingTest extends TestCase {
     assertTrue(binding.getDependencies().contains(
         new Dependency(Dependency.GINJECTOR, colorKey, SOURCE)));
 
-    binding.writeCreatorMethods(writerMock, signature, null);
+    StringBuilder methodBody = new StringBuilder();
+    binding.appendCreatorMethodBody(methodBody, writeContextMock);
+    assertEquals("return com.google.gwt.inject.rebind.binding.Color.Green;", methodBody.toString());
 
-    verify(utilMock);
+    verify(writeContextMock);
   }
 
   public void testInnerEnum() {
     Key<Font> fontKey = Key.get(Font.class);
-    SourceWriteUtil utilMock = createMock(SourceWriteUtil.class);
-    SourceWriter writerMock = createMock(SourceWriter.class);
+    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
 
-    String signature = "";
-    utilMock.writeMethod(writerMock, signature,
-        "return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Verdana;");
-    replay(utilMock);
+    replay(writeContextMock);
 
     BindConstantBinding<Font> binding =
-        new BindConstantBinding<Font>(utilMock, fontKey, Font.Verdana, CONTEXT);
+        new BindConstantBinding<Font>(fontKey, Font.Verdana, CONTEXT);
 
-    binding.writeCreatorMethods(writerMock, signature, null);
+    StringBuilder methodBody = new StringBuilder();
+    binding.appendCreatorMethodBody(methodBody, writeContextMock);
+    assertEquals(
+        "return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Verdana;",
+        methodBody.toString());
 
-    verify(utilMock);
+    verify(writeContextMock);
   }
 
   public void testInnerEnumWithCustomImplementation() {
     Key<Font> fontKey = Key.get(Font.class);
-    SourceWriteUtil utilMock = createMock(SourceWriteUtil.class);
-    SourceWriter writerMock = createMock(SourceWriter.class);
+    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
 
-    String signature = "";
-    utilMock.writeMethod(writerMock, signature,
-        "return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Arial;");
-    replay(utilMock);
+    replay(writeContextMock);
 
     BindConstantBinding<Font> binding =
-        new BindConstantBinding<Font>(utilMock, fontKey, Font.Arial, CONTEXT);
+        new BindConstantBinding<Font>(fontKey, Font.Arial, CONTEXT);
 
-    binding.writeCreatorMethods(writerMock, signature, null);
-
-    verify(utilMock);
+    StringBuilder methodBody = new StringBuilder();
+    binding.appendCreatorMethodBody(methodBody, writeContextMock);
+    assertEquals("return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Arial;",
+        methodBody.toString());
+    verify(writeContextMock);
   }
 
   public void testCharacter() {
     Key<Character> charKey = Key.get(Character.class);
-    SourceWriteUtil utilMock = createMock(SourceWriteUtil.class);
-    SourceWriter writerMock = createMock(SourceWriter.class);
+    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
 
     char value = '\u1234';
-    String signature = "";
 
-    utilMock.writeMethod(writerMock, signature, "return '" + value + "';");
-    replay(utilMock);
+    replay(writeContextMock);
 
     BindConstantBinding<Character> binding =
-        new BindConstantBinding<Character>(utilMock, charKey, value, CONTEXT);
+        new BindConstantBinding<Character>(charKey, value, CONTEXT);
 
     assertEquals(1, binding.getDependencies().size());
     // This doesn't actually check that the source is passed along, due to
@@ -111,24 +105,23 @@ public class BindConstantBindingTest extends TestCase {
     assertTrue(binding.getDependencies().contains(
         new Dependency(Dependency.GINJECTOR, charKey, SOURCE)));
 
-    binding.writeCreatorMethods(writerMock, signature, null);
+    StringBuilder methodBody = new StringBuilder();
+    binding.appendCreatorMethodBody(methodBody, writeContextMock);
+    assertEquals("return '" + value + "';", methodBody.toString());
 
-    verify(utilMock);
+    verify(writeContextMock);
   }
 
   public void testCharacterEscaped() {
     Key<Character> charKey = Key.get(Character.class);
-    SourceWriteUtil utilMock = createMock(SourceWriteUtil.class);
-    SourceWriter writerMock = createMock(SourceWriter.class);
+    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
 
     char value = '\'';
-    String signature = "";
 
-    utilMock.writeMethod(writerMock, signature, "return '\\'';");
-    replay(utilMock);
+    replay(writeContextMock);
 
     BindConstantBinding<Character> binding =
-        new BindConstantBinding<Character>(utilMock, charKey, value, CONTEXT);
+        new BindConstantBinding<Character>(charKey, value, CONTEXT);
 
     assertEquals(1, binding.getDependencies().size());
     // This doesn't actually check that the source is passed along, due to
@@ -136,9 +129,11 @@ public class BindConstantBindingTest extends TestCase {
     assertTrue(binding.getDependencies().contains(
         new Dependency(Dependency.GINJECTOR, charKey, SOURCE)));
 
-    binding.writeCreatorMethods(writerMock, signature, null);
+    StringBuilder methodBody = new StringBuilder();
+    binding.appendCreatorMethodBody(methodBody, writeContextMock);
+    assertEquals("return '\\'';", methodBody.toString());
 
-    verify(utilMock);
+    verify(writeContextMock);
   }
 
   public enum Font {

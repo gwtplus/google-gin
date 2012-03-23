@@ -21,53 +21,57 @@ import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
  * Abstract binder that takes a type and performs the required key analysis and
- * method injection.  Calls {@link #appendCreationStatement} on subclass to
+ * method injection.  Calls {@link #getCreationStatement} on subclass to
  * retrieve the actual object creation statement (e.g.
  * {@code new MyObject();}).
  */
 abstract class CreatorBinding extends AbstractBinding implements Binding {
 
-  private final SourceWriteUtil sourceWriteUtil;
   private final GuiceUtil guiceUtil;
   private final Set<Dependency> dependencies = new LinkedHashSet<Dependency>();
   private final TypeLiteral<?> type;
 
-  protected CreatorBinding(SourceWriteUtil sourceWriteUtil, GuiceUtil guiceUtil,
-        TypeLiteral<?> type, Context context) {
+  protected CreatorBinding(GuiceUtil guiceUtil, TypeLiteral<?> type, Context context) {
     super(context);
 
-    this.sourceWriteUtil = sourceWriteUtil;
     this.guiceUtil = guiceUtil;
 
     this.type = Preconditions.checkNotNull(type);
     dependencies.addAll(guiceUtil.getMemberInjectionDependencies(Key.get(type), type));
   }
 
-  public final void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature,
+  public final Iterable<InjectorMethod> getCreatorMethods(String creatorMethodSignature,
       NameGenerator nameGenerator) throws NoSourceNameException {
-    String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(type);
+    List<InjectorMethod> methods = new ArrayList<InjectorMethod>();
 
-    StringBuilder sb = new StringBuilder();
-    appendCreationStatement(writer, sb, nameGenerator);
-    sb.append("\n");
-    sb.append(memberInjectMethodName).append("(result);\n");
+    SourceSnippet creatorMethod = new SourceSnippetBuilder()
+        .append(getCreationStatement(methods, nameGenerator))
+        .append("\n")
+        .append(SourceSnippets.callMemberInject(type, "result"))
+        .append("\n")
+        .append("return result;")
+        .build();
 
-    sb.append("return result;");
+    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, creatorMethod));
 
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature, sb.toString());
+    return Collections.unmodifiableList(methods);
   }
 
   public Collection<Dependency> getDependencies() {
@@ -78,7 +82,12 @@ abstract class CreatorBinding extends AbstractBinding implements Binding {
     return type;
   }
 
-  protected abstract void appendCreationStatement(SourceWriter sourceWriter, StringBuilder sb,
+  /**
+   * Gets a {@link SourceSnippet} that creates the bound value and stores it in
+   * a new local variable named "result", and creates any auxiliary methods
+   * required by the snippet.
+   */
+  protected abstract SourceSnippet getCreationStatement(List<InjectorMethod> methodsOutput,
       NameGenerator nameGenerator) throws NoSourceNameException;
 
   protected String getTypeName() throws NoSourceNameException {

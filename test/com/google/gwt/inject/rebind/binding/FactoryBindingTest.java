@@ -34,8 +34,8 @@ public class FactoryBindingTest extends TestCase {
   public void testTooManyParams() {
 
     try {
-      new FactoryBinding(null, Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
-          Key.get(BrokenBeetleFactory.class), CONTEXT);
+      new FactoryBinding(Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
+          Key.get(BrokenBeetleFactory.class), CONTEXT, null);
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("no constructors"));
@@ -45,8 +45,8 @@ public class FactoryBindingTest extends TestCase {
   public void testMismatchingParams() {
 
     try {
-      new FactoryBinding(null, Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
-          Key.get(BrokenGolfFactory.class), CONTEXT);
+      new FactoryBinding(Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
+          Key.get(BrokenGolfFactory.class), CONTEXT, null);
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("has @AssistedInject constructors"));

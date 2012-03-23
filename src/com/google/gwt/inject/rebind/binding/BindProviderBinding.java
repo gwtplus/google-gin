@@ -16,9 +16,7 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.dev.util.Preconditions;
-import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
+import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.inject.Key;
 
 import javax.inject.Provider;
@@ -29,25 +27,20 @@ import java.util.Collection;
 /**
  * A binding to call the requested {@link com.google.inject.Provider}.
  */
-public class BindProviderBinding extends AbstractBinding implements Binding {
+public class BindProviderBinding extends AbstractSingleMethodBinding implements Binding {
 
-  private final SourceWriteUtil sourceWriteUtil;
   private final Key<? extends Provider<?>> providerKey;
   private final Key<?> sourceKey;
 
-  BindProviderBinding(SourceWriteUtil sourceWriteUtil, Key<? extends Provider<?>> providerKey,
-      Key<?> sourceKey, Context context) {
+  BindProviderBinding(Key<? extends Provider<?>> providerKey, Key<?> sourceKey, Context context) {
     super(context);
 
-    this.sourceWriteUtil = sourceWriteUtil;
     this.providerKey = Preconditions.checkNotNull(providerKey);
     this.sourceKey = Preconditions.checkNotNull(sourceKey);
   }
 
-  public void writeCreatorMethods(SourceWriter writer, String creatorMethodSignature, 
-      NameGenerator nameGenerator) {
-    sourceWriteUtil.writeMethod(writer, creatorMethodSignature,
-        "return " + nameGenerator.getGetterMethodName(providerKey) + "().get();");
+  public void appendCreatorMethodBody(StringBuilder builder, InjectorWriteContext writeContext) {
+    builder.append("return ").append(writeContext.callGetter(providerKey)).append(".get();");
   }
 
   public Collection<Dependency> getDependencies() {
