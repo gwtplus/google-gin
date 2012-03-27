@@ -35,14 +35,17 @@ public class ImplicitProviderBinding extends AbstractSingleMethodBinding impleme
   private final Key<?> targetKey;
   private final Key<?> providerKey;
 
-  ImplicitProviderBinding(Key<?> providerKey) {
-    super(Context.format("Implicit provider for %s", providerKey));
+  private ImplicitProviderBinding(Key<?> providerKey, Key<?> targetKey) {
+    super(Context.format("Implicit provider for %s", providerKey), targetKey);
+
 
     this.providerKey = Preconditions.checkNotNull(providerKey);
     this.providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
+    this.targetKey = Preconditions.checkNotNull(targetKey);
+  }
 
-    // Pass any binding annotation on the Provider to the thing we create
-    this.targetKey = ReflectUtil.getProvidedKey(providerKey);
+  ImplicitProviderBinding(Key<?> providerKey) {
+    this(providerKey, ReflectUtil.getProvidedKey(providerKey));
   }
 
   public void appendCreatorMethodBody(StringBuilder builder, InjectorWriteContext writeContext)

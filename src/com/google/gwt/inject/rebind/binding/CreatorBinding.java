@@ -49,7 +49,7 @@ abstract class CreatorBinding extends AbstractBinding implements Binding {
   private final TypeLiteral<?> type;
 
   protected CreatorBinding(GuiceUtil guiceUtil, TypeLiteral<?> type, Context context) {
-    super(context);
+    super(context, type);
 
     this.guiceUtil = guiceUtil;
 
@@ -69,7 +69,8 @@ abstract class CreatorBinding extends AbstractBinding implements Binding {
         .append("return result;")
         .build();
 
-    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, creatorMethod));
+    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, getGetterMethodPackage(),
+        creatorMethod));
 
     return Collections.unmodifiableList(methods);
   }

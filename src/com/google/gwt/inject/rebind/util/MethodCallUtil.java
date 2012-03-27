@@ -107,25 +107,29 @@ public class MethodCallUtil {
       List<InjectorMethod> methodsOutput) throws NoSourceNameException {
 
     boolean hasInvokee = invokeeName != null;
-    Class<?> methodDeclaringType = method.getRawDeclaringType();
-    boolean isPublic = method.isPublic() && ReflectUtil.isPublic(method.getDeclaringType());
+    boolean useNativeMethod = method.isPrivate() ||
+        ReflectUtil.isPrivate(method.getDeclaringType());
     boolean isThrowing = hasCheckedExceptions(method);
 
     // Determine method signature parts.
-    String invokeeTypeName = ReflectUtil.getSourceName(methodDeclaringType);
+    String invokeeTypeName = ReflectUtil.getSourceName(method.getRawDeclaringType());
     int invokerParamCount = method.getParameterTypes().size() + (hasInvokee ? 1 : 0);
     TypeLiteral<?> returnType = method.getReturnType();
     String returnTypeString = ReflectUtil.getSourceName(returnType);
     boolean returning = !returnType.getRawType().equals(Void.TYPE);
 
     String invokerMethodName = getInvokerMethodName(method, nameGenerator);
+    // The invoker method is placed in the fragment of the package that declares
+    // the method, so it has access to the same package-private types as the
+    // method declaration.
+    String invokerPackageName = ReflectUtil.getUserPackageName(method.getDeclaringType());
 
-    methodsOutput.add(createInvoker(invokeeName, invokeeTypeName, hasInvokee, !isPublic,
-        isThrowing, invokerMethodName, invokerParamCount, method, returnTypeString, returning,
-        isLongAccess(method)));
+    methodsOutput.add(createInvoker(invokeeName, invokeeTypeName, hasInvokee, useNativeMethod,
+        isThrowing, invokerMethodName, invokerPackageName, invokerParamCount, method,
+        returnTypeString, returning, isLongAccess(method)));
 
-    return new InvokerCall(hasInvokee, invokeeName, invokerMethodName, invokerParamCount,
-        method, parameterNames);
+    return new InvokerCall(hasInvokee, invokeeName, invokerMethodName, invokerPackageName,
+        invokerParamCount, method, parameterNames);
   }
 
   /**
@@ -144,15 +148,18 @@ public class MethodCallUtil {
     private final boolean hasInvokee;
     private final String invokeeName;
     private final String invokerMethodName;
+    private final String invokerPackageName;
     private final int invokerParamCount;
     private final MethodLiteral<?, ?> method;
     private final String[] parameterNames;
 
     public InvokerCall(boolean hasInvokee, String invokeeName, String invokerMethodName,
-        int invokerParamCount, MethodLiteral<?, ?> method, String[] parameterNames) {
+        String invokerPackageName, int invokerParamCount, MethodLiteral<?, ?> method,
+        String[] parameterNames) {
       this.hasInvokee = hasInvokee;
       this.invokeeName = invokeeName;
       this.invokerMethodName = invokerMethodName;
+      this.invokerPackageName = invokerPackageName;
       this.invokerParamCount = invokerParamCount;
       this.method = method;
       this.parameterNames = parameterNames;
@@ -179,7 +186,8 @@ public class MethodCallUtil {
         paramCount++;
       }
 
-      return invokerMethodName + "(" + join(", ", invokerCallParams) + ");";
+      return writeContext.callMethod(invokerMethodName, invokerPackageName, invokerCallParams)
+          + ";";
     }
   }
 
@@ -188,8 +196,9 @@ public class MethodCallUtil {
    */
   private InjectorMethod createInvoker(String invokeeName, String invokeeTypeName,
       boolean hasInvokee, boolean isNative, boolean isThrowing, String invokerMethodName,
-      int invokerParamCount, MethodLiteral<?, ?> method, String returnTypeString,
-      boolean returning, boolean isLongAccess) throws NoSourceNameException {
+      String invokerPackageName, int invokerParamCount, MethodLiteral<?, ?> method,
+      String returnTypeString, boolean returning, boolean isLongAccess)
+      throws NoSourceNameException {
 
     List<String> invokerSignatureParams = new ArrayList<String>(invokerParamCount);
 
@@ -214,12 +223,12 @@ public class MethodCallUtil {
 
     String annotation = isLongAccess ? "@com.google.gwt.core.client.UnsafeNativeLong " : "";
 
-    String invokerSignature = annotation + "private " + (isNative ? "native " : "")
+    String invokerSignature = annotation + "public " + (isNative ? "native " : "")
         + returnTypeString + " " + invokerMethodName + "(" + join(", ", invokerSignatureParams)
         + ")";
 
-    return new InvokerMethod(hasInvokee, invokeeCallParams, invokeeTypeName, invokerSignature,
-        isNative, isThrowing, method, returning, returnTypeString);
+    return new InvokerMethod(hasInvokee, invokeeCallParams, invokeeTypeName, invokerPackageName,
+        invokerSignature, isNative, isThrowing, method, returning, returnTypeString);
   }
 
   private static final class InvokerMethod extends AbstractInjectorMethod {
@@ -232,9 +241,9 @@ public class MethodCallUtil {
     private final String returnTypeString;
 
     public InvokerMethod(boolean hasInvokee, List<String> invokeeCallParams, String invokeeTypeName,
-                         String invokerSignature, boolean isNative, boolean isThrowing,
-                         MethodLiteral<?, ?> method, boolean returning, String returnTypeString) {
-      super(isNative, invokerSignature);
+        String invokerPackageName, String invokerSignature, boolean isNative, boolean isThrowing,
+        MethodLiteral<?, ?> method, boolean returning, String returnTypeString) {
+      super(isNative, invokerSignature, invokerPackageName);
 
       this.hasInvokee = hasInvokee;
       this.invokeeCallParams = invokeeCallParams;

@@ -50,7 +50,7 @@ public class ProviderMethodBinding extends AbstractBinding implements Binding {
   
   ProviderMethodBinding(GuiceUtil guiceUtil, MethodCallUtil methodCallUtil,
       ProviderMethod<?> providerMethod, Context context) {
-    super(context);
+    super(context, TypeLiteral.get(providerMethod.getMethod().getDeclaringClass()));
 
     this.guiceUtil = guiceUtil;
 
@@ -78,7 +78,8 @@ public class ProviderMethodBinding extends AbstractBinding implements Binding {
             nameGenerator, methods))
         .build();
 
-    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, creatorMethodBody));
+    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, getGetterMethodPackage(),
+        creatorMethodBody));
 
     return methods;
   }

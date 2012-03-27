@@ -15,6 +15,8 @@
  */
 package com.google.gwt.inject.rebind.util;
 
+import com.google.gwt.dev.util.Preconditions;
+import com.google.gwt.inject.rebind.output.FragmentPackageName;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
@@ -64,6 +66,27 @@ public class NameGenerator {
   private final Set<String> methodNames = new LinkedHashSet<String>();
 
   /**
+   * Returns the name of an assisted injection helper method.
+   */
+  public String getAssistedInjectMethodName(Key<?> factoryKey, String methodName) {
+    return mangle("assistedInject_" + methodName, factoryKey);
+  }
+
+  /**
+   * Returns the name of a getter for a child injector.
+   */
+  public String getChildInjectorGetterMethodName(String childInjectorClassName) {
+    return convertToValidMemberName("getChild_" + childInjectorClassName);
+  }
+
+  /**
+   * Returnst he name of a getter for an injector fragment.
+   */
+  public String getFragmentGetterMethodName(FragmentPackageName fragmentPackageName) {
+    return "getFragment_" + fragmentPackageName.toString().replace(".", "_");
+  }
+
+  /**
    * Returns the key's getter method name.  The method with that name can be
    * called to retrieve an instance of the type described by the key.
    *
@@ -82,6 +105,54 @@ public class NameGenerator {
    */
   public String getCreatorMethodName(Key<?> key) {
     return mangle("create_", key);
+  }
+
+  /**
+   * Computes the name of a single fragment of a Ginjector.
+   *
+   * @param injectorClassName the simple name of the injector's class (not
+   *     including its package)
+   */
+  public String getFragmentClassName(String injectorClassName,
+      FragmentPackageName fragmentPackageName) {
+    // Sanity check.
+    Preconditions.checkArgument(!injectorClassName.contains("."),
+        "The injector class must be a simple name, but it was \"%s\"", injectorClassName);
+    // Relies on the fact that injector class names are globally unique, so we
+    // don't need to include the injector's package.
+    return injectorClassName + "_fragment_" + fragmentPackageName.toString().replace(".", "_");
+  }
+
+  /**
+   * Computes the canonical name (including package) of a single fragment of a
+   * Ginjector.
+   */
+  public String getFragmentCanonicalClassName(String injectorClassName,
+      FragmentPackageName fragmentPackageName) {
+    return fragmentPackageName + "." + getFragmentClassName(injectorClassName, fragmentPackageName);
+  }
+
+  /**
+   * Computes the field name of a single fragment of an injector.
+   */
+  public String getFragmentFieldName(FragmentPackageName fragmentPackageName) {
+    return convertToValidMemberName("fieldFragment_" + fragmentPackageName);
+  }
+
+  /**
+   * Computes the name of the field in which the Ginjector interface
+   * implementation is stored.
+   */
+  public String getGinjectorInterfaceFieldName() {
+    return "fieldGinjectorInterface";
+  }
+
+  /**
+   * Computes the name of the method used to retrieve the Ginjector interface
+   * implementation.
+   */
+  public String getGinjectorInterfaceGetterMethodName() {
+    return "getGinjectorInterface";
   }
 
   /**

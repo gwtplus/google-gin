@@ -81,7 +81,7 @@ public class GinjectorBindingsTest extends TestCase {
     methodCallUtil = control.createMock("methodCallUtil", MethodCallUtil.class);
 
     bindingFactory = new BindingFactoryImpl(
-        guiceUtil, DummyInjectorInterface.class, methodCallUtil);
+        errorManager, guiceUtil, DummyInjectorInterface.class, methodCallUtil);
   }
 
   /** Replay all mocks. */

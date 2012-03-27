@@ -54,13 +54,16 @@ public class AsyncProviderBinding extends AbstractSingleMethodBinding implements
   private final Key<?> providerKey;
   private final Key<?> targetKey;
 
-  AsyncProviderBinding(Key<?> providerKey) {
-    super(Context.format("Implicit injection of %s", providerKey));
+  private AsyncProviderBinding(Key<?> providerKey, Key<?> targetKey) {
+    super(Context.format("Implicit injection of %s", providerKey), targetKey);
 
     this.providerKey = Preconditions.checkNotNull(providerKey);
     providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
+    this.targetKey = targetKey;
+  }
 
-    targetKey = ReflectUtil.getProvidedKey(providerKey);
+  AsyncProviderBinding(Key<?> providerKey) {
+    this(providerKey, ReflectUtil.getProvidedKey(providerKey));
   }
 
   public void appendCreatorMethodBody(StringBuilder builder, InjectorWriteContext writeContext)

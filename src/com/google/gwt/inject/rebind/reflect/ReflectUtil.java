@@ -336,13 +336,6 @@ public class ReflectUtil {
   }
 
   /**
-   * Returns {@code true} if the passed type's visibility is {@code public}.
-   */
-  public static boolean isPublic(TypeLiteral<?> type) {
-    return isPublic(type.getRawType());
-  }
-
-  /**
    * Returns {@code true} if the passed type's visibility is {@code private}.
    */
   public static boolean isPrivate(Class<?> type) {
@@ -364,19 +357,78 @@ public class ReflectUtil {
   }
 
   /**
-   * Returns the passed method's signature with all types in source form.
-   *
-   * <p>If the method has parameters, makes up generic names for these in the
-   * signature.
-   *
-   * @param method method for which signature is created
-   * @return method's signature
-   * @see #getSourceName(Type)
-   * @throws NoSourceNameException if any type's source name cannot be
-   *    determined
+   * Builds the signature of a method with all types in source form.
    */
-  public static String getSignature(MethodLiteral<?, ?> method) throws NoSourceNameException {
-    return getSignature(method, getDefaultParameterNames(method.getParameterTypes().size()));
+  public static SignatureBuilder signatureBuilder(MethodLiteral<?, ?> method) {
+    return new SignatureBuilder(method);
+  }
+
+  /**
+   * Builder that produces the signature of a method.
+   */
+  public static class SignatureBuilder {
+    private final MethodLiteral<?, ?> method;
+
+    private String methodName;
+    private int modifiers;
+    private String[] parameterNames;
+
+    private SignatureBuilder(MethodLiteral<?, ?> method) {
+      this.method = method;
+
+      // Set up defaults:
+      this.methodName = method.getName();
+      this.modifiers = method.getModifiers();
+      this.parameterNames = getDefaultParameterNames(method.getParameterTypes().size());
+    }
+
+    /**
+     * Builds the method signature with all types in source form.
+     *
+     * @see #getSourceName(Type)
+     * @throws NoSourceNameException if any type's source name cannot be
+     *     determined.
+     */
+    public String build() throws NoSourceNameException {
+      return getSignature(method, parameterNames, methodName, modifiers);
+    }
+
+    /**
+     * Removes the abstract modifier from the current modifiers (either the last
+     * modifiers set by {@link #withModifiers}, or the modifiers of the method
+     * passed to {@link #signatureBuilder}).
+     */
+    public SignatureBuilder removeAbstractModifier() {
+      return withModifiers(modifiers & ~Modifier.ABSTRACT);
+    }
+
+    /**
+     * Sets the method name used in the signature.  If not set, defaults to the
+     * method's name.
+     */
+    public SignatureBuilder withMethodName(String methodName) {
+      this.methodName = methodName;
+      return this;
+    }
+
+    /**
+     * Sets the modifiers used in the method signature.  If not set, defaults to
+     * the method's modifiers.
+     */
+    public SignatureBuilder withModifiers(int modifiers) {
+      this.modifiers = modifiers;
+      return this;
+    }
+
+    /**
+     * Sets the names to use for the method's parameters.  The length of
+     * parameterNames must be the same as the method's parameter count.  If not
+     * set, default names are chosen.
+     */
+    public SignatureBuilder withParameterNames(String[] parameterNames) {
+      this.parameterNames = parameterNames;
+      return this;
+    }
   }
 
   /**
@@ -385,42 +437,7 @@ public class ReflectUtil {
    * @param method method for which signature is created
    * @param paramNames names to be used for the method's parameters. Length
    *    must be the same as method's parameter count
-   * @return method's signature
-   * @see #getSourceName(Type)
-   * @throws NoSourceNameException if any type's source name cannot be
-   *    determined
-   */
-  public static String getSignature(MethodLiteral<?, ?> method, String[] paramNames)
-      throws NoSourceNameException {
-    return getSignature(method, paramNames, method.getModifiers());
-  }
-
-  /**
-   * Returns the passed method's signature with all types in source form.
-   *
-   * <p>If the method has parameters, makes up generic names for these in the
-   * signature.
-   *
-   * @param method method for which signature is created
-   * @param overrideModifiers modifiers used instead of the method's original
-   *    modifiers, see also {@link Modifier}
-   * @return method's signature
-   * @see #getSourceName(Type)
-   * @throws NoSourceNameException if any type's source name cannot be
-   *    determined
-   */
-  public static String getSignature(MethodLiteral<?, ?> method, int overrideModifiers)
-      throws NoSourceNameException {
-    return getSignature(method, getDefaultParameterNames(method.getParameterTypes().size()),
-        overrideModifiers);
-  }
-
-  /**
-   * Returns the passed method's signature with all types in source form.
-   *
-   * @param method method for which signature is created
-   * @param paramNames names to be used for the method's parameters. Length
-   *    must be the same as method's parameter count
+   * @param overrideName name used instead of the method's name
    * @param overrideModifiers modifiers used instead of the method's original
    *    modifiers, see also {@link Modifier}
    * @return method's signature
@@ -429,8 +446,8 @@ public class ReflectUtil {
    *    determined
    */
   // TODO(schmitt): Print method and parameter annotations.
-  public static String getSignature(MethodLiteral<?, ?> method, String[] paramNames,
-      int overrideModifiers) throws NoSourceNameException {
+  private static String getSignature(MethodLiteral<?, ?> method, String[] paramNames,
+      String overrideName, int overrideModifiers) throws NoSourceNameException {
     if (paramNames.length != method.getParameterTypes().size()) {
       throw new IllegalArgumentException(
           String.format("Wrong number of parameters provided for method signature, "
@@ -452,7 +469,12 @@ public class ReflectUtil {
     }
 
     if (!method.isConstructor()) {
-      sb.append(getSourceName(method.getReturnType())).append(" ").append(method.getName());
+      sb.append(getSourceName(method.getReturnType())).append(" ");
+      if (overrideName != null) {
+        sb.append(overrideName);
+      } else {
+        sb.append(method.getName());
+      }
     } else {
       sb.append(getSourceName(method.getRawDeclaringType()));
     }

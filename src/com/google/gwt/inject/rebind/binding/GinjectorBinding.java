@@ -21,6 +21,7 @@ import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.inject.Inject;
 import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -42,14 +43,15 @@ public class GinjectorBinding extends AbstractSingleMethodBinding implements Bin
     // manually binds the ginjector, instead of relying on the double-binding
     // check to catch it.
     super(Context.format("Automatic binding for %s; you should not need to bind this manually.",
-        ginjectorInterface));
+        ginjectorInterface), TypeLiteral.get(ginjectorInterface));
 
     this.ginjectorInterface = ginjectorInterface;
   }
 
   public void appendCreatorMethodBody(StringBuilder builder,
       InjectorWriteContext injectorWriteContext) {
-    builder.append("return ").append(injectorWriteContext.getGinjectorInterface()).append(";");
+    builder.append("return ").append(injectorWriteContext.callGinjectorInterfaceGetter())
+        .append(";");
   }
 
   public Collection<Dependency> getDependencies() {

@@ -42,6 +42,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -94,6 +95,7 @@ public class FactoryBinding extends AbstractBinding implements Binding {
 
   private final List<AssistData> assistData = new ArrayList<AssistData>();
   private final Map<Key<?>, TypeLiteral<?>> collector;
+  private final Key<?> factoryKey;
   private final TypeLiteral<?> factoryType;
   private final Set<Dependency> dependencies = new LinkedHashSet<Dependency>();
 
@@ -107,9 +109,10 @@ public class FactoryBinding extends AbstractBinding implements Binding {
 
   FactoryBinding(Map<Key<?>, TypeLiteral<?>> collector, Key<?> factoryKey, Context context,
       MethodCallUtil methodCallUtil) {
-    super(context);
+    super(context, factoryKey);
 
     this.collector = Preconditions.checkNotNull(collector);
+    this.factoryKey = factoryKey;
     this.factoryType = factoryKey.getTypeLiteral();
     this.methodCallUtil = methodCallUtil;
 
@@ -131,28 +134,72 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     sb.append("return new ").append(factoryTypeName).append("() {");
 
     for (AssistData assisted : assistData) {
+      // While it might seem that we could just create the return type directly
+      // in the factory, that won't work.  The problem is that the return type
+      // might have to be created in a different package from the factory: for
+      // instance, it might inject a package-private object from its own
+      // package.
+      //
+      // So here's the strategy: we generate a separate injector method that,
+      // given the assisted parameters, creates the return value and performs
+      // member injection on it, named "assistedCreate_FACTORY_RETURNTYPE".
+      // Then we create a factory method that dispatches to that injector method
+      // (which, again, may be in some other injector fragment).
+
       String returnName = ReflectUtil.getSourceName(assisted.implementation);
 
-      SourceSnippet memberInjectCall =
-          SourceSnippets.callMemberInject(assisted.implementation, "result");
-      SourceSnippet methodCall = methodCallUtil.createMethodCallWithInjection(
-          assisted.constructor, null, assisted.parameterNames, nameGenerator, methods);
+      String signature = ReflectUtil.signatureBuilder(assisted.method)
+          .removeAbstractModifier()
+          .build();
 
-      String signature = ReflectUtil.getSignature(assisted.method,
-          ReflectUtil.nonAbstractModifiers(assisted.method));
+      SourceSnippet assistedCreateCall = callAssistedCreate(assisted, nameGenerator, methods);
 
       sb.append("\n\n    ").append(signature).append(" {")
-          .append("\n      ").append(returnName).append(" result = ").append(methodCall)
-          .append("\n      ").append(memberInjectCall)
-          .append("\n      ").append("return result;")
-          .append("\n    }"); // End method.
+         .append("\n      return ").append(assistedCreateCall).append(";")
+         .append("\n    }"); // End method.
     }
 
     sb.append("\n};"); // End factory implementation.
 
-    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, sb.build()));
+    String factoryPackage = getGetterMethodPackage();
+    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, factoryPackage, sb.build()));
 
     return Collections.unmodifiableCollection(methods);
+  }
+
+  private SourceSnippet callAssistedCreate(AssistData assisted, NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
+    String returnTypeName = ReflectUtil.getSourceName(assisted.implementation);
+    String packageName = ReflectUtil.getUserPackageName(assisted.implementation);
+    String factoryTypeName = ReflectUtil.getSourceName(factoryType);
+
+    String assistedInjectMethodName =
+        nameGenerator.getAssistedInjectMethodName(factoryKey, assisted.method.getName());
+    String assistedInjectSignature = ReflectUtil.signatureBuilder(assisted.method)
+        .withMethodName(assistedInjectMethodName)
+        .removeAbstractModifier()
+        .build();
+
+    SourceSnippet memberInjectCall =
+        SourceSnippets.callMemberInject(assisted.implementation, "result");
+    SourceSnippet methodCall = methodCallUtil.createMethodCallWithInjection(
+        assisted.constructor, null, assisted.parameterNames, nameGenerator, methodsOutput);
+
+    SourceSnippet assistedInjectMethodBody = new SourceSnippetBuilder()
+        .append(returnTypeName).append(" result = ").append(methodCall)
+        .append("\n").append(memberInjectCall)
+        .append("\nreturn result;")
+        .build();
+
+    methodsOutput.add(SourceSnippets.asMethod(false, assistedInjectSignature, packageName,
+        assistedInjectMethodBody));
+
+    List<String> parameterNames = new ArrayList<String>();
+    for (int i = 0; i < assisted.method.getParameterKeys().size(); ++i) {
+      parameterNames.add(ReflectUtil.formatParameterName(i));
+    }
+
+    return SourceSnippets.callMethod(assistedInjectMethodName, packageName, parameterNames);
   }
 
   public Collection<Dependency> getDependencies() {

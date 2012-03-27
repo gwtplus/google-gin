@@ -46,6 +46,19 @@ public interface Binding {
   Context getContext();
 
   /**
+   * Returns the package in which the getter for the bound key is created.  This
+   * is used by other bindings and by the top-level interface to determine which
+   * package this binding's method was written to.  Implementors may assume that
+   * all other bindings have been created and placed in their respective
+   * {@link GinjectorBindings} objects.
+   *
+   * <p>Typically this will be the package containing the type that is returned
+   * by the getter, but the only requirement is that it has to be a package
+   * where the return type is visible.
+   */
+  String getGetterMethodPackage();
+
+  /**
    * Returns the set of dependencies that this binding produces.  This contains edges coming into
    * the key that this type binds (from {@link Dependency#GINJECTOR}) as well as dependencies that
    * this binding needs.

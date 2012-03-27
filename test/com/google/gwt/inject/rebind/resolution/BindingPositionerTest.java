@@ -9,6 +9,7 @@ import static org.easymock.EasyMock.isA;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.dev.util.Preconditions;
+import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Context;
@@ -36,6 +37,8 @@ public class BindingPositionerTest extends TestCase {
 
   private IMocksControl control;
   
+  private ErrorManager errorManager;
+
   private GinjectorBindings root;
   private GinjectorBindings child;
   private GinjectorBindings grandchild;
@@ -47,6 +50,8 @@ public class BindingPositionerTest extends TestCase {
   protected void setUp() throws Exception {
     control = EasyMock.createControl();
         
+    errorManager = control.createMock("errorManager", ErrorManager.class);
+
     root = control.createMock("root", GinjectorBindings.class);
     child = control.createMock("child", GinjectorBindings.class);
     grandchild = control.createMock("grandchild", GinjectorBindings.class);
@@ -427,7 +432,8 @@ public class BindingPositionerTest extends TestCase {
           GinjectorBindings child = keyAndChild.getValue();
 
           expect(parent.getBinding(key))
-              .andReturn(new ExposedChildBinding(Key.get(Long.class), child, Context.forText("")))
+              .andReturn(new ExposedChildBinding(errorManager, Key.get(Long.class), child,
+                  Context.forText("")))
               .anyTimes();
         }
       }

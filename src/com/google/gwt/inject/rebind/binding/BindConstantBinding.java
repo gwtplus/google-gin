@@ -54,7 +54,7 @@ public class BindConstantBinding<T> extends AbstractSingleMethodBinding implemen
   }
 
   BindConstantBinding(Key<T> key, T instance, Context context) {
-    super(context);
+    super(context, key);
 
     this.key = Preconditions.checkNotNull(key);
     this.valueToOutput = getValueToOutput(key, Preconditions.checkNotNull(instance));

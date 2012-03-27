@@ -208,69 +208,82 @@ public class ReflectUtilTest extends TestCase {
     assertEquals("java.lang.String[]", ReflectUtil.getSourceName(String[].class));
   }
 
-  public void testGetSignature() throws NoSuchMethodException, NoSourceNameException {
+  public void testSignatureBuilder() throws NoSuchMethodException, NoSourceNameException {
     MethodLiteral<?, ?> method =
         getMethod(TypeLiteral.get(ReflectUtilTest.class), "simpleMethod");
-    assertEquals("private void simpleMethod()", ReflectUtil.getSignature(method));
+    assertEquals("private void simpleMethod()", ReflectUtil.signatureBuilder(method).build());
   }
 
-  public void testGetSignature_constructor() throws NoSuchMethodException, NoSourceNameException {
+  public void testSignatureBuilder_constructor()
+      throws NoSuchMethodException, NoSourceNameException {
+
     assertEquals("protected com.google.gwt.inject.rebind.reflect.ReflectUtilTest.ConstructorType()",
-        ReflectUtil.getSignature(getConstructor(TypeLiteral.get(ConstructorType.class))));
+        ReflectUtil.signatureBuilder(getConstructor(TypeLiteral.get(ConstructorType.class)))
+            .build());
   }
 
-  public void testGetSignature_parameters() throws NoSuchMethodException, NoSourceNameException {
+  public void testSignatureBuilder_parameters()
+      throws NoSuchMethodException, NoSourceNameException {
+
     MethodLiteral<?, ?> method =
         getMethod(TypeLiteral.get(ReflectUtilTest.class),
             "methodWithParameters", String.class, Integer.class);
     assertEquals("private void methodWithParameters(java.lang.String _0, java.lang.Integer _1)",
-        ReflectUtil.getSignature(method));
+        ReflectUtil.signatureBuilder(method).build());
   }
 
-  public void testGetSignature_overriddenModifiers()
+  public void testSignatureBuilder_overriddenModifiers()
       throws NoSuchMethodException, NoSourceNameException {
     MethodLiteral<?, ?> method =
         getMethod(TypeLiteral.get(ReflectUtilTest.class), "simpleMethod");
     int modifiers = method.getModifiers() & ~Modifier.PRIVATE | Modifier.ABSTRACT | Modifier.PUBLIC;
 
     assertEquals("public abstract void simpleMethod()",
-        ReflectUtil.getSignature(method, new String[0], modifiers));
+        ReflectUtil.signatureBuilder(method)
+            .withParameterNames(new String[0])
+            .withModifiers(modifiers)
+            .build());
   }
 
-  public void testGetSignature_typeParametrizedMethod()
+  public void testSignatureBuilder_typeParametrizedMethod()
       throws NoSuchMethodException, NoSourceNameException {
     MethodLiteral<?, ?> method =
         getMethod(TypeLiteral.get(ReflectUtilTest.class), "parametrizedMethod", Object.class);
     assertEquals(
         "private <T extends java.lang.CharSequence & java.util.Map, V> T parametrizedMethod(V _0)",
-        ReflectUtil.getSignature(method));
+        ReflectUtil.signatureBuilder(method).build());
   }
 
-  public void testGetSignature_paramNames() throws NoSuchMethodException, NoSourceNameException {
+  public void testSignatureBuilder_paramNames()
+      throws NoSuchMethodException, NoSourceNameException {
+
     MethodLiteral<?, ?> method =
         getMethod(TypeLiteral.get(ReflectUtilTest.class),
             "methodWithParameters", String.class, Integer.class);
     assertEquals("private void methodWithParameters(java.lang.String bar, java.lang.Integer foo)",
-        ReflectUtil.getSignature(method, new String[] { "bar", "foo" }));
+        ReflectUtil.signatureBuilder(method)
+            .withParameterNames(new String[] { "bar", "foo" })
+            .build());
 
     try {
-      ReflectUtil.getSignature(method, new String[] { "bar" });
+      ReflectUtil.signatureBuilder(method).withParameterNames(new String[] { "bar" }).build();
       fail("Expected IllegalArgumentException.");
     } catch (IllegalArgumentException e) {
       // Expected
     }
   }
 
-  public void testGetSignature_exceptions() throws NoSuchMethodException, NoSourceNameException {
+  public void testSignatureBuilder_exceptions()
+      throws NoSuchMethodException, NoSourceNameException {
     MethodLiteral<?, ?> method =
         getMethod(TypeLiteral.get(ReflectUtilTest.class), "throwingMethod");
     assertEquals(
         "private void throwingMethod() throws java.lang.IllegalArgumentException, "
             + "com.google.gwt.inject.rebind.reflect.ReflectUtilTest.ExampleException",
-        ReflectUtil.getSignature(method));
+        ReflectUtil.signatureBuilder(method).build());
   }
 
-  public void testGetSignature_parametrizedDeclaringType()
+  public void testSignatureBuilder_parametrizedDeclaringType()
       throws NoSuchMethodException, NoSourceNameException {
     TypeLiteral<ParametrizedMethods<CharSequence, ExampleException, String>> type =
         new TypeLiteral<ParametrizedMethods<CharSequence, ExampleException, String>>() {};
@@ -278,20 +291,20 @@ public class ReflectUtilTest extends TestCase {
     MethodLiteral<?, ?> methodWithParameters = getMethod(type, "methodWithParameters",
         Object.class, CharSequence.class);
     assertEquals("void methodWithParameters(java.lang.CharSequence _0, java.lang.String _1)",
-        ReflectUtil.getSignature(methodWithParameters));
+        ReflectUtil.signatureBuilder(methodWithParameters).build());
 
     MethodLiteral<?, ?> returningMethod = getMethod(type, "returningMethod");
     assertEquals("java.lang.CharSequence returningMethod()",
-        ReflectUtil.getSignature(returningMethod));
+        ReflectUtil.signatureBuilder(returningMethod).build());
 
     MethodLiteral<?, ?> throwingMethod = getMethod(type, "throwingMethod");
     assertEquals("void throwingMethod() "
         + "throws com.google.gwt.inject.rebind.reflect.ReflectUtilTest.ExampleException",
-        ReflectUtil.getSignature(throwingMethod));
+        ReflectUtil.signatureBuilder(throwingMethod).build());
 
     MethodLiteral<?, ?> parametrizedMethod = getMethod(type, "parametrizedMethod");
     assertEquals("<V extends T> V parametrizedMethod()",
-        ReflectUtil.getSignature(parametrizedMethod));
+        ReflectUtil.signatureBuilder(parametrizedMethod).build());
   }
 
   public void testGetTypeVariableDefinition() throws NoSourceNameException, NoSuchMethodException {

@@ -38,6 +38,18 @@ public final class SourceSnippets {
     };
   }
 
+  /**
+   * Create a snippet that invokes {@link InjectorWriteContext#callMethod}.
+   */
+  public static SourceSnippet callMethod(final String methodName, final String fragmentPackageName,
+      final Iterable<String> parameters) {
+    return new SourceSnippet() {
+      public String getSource(InjectorWriteContext writeContext) {
+        return writeContext.callMethod(methodName, fragmentPackageName, parameters);
+      }
+    };
+  }
+
   public static SourceSnippet forText(final String text) {
     return new SourceSnippet() {
       public String getSource(InjectorWriteContext writeContext) {
@@ -46,9 +58,9 @@ public final class SourceSnippets {
     };
   }
 
-  public static InjectorMethod asMethod(boolean isNative, String signature,
+  public static InjectorMethod asMethod(boolean isNative, String signature, String pkg,
       final SourceSnippet body) {
-    return new AbstractInjectorMethod(isNative, signature) {
+    return new AbstractInjectorMethod(isNative, signature, pkg) {
       public String getMethodBody(InjectorWriteContext writeContext) {
         return body.getSource(writeContext);
       }

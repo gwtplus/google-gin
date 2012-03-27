@@ -16,6 +16,7 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.dev.util.Preconditions;
+import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.NameGenerator;
@@ -33,14 +34,32 @@ import java.util.Collections;
  */
 public class ParentBinding extends AbstractSingleMethodBinding implements Binding {
 
+  private final ErrorManager errorManager;
   private final Key<?> key;
   private final GinjectorBindings parentBindings;
 
-  ParentBinding(Key<?> key, GinjectorBindings parentBindings, Context context) {
+  ParentBinding(ErrorManager errorManager, Key<?> key, GinjectorBindings parentBindings,
+      Context context) {
     super(context);
 
+    this.errorManager = Preconditions.checkNotNull(errorManager);
     this.key = Preconditions.checkNotNull(key);
     this.parentBindings = Preconditions.checkNotNull(parentBindings);
+  }
+
+  /**
+   * The getter must be placed in the same package as the parent getter, to ensure that its return
+   * type is visible.
+   */
+  public String getGetterMethodPackage() {
+    Binding parentBinding = parentBindings.getBinding(key);
+    if (parentBinding == null) {
+      // The parent binding should exist by the time this is called.
+      errorManager.logError("No parent binding found in %s for %s.", parentBindings, key);
+      return "";
+    } else {
+      return parentBinding.getGetterMethodPackage();
+    }
   }
   
   public GinjectorBindings getParentBindings() {

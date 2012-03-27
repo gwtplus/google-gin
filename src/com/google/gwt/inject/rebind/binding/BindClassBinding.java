@@ -31,7 +31,26 @@ public class BindClassBinding extends AbstractSingleMethodBinding implements Bin
   private final Key<?> boundClassKey;
 
   BindClassBinding(Key<?> boundClassKey, Key<?> sourceClassKey, Context context) {
-    super(context);
+    // In which package should the creator method for a bind class binding be
+    // placed, when the bound class key (the "interface type") and the source
+    // class key (the "implementation type") might be in different packages, and
+    // one or both might be package-private?
+    //
+    // The answer is that it's always right to use the source class key to
+    // choose the creator's package.  Consider these cases:
+    //
+    //  1) Both public: we can place the creator in any package.
+    //
+    //  2) boundClass private, sourceClass public: they must be in the same
+    //     package, since sourceClass implements boundClass.
+    //
+    //  3) boundClass public, sourceClass private: we can create an instance of
+    //     sourceClass only in its own package.
+    //
+    //  4) boundClass private, sourceClass private: again, they must be in the
+    //     same package (and we have to create an instance of sourceClass from
+    //     its own package).
+    super(context, sourceClassKey);
 
     this.boundClassKey = Preconditions.checkNotNull(boundClassKey);
     this.sourceClassKey = Preconditions.checkNotNull(sourceClassKey);

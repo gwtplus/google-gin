@@ -36,4 +36,7 @@ public interface InjectorMethod {
    * Returns the body of the method in the given context (e.g., "return this;")
    */
   String getMethodBody(InjectorWriteContext context) throws NoSourceNameException;
+
+  /** Get the name of the package in which this method should be created. */
+  String getPackageName();
 }

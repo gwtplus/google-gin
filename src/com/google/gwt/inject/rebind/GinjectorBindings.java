@@ -257,6 +257,10 @@ public class GinjectorBindings implements BindingIndex {
     return Collections.unmodifiableCollection(bindings.entrySet());
   }
 
+  public TypeLiteral<?> getGinjectorInterface() {
+    return ginjectorInterface;
+  }
+
   public Iterable<Class<?>> getStaticInjectionRequests() {
     return Collections.unmodifiableCollection(staticInjectionRequests);
   }
@@ -376,7 +380,7 @@ public class GinjectorBindings implements BindingIndex {
       return;
     }
 
-    if (!isClassAccessibleFromGinjector(key.getTypeLiteral())) {
+    if (!isClassAccessibleFromPackage(key.getTypeLiteral())) {
       errorManager.logError("Can not inject an instance of an inaccessible class: %s", key);
       return;
     }
@@ -424,14 +428,8 @@ public class GinjectorBindings implements BindingIndex {
     return boundLocallyInChildren.get(key);
   }
 
-  private boolean isClassAccessibleFromGinjector(TypeLiteral<?> type) {
-    if (ReflectUtil.isPublic(type)) {
-      return true;
-    }
-
-    Package classPackage = type.getRawType().getPackage();
-    Package ginjectorPackage = ginjectorInterface.getRawType().getPackage();
-    return classPackage == ginjectorPackage;
+  private boolean isClassAccessibleFromPackage(TypeLiteral<?> type) {
+    return !ReflectUtil.isPrivate(type);
   }
 
   void addStaticInjectionRequest(Class<?> type, Object source) {

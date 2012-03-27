@@ -42,6 +42,7 @@ import com.google.gwt.inject.client.misc.StaticInjectTest;
 import com.google.gwt.inject.client.nomodules.NoModulesTest;
 import com.google.gwt.inject.client.nonpublic.NonPublicTest;
 import com.google.gwt.inject.client.optional.OptionalInjectionTest;
+import com.google.gwt.inject.client.packageprivate.PackagePrivateTest;
 import com.google.gwt.inject.client.privatebasic.PrivateBasicTest;
 import com.google.gwt.inject.client.privatedependsonexposed.PrivateDependsOnExposedTest;
 import com.google.gwt.inject.client.privatedoublebinds.PrivateDoubleBindsTest;
@@ -99,6 +100,7 @@ public class GinClientTestSuite {
     suite.addTestSuite(BusTest.class);
     suite.addTestSuite(ConfigurationModulesTest.class);
     suite.addTestSuite(InstallDuplicateTest.class);
+    suite.addTestSuite(PackagePrivateTest.class);
     suite.addTestSuite(PrivateBasicTest.class);
     suite.addTestSuite(PrivateManyLevelTest.class);
     suite.addTestSuite(PrivateFactoryTest.class);

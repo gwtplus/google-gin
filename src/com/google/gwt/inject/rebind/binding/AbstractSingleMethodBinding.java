@@ -20,6 +20,8 @@ import com.google.gwt.inject.rebind.util.AbstractInjectorMethod;
 import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 
 import java.util.Collections;
 
@@ -27,8 +29,17 @@ import java.util.Collections;
  * Common base class for bindings that only output one non-native method.
  */
 abstract class AbstractSingleMethodBinding extends AbstractBinding {
+
   protected AbstractSingleMethodBinding(Context context) {
     super(context);
+  }
+
+  protected AbstractSingleMethodBinding(Context context, Key<?> keyForPackage) {
+    super(context, keyForPackage);
+  }
+
+  protected AbstractSingleMethodBinding(Context context, TypeLiteral<?> typeForPackage) {
+    super(context, typeForPackage);
   }
 
   /**
@@ -50,7 +61,7 @@ abstract class AbstractSingleMethodBinding extends AbstractBinding {
 
   private final class CreatorMethod extends AbstractInjectorMethod {
     CreatorMethod(String creatorMethodSignature) {
-      super(false, creatorMethodSignature);
+      super(false, creatorMethodSignature, getGetterMethodPackage());
     }
 
     @Override

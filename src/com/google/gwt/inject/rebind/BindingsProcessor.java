@@ -95,7 +95,7 @@ class BindingsProcessor {
   
   public void process() throws UnableToCompleteException {
     validateMethods();
-    rootGinjectorBindings.setModule(ginjectorInterface.getClass());
+    rootGinjectorBindings.setModule(ginjectorInterface.getRawType());
     rootGinjectorBindings.addUnresolvedEntriesForInjectorInterface();
     registerGinjectorBinding();
 

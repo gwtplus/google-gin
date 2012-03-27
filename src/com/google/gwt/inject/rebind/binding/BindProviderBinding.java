@@ -33,7 +33,16 @@ public class BindProviderBinding extends AbstractSingleMethodBinding implements 
   private final Key<?> sourceKey;
 
   BindProviderBinding(Key<? extends Provider<?>> providerKey, Key<?> sourceKey, Context context) {
-    super(context);
+    // In which package should we place the code to inject and use a
+    // user-supplied provider, given that the provider might be in a different
+    // package from the type it provides?
+    //
+    // This binding needs to be able to create and use a provider, which means
+    // that the creator method needs to go in the provider's package.  If the
+    // provided type (the source key) is in a different package, it has to be
+    // visible in the provider's package; otherwise, the provider couldn't
+    // return it from get().
+    super(context, providerKey);
 
     this.providerKey = Preconditions.checkNotNull(providerKey);
     this.sourceKey = Preconditions.checkNotNull(sourceKey);

@@ -21,10 +21,12 @@ package com.google.gwt.inject.rebind.util;
 public abstract class AbstractInjectorMethod implements InjectorMethod {
   private final boolean isNative;
   private final String methodSignature;
+  private final String packageName;
 
-  protected AbstractInjectorMethod(boolean isNative, String methodSignature) {
+  protected AbstractInjectorMethod(boolean isNative, String methodSignature, String packageName) {
     this.isNative = isNative;
     this.methodSignature = methodSignature;
+    this.packageName = packageName;
   }
 
   public boolean isNative() {
@@ -33,5 +35,9 @@ public abstract class AbstractInjectorMethod implements InjectorMethod {
 
   public String getMethodSignature() {
     return methodSignature;
+  }
+
+  public String getPackageName() {
+    return packageName;
   }
 }

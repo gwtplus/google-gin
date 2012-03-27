@@ -95,15 +95,19 @@ public class SourceWriteUtil {
       NameGenerator nameGenerator, List<InjectorMethod> methodsOutput)
       throws NoSourceNameException {
     final boolean hasInjectee = injecteeName != null;
-    Class<?> fieldDeclaringType = field.getRawDeclaringType();
-    final boolean isPublic = field.isPublic() && ReflectUtil.isPublic(field.getDeclaringType());
+    final boolean useNativeMethod = field.isPrivate()
+        || ReflectUtil.isPrivate(field.getDeclaringType());
 
     // Determine method signature parts.
-    final String injecteeTypeName = ReflectUtil.getSourceName(fieldDeclaringType);
+    final String injecteeTypeName = ReflectUtil.getSourceName(field.getRawDeclaringType());
     String fieldTypeName = ReflectUtil.getSourceName(field.getFieldType());
     String methodBaseName = nameGenerator.convertToValidMemberName(injecteeTypeName + "_"
         + field.getName() + "_fieldInjection");
     final String methodName = nameGenerator.createMethodName(methodBaseName);
+    // Field injections are performed in the package of the class declaring the
+    // field.  Any private types referenced by the injection must be visible
+    // from there.
+    String packageName = ReflectUtil.getUserPackageName(field.getDeclaringType());
 
     String signatureParams = fieldTypeName + " value";
     boolean isLongAcccess = field.getFieldType().getRawType().equals(Long.TYPE);
@@ -113,30 +117,27 @@ public class SourceWriteUtil {
     }
 
     // Compose method implementation and invocation.
-    String header;
-    if (isPublic) {
-      header = "private ";
+    String annotation;
+    if (isLongAcccess) {
+      annotation = "@com.google.gwt.core.client.UnsafeNativeLong ";
     } else {
-      // GWT JSNI to violate access restriction.
-      if (isLongAcccess) {
-        header = "@com.google.gwt.core.client.UnsafeNativeLong private native ";
-      } else {
-        header = "private native ";
-      }
+      annotation = "";
     }
-    String signature = header + "void " + methodName + "(" + signatureParams + ")";
+    String header = useNativeMethod ? "public native " : "public ";
+    String signature = annotation + header + "void " + methodName + "(" + signatureParams + ")";
 
-    InjectorMethod injectionMethod = new AbstractInjectorMethod(!isPublic, signature) {
-        public String getMethodBody(InjectorWriteContext writeContext)
-            throws NoSourceNameException {
-          if (isPublic) {
-            return (hasInjectee
-                ? "injectee." : injecteeTypeName + ".") + field.getName() + " = value;";
-          } else {
-            return (hasInjectee ? "injectee." : "") + getJsniSignature(field) + " = value;";
+    InjectorMethod injectionMethod =
+        new AbstractInjectorMethod(useNativeMethod, signature, packageName) {
+          public String getMethodBody(InjectorWriteContext writeContext)
+              throws NoSourceNameException {
+            if (!useNativeMethod) {
+              return (hasInjectee
+                  ? "injectee." : injecteeTypeName + ".") + field.getName() + " = value;";
+            } else {
+              return (hasInjectee ? "injectee." : "") + getJsniSignature(field) + " = value;";
+            }
           }
-        }
-      };
+        };
     methodsOutput.add(injectionMethod);
 
     return new SourceSnippet() {
@@ -281,6 +282,18 @@ public class SourceWriteUtil {
   }
 
   /**
+   * Writes the given method to the given source writer.
+   */
+  public void writeMethod(InjectorMethod method, SourceWriter writer,
+      InjectorWriteContext writeContext) throws NoSourceNameException {
+    if (method.isNative()) {
+      writeNativeMethod(writer, method.getMethodSignature(), method.getMethodBody(writeContext));
+    } else {
+      writeMethod(writer, method.getMethodSignature(), method.getMethodBody(writeContext));
+    }
+  }
+
+  /**
    * Writes the given methods to the given source writer.
    *
    * @param methods the methods to write
@@ -290,11 +303,7 @@ public class SourceWriteUtil {
   public void writeMethods(Iterable<InjectorMethod> methods, SourceWriter writer,
       InjectorWriteContext writeContext) throws NoSourceNameException {
     for (InjectorMethod method : methods) {
-      if (method.isNative()) {
-        writeNativeMethod(writer, method.getMethodSignature(), method.getMethodBody(writeContext));
-      } else {
-        writeMethod(writer, method.getMethodSignature(), method.getMethodBody(writeContext));
-      }
+      writeMethod(method, writer, writeContext);
     }
   }
 
@@ -311,7 +320,7 @@ public class SourceWriteUtil {
   public String createMemberInjection(TypeLiteral<?> type, NameGenerator nameGenerator,
       List<InjectorMethod> methodsOutput) throws NoSourceNameException {
     String memberInjectMethodName = nameGenerator.getMemberInjectMethodName(type);
-    String memberInjectMethodSignature = "private void " + memberInjectMethodName + "("
+    String memberInjectMethodSignature = "public void " + memberInjectMethodName + "("
         + ReflectUtil.getSourceName(type) + " injectee)";
 
     SourceSnippetBuilder sb = new SourceSnippetBuilder();
@@ -321,8 +330,10 @@ public class SourceWriteUtil {
     sb.append(createFieldInjections(getFieldsToInject(type), "injectee", nameGenerator,
         methodsOutput));
 
-    // Generate the top-level member inject method:
-    methodsOutput.add(SourceSnippets.asMethod(false, memberInjectMethodSignature, sb.build()));
+    // Generate the top-level member inject method in the package containing the
+    // type we're injecting:
+    methodsOutput.add(SourceSnippets.asMethod(false, memberInjectMethodSignature,
+        ReflectUtil.getUserPackageName(type), sb.build()));
 
     return memberInjectMethodName;
   }

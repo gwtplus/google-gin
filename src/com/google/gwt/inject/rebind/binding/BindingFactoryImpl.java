@@ -17,6 +17,7 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.GinjectorInterfaceType;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
@@ -37,15 +38,19 @@ import java.util.Map;
  */
 public class BindingFactoryImpl implements BindingFactory {
 
+  private final ErrorManager errorManager;
   private final GuiceUtil guiceUtil;
   private final Class<? extends Ginjector> ginjectorInterface;
   private final MethodCallUtil methodCallUtil;
 
   // Visible for testing.
   @Inject
-  public BindingFactoryImpl(GuiceUtil guiceUtil,
+  public BindingFactoryImpl(
+      ErrorManager errorManager,
+      GuiceUtil guiceUtil,
       @GinjectorInterfaceType Class<? extends Ginjector> ginjectorInterface,
       MethodCallUtil methodCallUtil) {
+    this.errorManager = errorManager;
     this.guiceUtil = guiceUtil;
     this.ginjectorInterface = ginjectorInterface;
     this.methodCallUtil = methodCallUtil;
@@ -81,7 +86,7 @@ public class BindingFactoryImpl implements BindingFactory {
   
   public ExposedChildBinding getExposedChildBinding(Key<?> key, GinjectorBindings childBindings,
       Context context) {
-    return new ExposedChildBinding(key, childBindings, context);
+    return new ExposedChildBinding(errorManager, key, childBindings, context);
   }
   
   public FactoryBinding getFactoryBinding(Map<Key<?>, TypeLiteral<?>> collector, Key<?> factoryKey,
@@ -99,7 +104,7 @@ public class BindingFactoryImpl implements BindingFactory {
   
   public ParentBinding getParentBinding(Key<?> key, GinjectorBindings parentBindings,
       Context context) {
-    return new ParentBinding(key, parentBindings, context);
+    return new ParentBinding(errorManager, key, parentBindings, context);
   }
   
   public ProviderMethodBinding getProviderMethodBinding(ProviderMethod<?> providerMethod,

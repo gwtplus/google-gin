@@ -56,8 +56,17 @@ public interface InjectorWriteContext {
   String callMemberInject(TypeLiteral<?> type, String input);
 
   /**
+   * Generates a Java expression that evaluates to an invocation of the named
+   * method on the given package fragment.
+   *
+   * <p>Used when generating an intermediate invoker method; see
+   * {@link MethodCallUtil#createMethodCallWithInjection}.
+   */
+  String callMethod(String methodName, String fragmentPackageName, Iterable<String> parameters);
+
+  /**
    * Generates a Java statement that evaluates to the implementation of the
    * current Ginjector interface.
    */
-  String getGinjectorInterface();
+  String callGinjectorInterfaceGetter();
 }

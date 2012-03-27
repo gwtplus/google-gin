@@ -16,6 +16,7 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.dev.util.Preconditions;
+import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.GinjectorNameGenerator;
 import com.google.gwt.inject.rebind.util.InjectorWriteContext;
@@ -32,14 +33,32 @@ import java.util.Collections;
  */
 public class ExposedChildBinding extends AbstractSingleMethodBinding implements Binding {
 
+  private final ErrorManager errorManager;
   private final Key<?> key;
   private final GinjectorBindings childBindings;
 
-  public ExposedChildBinding(Key<?> key, GinjectorBindings childBindings, Context context) {
-    super(context);
+  public ExposedChildBinding(ErrorManager errorManager, Key<?> key, GinjectorBindings childBindings,
+      Context context) {
+    super(context, key);
 
+    this.errorManager = Preconditions.checkNotNull(errorManager);
     this.key = Preconditions.checkNotNull(key);
     this.childBindings = Preconditions.checkNotNull(childBindings);
+  }
+
+  /**
+   * The getter must be placed in the same package as the child getter, to ensure that its return
+   * type is visible.
+   */
+  public String getGetterMethodPackage() {
+    Binding childBinding = childBindings.getBinding(key);
+    if (childBinding == null) {
+      // The child binding should exist before we try to expose it!
+      errorManager.logError("No child binding found in %s for %s.", childBindings, key);
+      return "";
+    } else {
+      return childBinding.getGetterMethodPackage();
+    }
   }
 
   public GinjectorBindings getChildBindings() {
