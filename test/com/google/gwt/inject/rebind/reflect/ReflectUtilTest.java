@@ -16,7 +16,6 @@
 
 package com.google.gwt.inject.rebind.reflect;
 
-import com.google.gwt.inject.rebind.GinjectorGenerator;
 import com.google.gwt.inject.rebind.reflect.subpackage.BogusTypeLiteralMaker;
 import com.google.inject.TypeLiteral;
 
@@ -26,6 +25,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
+
 
 public class ReflectUtilTest extends TestCase {
 
@@ -234,7 +234,7 @@ public class ReflectUtilTest extends TestCase {
     int modifiers = method.getModifiers() & ~Modifier.PRIVATE | Modifier.ABSTRACT | Modifier.PUBLIC;
 
     assertEquals("public abstract void simpleMethod()",
-        ReflectUtil.getSignature(method, new String[0], modifiers)); 
+        ReflectUtil.getSignature(method, new String[0], modifiers));
   }
 
   public void testGetSignature_typeParametrizedMethod()

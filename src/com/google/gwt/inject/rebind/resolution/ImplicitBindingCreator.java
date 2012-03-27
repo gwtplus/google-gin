@@ -287,4 +287,3 @@ public class ImplicitBindingCreator {
     ImplicitBindingCreator create(TreeLogger logger);
   }
 }
-

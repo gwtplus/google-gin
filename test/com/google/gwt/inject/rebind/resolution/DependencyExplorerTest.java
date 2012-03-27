@@ -16,8 +16,8 @@ import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCre
 
 import junit.framework.TestCase;
 
-import org.easymock.classextension.EasyMock;
-import org.easymock.classextension.IMocksControl;
+import org.easymock.EasyMock;
+import org.easymock.IMocksControl;
 
 import java.util.Collection;
 import java.util.Collections;

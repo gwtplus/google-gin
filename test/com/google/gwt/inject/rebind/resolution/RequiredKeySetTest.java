@@ -9,8 +9,8 @@ import com.google.gwt.inject.rebind.binding.Dependency;
 
 import junit.framework.TestCase;
 
-import org.easymock.classextension.EasyMock;
-import org.easymock.classextension.IMocksControl;
+import org.easymock.EasyMock;
+import org.easymock.IMocksControl;
 
 /**
  * Tests for {@link RequiredKeySet}.

@@ -11,10 +11,11 @@ import com.google.gwt.junit.client.GWTTestCase;
 // It's here for when we can detect such problems.
 public class PrivateDoubleBindsTest extends GWTTestCase {
 
+  /*
   public void testDoubleBound() throws Exception {
     MyGinjector ginjector = GWT.create(MyGinjector.class);
     fail("Should not compile at all");
-  }
+  } */
 
   @GinModules({BarModule.class})
   interface MyGinjector extends Ginjector {

@@ -18,7 +18,6 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.dev.javac.StandardGeneratorContext;
 import com.google.gwt.dev.javac.testing.GeneratorContextBuilder;
 import com.google.gwt.dev.javac.testing.JavaSource;
 import com.google.gwt.dev.util.log.PrintWriterTreeLogger;
@@ -27,6 +26,7 @@ import junit.framework.TestCase;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.HashSet;
+
 
 public class GinBridgeClassLoaderTest extends TestCase {
 

@@ -21,8 +21,8 @@ import static com.google.gwt.inject.rebind.resolution.TestUtils.foo;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.easymock.classextension.EasyMock.createControl;
-import static org.easymock.classextension.EasyMock.createNiceMock;
+import static org.easymock.EasyMock.createControl;
+import static org.easymock.EasyMock.createNiceMock;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.GinjectorBindings;
@@ -34,8 +34,8 @@ import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
 import com.google.inject.Key;
 import junit.framework.TestCase;
-import org.easymock.classextension.EasyMock;
-import org.easymock.classextension.IMocksControl;
+import org.easymock.EasyMock;
+import org.easymock.IMocksControl;
 
 import java.util.HashMap;
 import java.util.Map;

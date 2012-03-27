@@ -15,14 +15,14 @@
  */
 package com.google.gwt.inject.rebind;
 
-import static org.easymock.classextension.EasyMock.capture;
-import static org.easymock.classextension.EasyMock.createControl;
-import static org.easymock.classextension.EasyMock.createNiceControl;
-import static org.easymock.classextension.EasyMock.expect;
-import static org.easymock.classextension.EasyMock.expectLastCall;
-import static org.easymock.classextension.EasyMock.isNull;
-import static org.easymock.classextension.EasyMock.replay;
-import static org.easymock.classextension.EasyMock.verify;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.createControl;
+import static org.easymock.EasyMock.createNiceControl;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.isNull;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.client.Ginjector;

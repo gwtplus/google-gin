@@ -28,7 +28,7 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.easymock.classextension.EasyMock.createControl;
+import static org.easymock.EasyMock.createControl;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.inject.rebind.ErrorManager;
@@ -43,8 +43,8 @@ import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCre
 import com.google.inject.Key;
 import junit.framework.TestCase;
 import org.easymock.Capture;
-import org.easymock.classextension.EasyMock;
-import org.easymock.classextension.IMocksControl;
+import org.easymock.EasyMock;
+import org.easymock.IMocksControl;
 
 import java.util.ArrayList;
 import java.util.Arrays;

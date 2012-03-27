@@ -16,7 +16,7 @@
 
 package com.google.gwt.inject.rebind.resolution;
 
-import static org.easymock.classextension.EasyMock.expect;
+import static org.easymock.EasyMock.expect;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
@@ -26,8 +26,8 @@ import com.google.gwt.inject.rebind.resolution.ImplicitBindingCreator.BindingCre
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import junit.framework.TestCase;
-import org.easymock.classextension.EasyMock;
-import org.easymock.classextension.IMocksControl;
+import org.easymock.EasyMock;
+import org.easymock.IMocksControl;
 
 public class ImplicitBindingCreatorTest extends TestCase {
 
@@ -76,7 +76,7 @@ public class ImplicitBindingCreatorTest extends TestCase {
     assertEquals(callGwtDotCreateBinding, bindingCreator.create(Key.get(Interface.class)));
   }
 
-  public void testCreate_interface_noRebindRule() {
+  public void testCreate_interface_noRebindRule(){
     expect(generatorContext.checkRebindRuleAvailable(Interface.class.getCanonicalName()))
         .andStubReturn(false);
     replay();
@@ -114,7 +114,7 @@ public class ImplicitBindingCreatorTest extends TestCase {
     assertEquals(callGwtDotCreateBinding, bindingCreator.create(Key.get(NoConstructor.class)));
   }
 
-  public void testCreate_concrete_noNullaryConstructor_noRebindRule() {
+  public void testCreate_concrete_noNullaryConstructor_noRebindRule(){
     expect(generatorContext.checkRebindRuleAvailable(NoNullaryConstructor.class.getCanonicalName()))
         .andStubReturn(false);
     replay();

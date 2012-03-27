@@ -55,8 +55,8 @@
     <pathelement location="${basedir}/lib/test/easymock.jar"/>
   </path>
 
-  <path id="library.easymockclassextension.classpath">
-    <pathelement location="${basedir}/lib/test/easymockclassextension.jar"/>
+  <path id="library.objenesis.classpath">
+    <pathelement location="${basedir}/lib/test/objenesis.jar"/>
   </path>
 
   <path id="library.cglib.classpath">
@@ -99,7 +99,7 @@
     <path refid="gin.classpath"/>
     <path refid="library.junit.classpath"/>
     <path refid="library.easymock.classpath"/>
-    <path refid="library.easymockclassextension.classpath"/>
+    <path refid="library.objenesis.classpath"/>
     <path refid="library.cglib.classpath"/>
   </path>
 
