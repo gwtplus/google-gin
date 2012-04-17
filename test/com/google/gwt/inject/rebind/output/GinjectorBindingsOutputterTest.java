@@ -145,7 +145,7 @@ public class GinjectorBindingsOutputterTest extends TestCase {
 
     GinjectorBindingsOutputter outputter = new GinjectorBindingsOutputter(ctx,
         null, fragmentOutputterFactory, new TestFragmentPackageNameFactory(), null, TreeLogger.NULL,
-        methodCallUtil, null);
+        methodCallUtil, null, null);
     GinjectorBindingsOutputter.FragmentMap fragments =
         new GinjectorBindingsOutputter.FragmentMap(bindings, ginjectorPackageName,
             ginjectorClassName, fragmentOutputterFactory);

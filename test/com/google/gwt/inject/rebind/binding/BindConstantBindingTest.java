@@ -20,10 +20,9 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 
 import com.google.gwt.inject.rebind.util.InjectorWriteContext;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Key;
 import junit.framework.TestCase;
+
 
 public class BindConstantBindingTest extends TestCase {
 

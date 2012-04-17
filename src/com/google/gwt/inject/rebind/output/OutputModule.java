@@ -17,6 +17,7 @@ package com.google.gwt.inject.rebind.output;
 
 import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.inject.PrivateModule;
+import com.google.inject.Singleton;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
 /**
@@ -34,6 +35,7 @@ public class OutputModule extends PrivateModule {
         .build(GinjectorFragmentOutputter.Factory.class));
 
     bind(GinjectorImplOutputter.class);
+    bind(ReachabilityAnalyzer.class).in(Singleton.class);
 
     expose(FragmentPackageName.Factory.class);
     expose(GinjectorImplOutputter.class);

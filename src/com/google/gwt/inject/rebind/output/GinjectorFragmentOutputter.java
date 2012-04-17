@@ -18,7 +18,6 @@ package com.google.gwt.inject.rebind.output;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinScope;
 import com.google.gwt.inject.rebind.GinjectorBindings;
@@ -34,11 +33,9 @@ import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
-import com.google.inject.Singleton;
 import com.google.inject.assistedinject.Assisted;
 
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 
 /**
  * Writes the definition of a single fragment of the Ginjector.  A Ginjector
@@ -100,7 +97,7 @@ class GinjectorFragmentOutputter {
     this.nameGenerator = bindings.getNameGenerator();
 
     fragmentClassName = nameGenerator.getFragmentClassName(ginjectorClassName, fragmentPackageName);
-    if(fragmentClassName.contains(".")) {
+    if (fragmentClassName.contains(".")) {
       errorManager.logError("Internal error: the fragment class name \"%s\" contains a full stop.",
           fragmentClassName);
     }
@@ -247,7 +244,7 @@ class GinjectorFragmentOutputter {
 
   private void appendBindingContextCommentToMethod(Context bindingContext,
       StringBuilder methodBody) {
-    for(String line : bindingContext.toString().split("\n")) {
+    for (String line : bindingContext.toString().split("\n")) {
       methodBody.append("//   ").append(line).append("\n");
     }
   }

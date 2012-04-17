@@ -118,9 +118,14 @@ public class NameGenerator {
     // Sanity check.
     Preconditions.checkArgument(!injectorClassName.contains("."),
         "The injector class must be a simple name, but it was \"%s\"", injectorClassName);
-    // Relies on the fact that injector class names are globally unique, so we
-    // don't need to include the injector's package.
-    return injectorClassName + "_fragment_" + fragmentPackageName.toString().replace(".", "_");
+
+    // Note that the fragment package name is not actually included in the
+    // fragment.  This reduces the length of the fragment's class name, which is
+    // important because some systems have small limits on the maximum length of
+    // a file (e.g., ~256 characters).  However, it means that other parts of
+    // Gin must reference the fragment using its canonical class name, to avoid
+    // ambiguity.
+    return injectorClassName + "_fragment";
   }
 
   /**

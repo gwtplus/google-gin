@@ -35,7 +35,7 @@ public class FactoryBindingTest extends TestCase {
 
     try {
       new FactoryBinding(Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
-          Key.get(BrokenBeetleFactory.class), CONTEXT, null);
+          Key.get(BrokenBeetleFactory.class), CONTEXT, null, null);
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("no constructors"));
@@ -46,7 +46,7 @@ public class FactoryBindingTest extends TestCase {
 
     try {
       new FactoryBinding(Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
-          Key.get(BrokenGolfFactory.class), CONTEXT, null);
+          Key.get(BrokenGolfFactory.class), CONTEXT, null, null);
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("has @AssistedInject constructors"));

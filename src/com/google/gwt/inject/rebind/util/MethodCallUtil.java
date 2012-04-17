@@ -122,8 +122,26 @@ public class MethodCallUtil {
     // The invoker method is placed in the fragment of the package that declares
     // the method, so it has access to the same package-private types as the
     // method declaration.
-    String invokerPackageName = ReflectUtil.getUserPackageName(method.getDeclaringType());
+    String invokerPackageName;
 
+    if (useNativeMethod && !hasInvokee) {
+      // In this case, the type of the invokee is not mentioned by the type
+      // signature of the invoker, and since we're using native code, we can
+      // write a call to the target method even if the invokee is fully private.
+      //
+      // This handles the case of a user statically injecting a private inner
+      // class.
+      //
+      // Pick a package somewhat arbitrarily; since we're using native code, it
+      // doesn't really matter where it goes.  The declaring type's package is
+      // easy to get to:
+      invokerPackageName = method.getDeclaringType().getRawType().getPackage().getName();
+    } else {
+      invokerPackageName = ReflectUtil.getUserPackageName(method.getDeclaringType());
+      // TODO(dburrows): won't this silently fail if some *parameters* to the
+      // invokee have limited visibility?  Currently I believe that we'll just
+      // generate noncompiling code.
+    }
     methodsOutput.add(createInvoker(invokeeName, invokeeTypeName, hasInvokee, useNativeMethod,
         isThrowing, invokerMethodName, invokerPackageName, invokerParamCount, method,
         returnTypeString, returning, isLongAccess(method)));

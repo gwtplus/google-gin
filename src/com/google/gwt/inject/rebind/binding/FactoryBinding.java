@@ -22,6 +22,7 @@ import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
@@ -42,7 +43,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -105,15 +105,17 @@ public class FactoryBinding extends AbstractBinding implements Binding {
    */
   private final Set<TypeLiteral<?>> implementations = new LinkedHashSet<TypeLiteral<?>>();
 
+  private final GuiceUtil guiceUtil;
   private final MethodCallUtil methodCallUtil;
 
   FactoryBinding(Map<Key<?>, TypeLiteral<?>> collector, Key<?> factoryKey, Context context,
-      MethodCallUtil methodCallUtil) {
+      GuiceUtil guiceUtil, MethodCallUtil methodCallUtil) {
     super(context, factoryKey);
 
     this.collector = Preconditions.checkNotNull(collector);
     this.factoryKey = factoryKey;
     this.factoryType = factoryKey.getTypeLiteral();
+    this.guiceUtil = guiceUtil;
     this.methodCallUtil = methodCallUtil;
 
     try {
@@ -252,6 +254,8 @@ public class FactoryBinding extends AbstractBinding implements Binding {
       assistData.add(new AssistData(implementation, MethodLiteral.get(constructor, implementation),
           MethodLiteral.get(method, methodDeclaringType), parameterNames));
       implementations.add(implementation);
+
+      dependencies.addAll(guiceUtil.getMemberInjectionDependencies(factoryKey, implementation));
     }
 
     errors.throwConfigurationExceptionIfErrorsExist();

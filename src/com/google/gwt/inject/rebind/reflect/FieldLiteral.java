@@ -4,6 +4,7 @@ import com.google.gwt.dev.util.Preconditions;
 import com.google.inject.TypeLiteral;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 /**
  * Generic field representation preserving the fields type parametrization.
@@ -40,6 +41,23 @@ public class FieldLiteral<T> extends MemberLiteral<T, Field> {
    */
   public TypeLiteral<?> getFieldType() {
     return getDeclaringType().getFieldType(getMember());
+  }
+
+  /**
+   * Returns {@code true} if this is a final field that past versions of Gin
+   * allowed to be set by member injection.
+   *
+   * <p>Past versions of Gin used native Javascript to set the values of
+   * inaccessible fields.  If those fields also happened to be final, the native
+   * code would ignore the final modifier and assign the field anyway.
+   *
+   * <p>As I (dburrows) don't feel that this is something to encourage, I'm
+   * narrowly allowing this usage only in cases where to do otherwise would
+   * break previously compiling code.  It might be prudent to remove this
+   * exclusion in the future, but not as part of my current work.
+   */
+  public boolean isLegacyFinalField() {
+    return !isPublic() && Modifier.isFinal(getModifiers());
   }
 
   /**

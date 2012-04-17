@@ -18,7 +18,6 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.output.GinjectorImplOutputter;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;

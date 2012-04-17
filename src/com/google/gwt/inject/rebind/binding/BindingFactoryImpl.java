@@ -91,7 +91,7 @@ public class BindingFactoryImpl implements BindingFactory {
   
   public FactoryBinding getFactoryBinding(Map<Key<?>, TypeLiteral<?>> collector, Key<?> factoryKey,
       Context context) {
-    return new FactoryBinding(collector, factoryKey, context, methodCallUtil);
+    return new FactoryBinding(collector, factoryKey, context, guiceUtil, methodCallUtil);
   }
 
   public GinjectorBinding getGinjectorBinding() {

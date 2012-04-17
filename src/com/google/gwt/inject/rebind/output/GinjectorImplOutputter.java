@@ -18,7 +18,6 @@ package com.google.gwt.inject.rebind.output;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.GinjectorNameGenerator;
 import com.google.gwt.inject.rebind.binding.Binding;
@@ -28,6 +27,7 @@ import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
@@ -63,6 +63,7 @@ public class GinjectorImplOutputter {
   private final GinjectorNameGenerator ginjectorNameGenerator;
   private final GuiceUtil guiceUtil;
   private final TreeLogger logger;
+  private final ReachabilityAnalyzer reachabilityAnalyzer;
   private final SourceWriteUtil.Factory sourceWriteUtilFactory;
 
   /**
@@ -78,13 +79,15 @@ public class GinjectorImplOutputter {
   public GinjectorImplOutputter(GinjectorBindingsOutputter bindingsOutputter,
       GeneratorContext ctx, FragmentPackageName.Factory fragmentPackageNameFactory,
       GinjectorNameGenerator ginjectorNameGenerator, final GuiceUtil guiceUtil, TreeLogger logger,
-      Provider<MemberCollector> collectorProvider, SourceWriteUtil.Factory sourceWriteUtilFactory) {
+      Provider<MemberCollector> collectorProvider, ReachabilityAnalyzer reachabilityAnalyzer,
+      SourceWriteUtil.Factory sourceWriteUtilFactory) {
     this.bindingsOutputter = bindingsOutputter;
     this.ctx = ctx;
     this.fragmentPackageNameFactory = fragmentPackageNameFactory;
     this.ginjectorNameGenerator = ginjectorNameGenerator;
     this.guiceUtil = guiceUtil;
     this.logger = logger;
+    this.reachabilityAnalyzer = reachabilityAnalyzer;
     this.sourceWriteUtilFactory = sourceWriteUtilFactory;
 
     constructorInjectCollector = collectorProvider.get();
@@ -180,6 +183,14 @@ public class GinjectorImplOutputter {
         throw new UnableToCompleteException();
       }
 
+      if (!reachabilityAnalyzer.isReachable(binding)) {
+        // Sanity-check reachability: every binding in the Ginjector ought to be
+        // reachable.
+        PrettyPrinter.log(logger, TreeLogger.Type.ERROR,
+            "The key %s is required by the Ginjector, but is not reachable.", methodKey);
+        throw new UnableToCompleteException();
+      }
+
       FragmentPackageName fragmentPackageName = fragmentPackageNameFactory.create(
           binding.getGetterMethodPackage());
 
@@ -198,6 +209,16 @@ public class GinjectorImplOutputter {
     // injection on the given BarType.
     for (MethodLiteral<?, Method> method : memberInjectCollector.getMethods(ginjectorInterface)) {
       Key<?> injectee = guiceUtil.getKey(method);
+
+      if (!reachabilityAnalyzer.isReachableMemberInject(bindings, injectee.getTypeLiteral())) {
+        // Sanity-check reachability: every member injection in the Ginjector
+        // ought to be reachable.
+        PrettyPrinter.log(logger, TreeLogger.Type.ERROR,
+            "Method injection of %s is required by the Ginjector, but is not reachable.",
+            injectee.getTypeLiteral());
+        throw new UnableToCompleteException();
+      }
+
       FragmentPackageName fragmentPackageName = fragmentPackageNameFactory.create(
           ReflectUtil.getUserPackageName(injectee.getTypeLiteral()));
 

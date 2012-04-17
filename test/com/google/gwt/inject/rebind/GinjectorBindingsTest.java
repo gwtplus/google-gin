@@ -15,12 +15,9 @@
  */
 package com.google.gwt.inject.rebind;
 
-import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.createControl;
 import static org.easymock.EasyMock.createNiceControl;
 import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.isNull;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 
@@ -39,6 +36,7 @@ import com.google.inject.Provider;
 import junit.framework.TestCase;
 import org.easymock.EasyMock;
 import org.easymock.IMocksControl;
+
 
 public class GinjectorBindingsTest extends TestCase {
 

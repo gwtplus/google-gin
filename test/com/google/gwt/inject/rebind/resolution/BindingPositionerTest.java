@@ -31,12 +31,13 @@ import java.util.Set;
 /**
  * Tests for {@link BindingPositioner}.
  */
+
 public class BindingPositionerTest extends TestCase {
 
   private static final String SOURCE = "dummy";
 
   private IMocksControl control;
-  
+
   private ErrorManager errorManager;
 
   private GinjectorBindings root;
@@ -45,11 +46,11 @@ public class BindingPositionerTest extends TestCase {
   private GinjectorBindings othergrandchild; // Only used as the source of an ExposedChildBinding.
 
   private final TreeLogger treeLogger = TreeLogger.NULL;
-    
+
   @Override
   protected void setUp() throws Exception {
     control = EasyMock.createControl();
-        
+
     errorManager = control.createMock("errorManager", ErrorManager.class);
 
     root = control.createMock("root", GinjectorBindings.class);
@@ -70,24 +71,24 @@ public class BindingPositionerTest extends TestCase {
     expect(child.isPinned(isA(Key.class))).andStubReturn(false);
     expect(grandchild.isPinned(isA(Key.class))).andStubReturn(false);
   }
-  
+
   public void testNoDependencies() throws Exception {
     new PositionerExpectationsBuilder(child).test();
   }
-  
+
   public void testAlreadyPositioned() throws Exception {
     // Verifies that a single, already positioned node stays where it is
     new PositionerExpectationsBuilder(child)
         .keysBoundAt(child, foo())
         .test();
   }
-  
+
   private PositionerExpectationsBuilder testTree() {
     return new PositionerExpectationsBuilder(grandchild)
         .addEdge(new Dependency(foo(), bar(), SOURCE))
         .addEdge(new Dependency(foo(), baz(), SOURCE));
   }
-  
+
   public void testPositionTree() throws Exception {
     // Foo (which depends on Bar and Baz) ends up "no-higher than the lowest" of bar and baz.
     testTree()
@@ -96,22 +97,22 @@ public class BindingPositionerTest extends TestCase {
         .keysBoundAt(root, baz())
         .test();
   }
-  
+
   public void testPositionTree_BoundInChild() throws Exception {
-    // Bar can't be placed at root (already bound in child), so it and foo get placed in child. 
+    // Bar can't be placed at root (already bound in child), so it and foo get placed in child.
     expect(root.isBoundLocallyInChild(bar())).andReturn(true).anyTimes(); // bar() must be in child
     testTree()
         .implicitlyBoundAt(child, foo(), bar())
         .implicitlyBoundAt(root, baz())
         .test();
   }
-  
+
   private PositionerExpectationsBuilder testChain() {
     return new PositionerExpectationsBuilder(grandchild)
         .addEdge(new Dependency(foo(), bar(), SOURCE))
         .addEdge(new Dependency(bar(), baz(), SOURCE));
   }
-  
+
   public void testPositionChain() throws Exception {
     testChain()
         .implicitlyBoundAt(root, foo(), bar(), baz())
@@ -126,27 +127,27 @@ public class BindingPositionerTest extends TestCase {
         .implicitlyBoundAt(grandchild, foo())
         .test();
   }
-  
+
   public void testPositionChain_BazBoundInRoot() throws Exception {
     testChain()
         .implicitlyBoundAt(child, foo(), bar())
         .keysBoundAt(child, baz())
         .test();
   }
-  
+
   private PositionerExpectationsBuilder testCycle() {
     return new PositionerExpectationsBuilder(grandchild)
         .addEdge(new Dependency(foo(), bar(), SOURCE))
         .addEdge(new Dependency(bar(), baz(), SOURCE))
         .addEdge(new Dependency(baz(), foo(), SOURCE));
   }
-  
+
   public void testPositionCycle() throws Exception {
     testCycle()
         .implicitlyBoundAt(root, foo(), bar(), baz())
         .test();
   }
-  
+
   public void testPositionCycle_BarBoundInSibling() throws Exception {
     // Cycle through foo -> bar -> baz, and bar must be placed in child, so everything is placed
     // in child.
@@ -155,14 +156,14 @@ public class BindingPositionerTest extends TestCase {
         .implicitlyBoundAt(child, bar(), baz(), foo())
         .test();
   }
-  
+
   public void testPositionCycle_BazBoundInChild() throws Exception {
     testCycle()
         .keysBoundAt(child, baz())
         .implicitlyBoundAt(child, bar(), foo())
         .test();
   }
-  
+
   public void testPositionCycle_BarAndBazBoundInSibling() throws Exception {
     expect(root.isBoundLocallyInChild(bar())).andReturn(true).anyTimes();
     expect(root.isBoundLocallyInChild(baz())).andReturn(true).anyTimes();
@@ -171,7 +172,7 @@ public class BindingPositionerTest extends TestCase {
         .implicitlyBoundAt(grandchild, foo(), bar(), baz())
         .test();
   }
-  
+
   public void testPositionCycle_OutsideDep() throws Exception {
     testCycle()
         .addEdge(new Dependency(bar(), Key.get(A.class), SOURCE))
@@ -179,7 +180,7 @@ public class BindingPositionerTest extends TestCase {
         .implicitlyBoundAt(child, foo(), bar(), baz())
         .test();
   }
-  
+
   public void testPositionPinned_noBindingInParent() throws Exception {
     // Bar is bound (and pinned) at grandchild, but because it is not exposed to
     // the root, foo should be created in grandchild.
@@ -249,12 +250,12 @@ public class BindingPositionerTest extends TestCase {
         .implicitlyBoundAt(root, foo())
         .test();
   }
-  
+
   private static class A {}
   private static class B {}
   private static class C {}
   private static class D {}
-  
+
   public void testTwoCycles() throws Exception {
     testCycle()
         .addEdge(new Dependency(bar(), Key.get(A.class), SOURCE))
@@ -263,41 +264,41 @@ public class BindingPositionerTest extends TestCase {
         .addEdge(new Dependency(Key.get(B.class), Key.get(D.class), SOURCE))
         .addEdge(new Dependency(Key.get(C.class), Key.get(A.class), SOURCE))
         .keysBoundAt(child, Key.get(D.class))
-        .implicitlyBoundAt(child, foo(), bar(), baz(), 
+        .implicitlyBoundAt(child, foo(), bar(), baz(),
             Key.get(A.class), Key.get(B.class), Key.get(C.class))
         .test();
   }
-  
+
   /**
    * Builder for constructing the expectations used above in a more readable manner.
    */
   private class PositionerExpectationsBuilder {
-    
+
     private final DependencyGraph.Builder graphBuilder;
     private final Map<Key<?>, GinjectorBindings> implicitlyBoundKeys =
         new HashMap<Key<?>, GinjectorBindings>();
-    private final Map<Key<?>, GinjectorBindings> preExistingLocations = 
+    private final Map<Key<?>, GinjectorBindings> preExistingLocations =
         new HashMap<Key<?>, GinjectorBindings>();
     private final Map<GinjectorBindings, Map<Key<?>, GinjectorBindings>> exposedTo =
         new HashMap<GinjectorBindings, Map<Key<?>, GinjectorBindings>>();
     private final Map<GinjectorBindings, Set<Key<?>>> notExposedBinding =
         new HashMap<GinjectorBindings, Set<Key<?>>>();
     private Class<?> thrownType = null;
-    
+
     public PositionerExpectationsBuilder(GinjectorBindings origin) {
       graphBuilder = new DependencyGraph.Builder(origin);
     }
-    
+
     public PositionerExpectationsBuilder addEdge(Dependency dependency) {
       graphBuilder.addEdge(dependency);
       return this;
     }
-    
+
     public PositionerExpectationsBuilder implicitlyBoundAt(
         GinjectorBindings expected, Key<?>... keys) {
       for (Key<?> key : keys) {
         Preconditions.checkState(!preExistingLocations.containsKey(key),
-            "Key %s cannot be implicitly bound -- already bound in ginjector %s!", key, 
+            "Key %s cannot be implicitly bound -- already bound in ginjector %s!", key,
             preExistingLocations.get(key));
         implicitlyBoundKeys.put(key, expected);
       }
@@ -352,7 +353,7 @@ public class BindingPositionerTest extends TestCase {
       }
       return this;
     }
-    
+
     public PositionerExpectationsBuilder pinnedAt(GinjectorBindings ginjector, Key<?>... keys) {
       for (Key<?> key : keys) {
         expect(ginjector.isPinned(key)).andReturn(true).anyTimes();
@@ -364,7 +365,7 @@ public class BindingPositionerTest extends TestCase {
       this.thrownType = thrownType;
       return this;
     }
-    
+
     public void test() {
       DependencyExplorerOutput output = control.createMock(DependencyExplorerOutput.class);
       expect(output.getGraph()).andStubReturn(graphBuilder.build());
@@ -401,7 +402,7 @@ public class BindingPositionerTest extends TestCase {
 
         // Check that already positioned things didn't move
         for (Map.Entry<Key<?>, GinjectorBindings> entry : preExistingLocations.entrySet()) {
-          assertSame(String.format("Expected already-bound %s to remain in location %s, but was %s", 
+          assertSame(String.format("Expected already-bound %s to remain in location %s, but was %s",
                   entry.getKey(), entry.getValue(), positioner.getInstallPosition(entry.getKey())),
               entry.getValue(), positioner.getInstallPosition(entry.getKey()));
         }

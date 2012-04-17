@@ -95,6 +95,10 @@ public class MethodInjectTest extends GWTTestCase {
     assertEquals(ShapeGinModule.OTHER_HEIGHT, square.getOtherHeight());
   }
 
+  public void testStaticMethodInjectOnPrivateClass() {
+    GWT.create(StaticMethodInjectOnPrivateClassGinjector.class);
+  }
+
   public void testMemberInjectWithForwarding() {
     ForwardingGinjector ginjector = GWT.create(ForwardingGinjector.class);
     Forwarding forwarded = ginjector.getForwarding();
@@ -195,6 +199,32 @@ public class MethodInjectTest extends GWTTestCase {
     private HiddenDanger() throws Exception {
       throw new Exception("test");
     }
+  }
+
+  private static class StaticMethodInjectOnPrivateClass {
+
+    @Inject
+    public static void injectPublic() {
+    }
+
+    @Inject
+    static void injectPackagePrivate() {
+    }
+
+    @Inject
+    private static void injectPrivate() {
+    }
+  }
+
+  static class StaticMethodInjectOnPrivateClassModule extends AbstractGinModule {
+    @Override
+    protected void configure() {
+      requestStaticInjection(StaticMethodInjectOnPrivateClass.class);
+    }
+  }
+
+  @GinModules(StaticMethodInjectOnPrivateClassModule.class)
+  interface StaticMethodInjectOnPrivateClassGinjector extends Ginjector{
   }
 
   @GinModules(ForwardingModule.class)

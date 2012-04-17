@@ -56,8 +56,6 @@ public class SubPackageGinModule extends AbstractGinModule {
         .implement(PublicAssisted.class, Names.named("a"), PublicAssistedImplementation.class);
     SubSubPackageGinModule.implementB(builder);
     install(builder.build(PublicAssisted.Factory.class));
-
-    requestStaticInjection(PublicImplementation.class);
   }
 
   @Provides
@@ -81,6 +79,11 @@ public class SubPackageGinModule extends AbstractGinModule {
         Provider<HiddenDependency> hiddenDependencyProvider,
         @Named("providerClass") ProvidedInSubpackage providedByProviderClass,
         @Named("providerMethod") ProvidedInSubpackage providedByProviderMethod) {
+    }
+
+    // Allows subclasses to be created that don't know about hidden parts (see
+    // PackagePrivateTest.CrossPackageExtender).
+    protected PublicImplementation() {
     }
 
     // Verify that method injection compiles with package-private methods.

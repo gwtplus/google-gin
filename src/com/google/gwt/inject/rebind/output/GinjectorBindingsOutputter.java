@@ -18,7 +18,6 @@ package com.google.gwt.inject.rebind.output;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.GinjectorNameGenerator;
@@ -28,18 +27,16 @@ import com.google.gwt.inject.rebind.reflect.FieldLiteral;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
-import com.google.gwt.inject.rebind.util.AbstractInjectorMethod;
 import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
-import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
+import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.spi.InjectionPoint;
@@ -66,6 +63,7 @@ class GinjectorBindingsOutputter {
   private final GinjectorNameGenerator ginjectorNameGenerator;
   private final TreeLogger logger;
   private final MethodCallUtil methodCallUtil;
+  private final ReachabilityAnalyzer reachabilityAnalyzer;
   private final SourceWriteUtil.Factory sourceWriteUtilFactory;
 
   @Inject
@@ -76,6 +74,7 @@ class GinjectorBindingsOutputter {
       GinjectorNameGenerator ginjectorNameGenerator,
       TreeLogger logger,
       MethodCallUtil methodCallUtil,
+      ReachabilityAnalyzer reachabilityAnalyzer,
       SourceWriteUtil.Factory sourceWriteUtilFactory) {
 
     this.ctx = ctx;
@@ -85,6 +84,7 @@ class GinjectorBindingsOutputter {
     this.ginjectorNameGenerator = ginjectorNameGenerator;
     this.logger = logger;
     this.methodCallUtil = methodCallUtil;
+    this.reachabilityAnalyzer = reachabilityAnalyzer;
     this.sourceWriteUtilFactory = sourceWriteUtilFactory;
   }
 
@@ -181,6 +181,10 @@ class GinjectorBindingsOutputter {
     // Output the bindings in the fragments.
     for (Map.Entry<Key<?>, Binding> entry : bindings.getBindings()) {
       Binding binding = entry.getValue();
+      if (!reachabilityAnalyzer.isReachable(binding)) {
+        continue;
+      }
+
       FragmentPackageName fragmentPackageName =
           fragmentPackageNameFactory.create(binding.getGetterMethodPackage());
       Key<?> key = entry.getKey();
@@ -298,6 +302,10 @@ class GinjectorBindingsOutputter {
       SourceWriteUtil sourceWriteUtil) {
     NameGenerator nameGenerator = bindings.getNameGenerator();
     for (TypeLiteral<?> type : bindings.getMemberInjectRequests()) {
+      if (!reachabilityAnalyzer.isReachableMemberInject(bindings, type)) {
+        continue;
+      }
+
       List<InjectorMethod> memberInjectionHelpers = new ArrayList<InjectorMethod>();
 
       try {
@@ -346,7 +354,12 @@ class GinjectorBindingsOutputter {
       }
     }
 
-    String packageName = ReflectUtil.getUserPackageName(TypeLiteral.get(type));
+    // Note that the top-level method that performs static injection will only
+    // invoke a bunch of other injector methods.  Therefore, it doesn't matter
+    // which package it goes in, and we don't need to invoke getUserPackageName
+    // (which is good, because in practice users statically inject types that
+    // have no user package name because they're private inner classes!)
+    String packageName = type.getPackage().getName();
     InjectorMethod method = SourceSnippets.asMethod(false, "private void " + methodName + "()",
         packageName, body.build());
     GinjectorFragmentOutputter fragment =

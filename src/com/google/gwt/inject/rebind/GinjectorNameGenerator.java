@@ -15,7 +15,6 @@
  */
 package com.google.gwt.inject.rebind;
 
-import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

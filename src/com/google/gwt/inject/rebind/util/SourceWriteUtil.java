@@ -96,7 +96,8 @@ public class SourceWriteUtil {
       throws NoSourceNameException {
     final boolean hasInjectee = injecteeName != null;
     final boolean useNativeMethod = field.isPrivate()
-        || ReflectUtil.isPrivate(field.getDeclaringType());
+        || ReflectUtil.isPrivate(field.getDeclaringType())
+        || field.isLegacyFinalField();
 
     // Determine method signature parts.
     final String injecteeTypeName = ReflectUtil.getSourceName(field.getRawDeclaringType());
@@ -107,7 +108,7 @@ public class SourceWriteUtil {
     // Field injections are performed in the package of the class declaring the
     // field.  Any private types referenced by the injection must be visible
     // from there.
-    String packageName = ReflectUtil.getUserPackageName(field.getDeclaringType());
+    final String packageName = ReflectUtil.getUserPackageName(field.getDeclaringType());
 
     String signatureParams = fieldTypeName + " value";
     boolean isLongAcccess = field.getFieldType().getRawType().equals(Long.TYPE);
@@ -142,12 +143,14 @@ public class SourceWriteUtil {
 
     return new SourceSnippet() {
       public String getSource(InjectorWriteContext writeContext) {
-        String callParams = writeContext.callGetter(guiceUtil.getKey(field));
+        List<String> callParams = new ArrayList<String>();
         if (hasInjectee) {
-          callParams = injecteeName + ", " + callParams;
+          callParams.add(injecteeName);
         }
 
-        return methodName + "(" + callParams + ");";
+        callParams.add(writeContext.callGetter(guiceUtil.getKey(field)));
+
+        return writeContext.callMethod(methodName, packageName, callParams) + ";\n";
       }
     };
   }
