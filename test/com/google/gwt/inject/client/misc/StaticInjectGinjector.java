@@ -17,11 +17,16 @@ package com.google.gwt.inject.client.misc;
 
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.misc.subpackage.StaticSubEagerSingleton;
 
 @GinModules(StaticInjectGinModule.class)
 public interface StaticInjectGinjector extends Ginjector {
 
   StaticClass getStaticClass();
+
+  StaticEagerSingleton getStaticEagerSingleton();
+
+  StaticSubEagerSingleton getStaticSubEagerSingleton();
 
   DynamicClass getDynamicClass();
 }

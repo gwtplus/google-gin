@@ -59,14 +59,14 @@ class GinjectorFragmentOutputter {
   private final String ginjectorClassName;
 
   /**
-   * Collects the text of the body of initialize().
-   *
-   * <p>initialize() contains code that needs to run before the root injector is
-   * returned to the client, but after the injector hierarchy is fully
-   * constructed.  See
-   * {@link GinjectorBindingsOutputter#writeToplevelConstructor}.
+   * Collects the text of the body of initializeEagerSingletons().
    */
-  private final StringBuilder initializeBody = new StringBuilder();
+  private final StringBuilder initializeEagerSingletonsBody = new StringBuilder();
+
+  /**
+   * Collects the text of the body of initializeStaticInjections().
+   */
+  private final StringBuilder initializeStaticInjectionsBody = new StringBuilder();
 
   /**
    * The {@link SourceWriter} used to generate the source code.
@@ -159,9 +159,9 @@ class GinjectorFragmentOutputter {
 
     switch (scope) {
       case EAGER_SINGLETON:
-        initializeBody.append("// Eager singleton bound at:\n");
-        appendBindingContextCommentToMethod(bindingContext, initializeBody);
-        initializeBody.append(getter).append("();\n");
+        initializeEagerSingletonsBody.append("// Eager singleton bound at:\n");
+        appendBindingContextCommentToMethod(bindingContext, initializeEagerSingletonsBody);
+        initializeEagerSingletonsBody.append(getter).append("();\n");
         // $FALL-THROUGH$
       case SINGLETON:
         writer.println("private " + typeName + " " + field + " = null;");
@@ -203,10 +203,10 @@ class GinjectorFragmentOutputter {
   }
 
   /**
-   * Add the given method name to the methods invoked in initialize().
+   * Add the given method name to the methods invoked in initializeStaticInjections().
    */
-  void invokeInInitialize(String methodName) {
-    initializeBody.append(methodName).append("();\n");
+  void invokeInInitializeStaticInjections(String methodName) {
+    initializeStaticInjectionsBody.append(methodName).append("();\n");
   }
 
   /**
@@ -235,9 +235,17 @@ class GinjectorFragmentOutputter {
         String.format("public %s(%s injector)", fragmentClassName, ginjectorClassName),
         "this.injector = injector;");
 
-    // Write the "initialize" method, where any eager initialization for this
-    // fragment is performed.
-    sourceWriteUtil.writeMethod(writer, "public void initialize()", initializeBody.toString());
+    // Write a method to initialize eager singletons.
+    sourceWriteUtil.writeMethod(
+        writer,
+        "public void initializeEagerSingletons()",
+        initializeEagerSingletonsBody.toString());
+
+    // Write a method to initialize static injection.
+    sourceWriteUtil.writeMethod(
+        writer,
+        "public void initializeStaticInjections()",
+        initializeStaticInjectionsBody.toString());
 
     writer.commit(logger);
   }

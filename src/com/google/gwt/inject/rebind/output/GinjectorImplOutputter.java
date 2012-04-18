@@ -149,8 +149,18 @@ public class GinjectorImplOutputter {
       writer.println("private final %1$s %2$s = new %1$s(this);", rootInjectorClass, rootFieldName);
 
       SourceWriteUtil sourceWriteUtil = sourceWriteUtilFactory.create(rootBindings);
-      sourceWriteUtil.writeMethod(writer, "public " + implClassName + "()",
-          rootFieldName + ".initialize();");
+      sourceWriteUtil.writeMethod(writer, "public " + implClassName + "()", String.format(
+          // To imitate the behavior of Guice and provide more predictable
+          // bootstrap ordering, we initialize the injectors in two phases:
+          // static injections first, followed by eager singletons.  Each of
+          // these method calls performs all necessary initialization of the
+          // given type in all fragments, ensuring that the initializers run in
+          // the proper order.
+          //
+          // See http://code.google.com/p/google-guice/wiki/Bootstrap
+          "%1$s.initializeStaticInjections();\n" +
+          "%1$s.initializeEagerSingletons();\n",
+          rootFieldName));
 
       outputInterfaceMethods(rootBindings, ginjectorInterface, sourceWriteUtil, writer);
     } catch (NoSourceNameException e) {

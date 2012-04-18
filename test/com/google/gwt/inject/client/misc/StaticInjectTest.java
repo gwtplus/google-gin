@@ -19,12 +19,19 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.misc.subpackage.StaticSubEagerSingleton;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
 public class StaticInjectTest extends GWTTestCase {
+
+  @Override
+  public void gwtTearDown() {
+    StaticEagerSingleton.resetBar();
+    StaticSubEagerSingleton.resetFoo();
+  }
 
   public void testPublicStaticFieldInject() {
     GWT.create(StaticInjectGinjector.class);
@@ -61,6 +68,24 @@ public class StaticInjectTest extends GWTTestCase {
     GWT.create(StaticInjectGinjector.class);
 
     assertNotNull(StaticClass.getInjector());
+  }
+
+  public void testEagerSingletonOrdering() {
+    StaticInjectGinjector injector = GWT.create(StaticInjectGinjector.class);
+
+    // Verify that eager singletons are injected after static injection takes
+    // place.
+    assertEquals("bar", injector.getStaticEagerSingleton().getBarCopy());
+    assertEquals("foo", injector.getStaticSubEagerSingleton().getFooCopy());
+  }
+
+  public void testEagerSingletonOrdering_crossPackage() {
+    StaticInjectGinjector injector = GWT.create(StaticInjectGinjector.class);
+
+    // Verify that eager singletons are injected after static injection takes
+    // place, even across packages.
+    assertEquals("bar", injector.getStaticSubEagerSingleton().getBarCopy());
+    assertEquals("foo", injector.getStaticEagerSingleton().getFooCopy());
   }
 
   public void testSuperClassInjection() {

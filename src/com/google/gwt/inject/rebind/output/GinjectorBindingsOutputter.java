@@ -138,10 +138,16 @@ class GinjectorBindingsOutputter {
       SourceWriter writer) {
     NameGenerator nameGenerator = bindings.getNameGenerator();
 
-    // Collects the text of the body of initialize().  initialize() contains
-    // code that needs to run before the root injector is returned to the
-    // client, but after the injector hierarchy is fully constructed.
-    StringBuilder initializeBody = new StringBuilder();
+    // The initialize*() methods contain code that needs to run before the root
+    // injector is returned to the client, but after the injector hierarchy is
+    // fully constructed.
+
+    // Collects the text of the body of initializeEagerSingletons().
+    StringBuilder initializeEagerSingletonsBody = new StringBuilder();
+
+    // Collects the text of the body of initializeStaticInjections().
+    StringBuilder initializeStaticInjectionsBody = new StringBuilder();
+
     SourceWriteUtil sourceWriteUtil = sourceWriteUtilFactory.create(bindings);
 
     // Output child modules.
@@ -168,10 +174,12 @@ class GinjectorBindingsOutputter {
             + "return %2$s;", canonicalClassName, fieldName));
 
       // Ensure that the initializer initializes this child.
-      outputSubInitialize(child, getterName, initializeBody);
+      outputSubInitialize(child, getterName,
+          initializeEagerSingletonsBody, initializeStaticInjectionsBody);
     }
 
-    initializeBody.append("\n");
+    initializeEagerSingletonsBody.append("\n");
+    initializeStaticInjectionsBody.append("\n");
 
     outputInterfaceField(bindings, sourceWriteUtil, writer);
 
@@ -195,10 +203,12 @@ class GinjectorBindingsOutputter {
     }
 
     // Output the fragment members.
-    outputFragments(bindings, fragments, initializeBody, sourceWriteUtil, writer);
+    outputFragments(bindings, fragments, initializeEagerSingletonsBody,
+        initializeStaticInjectionsBody, sourceWriteUtil, writer);
 
     writeConstructor(bindings, sourceWriteUtil, writer);
-    writeInitialize(initializeBody, sourceWriteUtil, writer);
+    writeInitializers(initializeEagerSingletonsBody, initializeStaticInjectionsBody,
+        sourceWriteUtil, writer);
   }
 
   /**
@@ -257,11 +267,12 @@ class GinjectorBindingsOutputter {
 
   /**
    * For each fragment in the given {@link FragmentMap}, writes the field that
-   * stores it and a getter for that field, and adds code to the constructor
-   * that initializes the new field.
+   * stores it and a getter for that field, and adds code to invoke the
+   * fragment's initializers.
    */
   private void outputFragments(GinjectorBindings bindings,
-      FragmentMap fragments, StringBuilder initializeBody, SourceWriteUtil sourceWriteUtil,
+      FragmentMap fragments, StringBuilder initializeEagerSingletonsBody,
+      StringBuilder initializeStaticInjectionsBody, SourceWriteUtil sourceWriteUtil,
       SourceWriter writer) {
     String implClassName = ginjectorNameGenerator.getClassName(bindings);
     NameGenerator nameGenerator = bindings.getNameGenerator();
@@ -290,8 +301,11 @@ class GinjectorBindingsOutputter {
         + "}\n\n"
         + "return %2$s;", fragmentCanonicalClassName, fieldName));
 
-      // Initialize this fragment in initialize().
-      initializeBody.append(getterName + "().initialize();\n");
+      // TODO(dburrows): throw away calls to and definitions of initializers
+      // that have nothing to do.
+
+      initializeEagerSingletonsBody.append(getterName + "().initializeEagerSingletons();\n");
+      initializeStaticInjectionsBody.append(getterName + "().initializeStaticInjections();\n");
     }
   }
 
@@ -365,7 +379,7 @@ class GinjectorBindingsOutputter {
     GinjectorFragmentOutputter fragment =
         fragments.get(fragmentPackageNameFactory.create(packageName));
     fragment.outputMethod(method);
-    fragment.invokeInInitialize(methodName);
+    fragment.invokeInInitializeStaticInjections(methodName);
   }
 
   /**
@@ -381,13 +395,19 @@ class GinjectorBindingsOutputter {
   }
 
   /**
-   * Outputs code to invoke the given child's initialize() routine via its
+   * Outputs code to invoke the given child's initialize*() routines via its
    * member variable.
    */
   private void outputSubInitialize(GinjectorBindings child, String childGetterName,
-      StringBuilder initializeBody) {
-    initializeBody.append(childGetterName);
-    initializeBody.append("().initialize();\n");
+      StringBuilder initializeEagerSingletonsBody, StringBuilder initializeStaticInjectionsBody) {
+
+    initializeEagerSingletonsBody
+        .append(childGetterName)
+        .append("().initializeEagerSingletons();\n");
+
+    initializeStaticInjectionsBody
+        .append(childGetterName)
+        .append("().initializeStaticInjections();\n");
   }
 
   /**
@@ -462,9 +482,15 @@ class GinjectorBindingsOutputter {
   // eager singletons.  For more details, see
   // <http://code.google.com/p/google-gin/issues/detail?id=156>.
 
-  private void writeInitialize(StringBuilder initializeBody, SourceWriteUtil sourceWriteUtil,
-      SourceWriter writer) {
-    sourceWriteUtil.writeMethod(writer, "public void initialize()", initializeBody.toString());
+  private void writeInitializers(
+      StringBuilder initializeEagerSingletonsBody, StringBuilder initializeStaticInjectionsBody,
+      SourceWriteUtil sourceWriteUtil, SourceWriter writer) {
+
+    sourceWriteUtil.writeMethod(writer,
+        "public void initializeEagerSingletons()", initializeEagerSingletonsBody.toString());
+
+    sourceWriteUtil.writeMethod(writer,
+        "public void initializeStaticInjections()", initializeStaticInjectionsBody.toString());
   }
 
   /**

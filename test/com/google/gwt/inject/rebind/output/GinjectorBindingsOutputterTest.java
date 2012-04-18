@@ -138,8 +138,8 @@ public class GinjectorBindingsOutputterTest extends TestCase {
     fragmentOutputter.outputMethod((InjectorMethod) anyObject());
     fragmentOutputterSubpackage.outputMethod((InjectorMethod) anyObject());
 
-    fragmentOutputter.invokeInInitialize("test_injectSubClass");
-    fragmentOutputterSubpackage.invokeInInitialize("test_injectSubPackageClass");
+    fragmentOutputter.invokeInInitializeStaticInjections("test_injectSubClass");
+    fragmentOutputterSubpackage.invokeInInitializeStaticInjections("test_injectSubPackageClass");
 
     replay();
 
