@@ -46,7 +46,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -501,7 +501,7 @@ class GinjectorBindingsOutputter {
     private final GinjectorBindings bindings;
     private final GinjectorFragmentOutputter.Factory fragmentFactory;
     private final Map<FragmentPackageName, GinjectorFragmentOutputter> fragments =
-        new HashMap<FragmentPackageName, GinjectorFragmentOutputter>();
+        new LinkedHashMap<FragmentPackageName, GinjectorFragmentOutputter>();
     private final String ginjectorPackageName;
     private final String ginjectorClassName;
 
