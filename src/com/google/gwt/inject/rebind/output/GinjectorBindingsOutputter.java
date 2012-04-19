@@ -199,9 +199,10 @@ class GinjectorBindingsOutputter {
           fragmentPackageNameFactory.create(binding.getGetterMethodPackage());
       Key<?> key = entry.getKey();
 
-      outputCreatorMethods(bindings, key, binding, fragments, nameGenerator);
+      List<InjectorMethod> helperMethods = new ArrayList();
       fragments.get(fragmentPackageName)
-          .writeBindingGetter(key, binding, bindings.determineScope(key));
+          .writeBindingGetter(key, binding, bindings.determineScope(key), helperMethods);
+      outputMethods(helperMethods, fragments);
     }
 
     // Output the fragment members.
@@ -211,37 +212,6 @@ class GinjectorBindingsOutputter {
     writeConstructor(bindings, sourceWriteUtil, writer);
     writeInitializers(initializeEagerSingletonsBody, initializeStaticInjectionsBody,
         sourceWriteUtil, writer);
-  }
-
-  /**
-   * Writes the creator methods associated with the given binding.
-   */
-  private void outputCreatorMethods(GinjectorBindings bindings, Key<?> key, Binding binding,
-      FragmentMap fragments, NameGenerator nameGenerator) {
-
-    try {
-      String typeName = ReflectUtil.getSourceName(key.getTypeLiteral());
-      String creator = bindings.getNameGenerator().getCreatorMethodName(key);
-
-      List<InjectorMethod> helperMethods = new ArrayList<InjectorMethod>();
-      SourceSnippet creationMethodBody = new SourceSnippetBuilder()
-          .append(binding.getCreationStatements(nameGenerator, helperMethods))
-          .append("return result;")
-          .build();
-
-      // Write a top-level creator method that wraps the creation statement(s)
-      // produced by the binding.
-      String creatorSignature = "private " + typeName + " " + creator + "()";
-      String creatorPackage = binding.getGetterMethodPackage();
-      InjectorMethod creatorMethod =
-          SourceSnippets.asMethod(false, creatorSignature, creatorPackage, creationMethodBody);
-
-      outputMethods(Collections.singletonList(creatorMethod), fragments);
-      outputMethods(helperMethods, fragments);
-    } catch (NoSourceNameException e) {
-      errorManager.logError("Error trying to write creators for [%s] -> [%s];"
-          + " binding declaration: %s", e, key, binding, binding.getContext());
-    }
   }
 
   /**

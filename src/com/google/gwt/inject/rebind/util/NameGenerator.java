@@ -97,17 +97,6 @@ public class NameGenerator {
   }
 
   /**
-   * Returns the key's creator method name.  The method with that name can be
-   * called to create and retrieve an instance of the type described by the
-   * key.
-   *
-   * @return creator method name
-   */
-  public String getCreatorMethodName(Key<?> key) {
-    return mangle("create_", key);
-  }
-
-  /**
    * Computes the name of a single fragment of a Ginjector.
    *
    * @param injectorClassName the simple name of the injector's class (not

@@ -39,6 +39,8 @@ import com.google.inject.Key;
 import com.google.inject.assistedinject.Assisted;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Writes the definition of a single fragment of the Ginjector.  A Ginjector
@@ -138,19 +140,22 @@ class GinjectorFragmentOutputter {
 
   /**
    * Writes a method describing the getter for the given key, along with any
-   * other code necessary to support it.
+   * other code necessary to support it.  Produces a list of helper methods that
+   * still need to be written.
    */
-  void writeBindingGetter(Key<?> key, Binding binding, GinScope scope) {
+  void writeBindingGetter(Key<?> key, Binding binding, GinScope scope,
+      List<InjectorMethod> helperMethodsOutput) {
     Context bindingContext = binding.getContext();
 
     SourceSnippetBuilder getterBuilder = new SourceSnippetBuilder();
-
-    String creator = nameGenerator.getCreatorMethodName(key);
+    SourceSnippet creationStatements;
     String getter = nameGenerator.getGetterMethodName(key);
 
     String typeName;
     try {
       typeName = ReflectUtil.getSourceName(key.getTypeLiteral());
+
+      creationStatements = binding.getCreationStatements(nameGenerator, helperMethodsOutput);
     } catch (NoSourceNameException e) {
       errorManager.logError("Error trying to write getter for [%s] -> [%s];"
           + " binding declaration: %s", e, key, binding, bindingContext);
@@ -169,20 +174,17 @@ class GinjectorFragmentOutputter {
       case SINGLETON:
         writer.println("private " + typeName + " " + field + " = null;");
         writer.println();
-
-        getterBuilder.append(String.format(
-            "if (%1$s == null){;\n"
-          + "  %1$s = %2$s();\n"
-          + "}\n"
-          + "return %1$s;\n",
-            field, creator));
+        getterBuilder.append(String.format("\nif (%s == null) {\n", field))
+            .append(creationStatements).append("\n")
+            .append(String.format("    %s = result;\n", field))
+            .append("}\n")
+            .append(String.format("return %s;\n", field));
         break;
 
       case NO_SCOPE:
-        // For none, getter just returns creator
         sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
 
-        getterBuilder.append(String.format("return %s();", creator));
+        getterBuilder.append(creationStatements).append("\n").append("return result;\n");
         break;
 
       default:

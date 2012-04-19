@@ -30,10 +30,6 @@ public class NameGeneratorTest extends TestCase {
     String foo2 = nameGenerator.getGetterMethodName(Key.get(String.class));
     assertEquals(foo, foo2);
 
-    foo = nameGenerator.getCreatorMethodName(Key.get(String.class));
-    foo2 = nameGenerator.getCreatorMethodName(Key.get(String.class));
-    assertEquals(foo, foo2);
-
     foo = nameGenerator.getSingletonFieldName(Key.get(String.class));
     foo2 = nameGenerator.getSingletonFieldName(Key.get(String.class));
     assertEquals(foo, foo2);
@@ -61,23 +57,12 @@ public class NameGeneratorTest extends TestCase {
     nameGenerator.markAsUsed(foo);
   }
   
-  public void testGetCreatorMethodName() {
-    NameGenerator nameGenerator = new NameGenerator();
-    Key<?> key = Key.get(String.class);
-    String reserved = "create_" 
-        + nameGenerator.convertToValidMemberName(key.toString()); 
-    nameGenerator.markAsUsed(reserved);
-    String getStringCreator = nameGenerator.getCreatorMethodName(key);
-    assertFalse(String.format("Expected '%s' to not equal '%s'",
-        reserved, getStringCreator), reserved.equals(getStringCreator));
-  }
-  
   public void testCaching() {
     NameGenerator nameGenerator = new NameGenerator();
     Key<?> key = Key.get(String.class);
-    String getStringCreator = nameGenerator.getCreatorMethodName(key);
+    String getStringField = nameGenerator.getSingletonFieldName(key);
     String getStringGetter = nameGenerator.getGetterMethodName(key);
-    assertFalse(getStringGetter.equals(getStringCreator));
+    assertFalse(getStringGetter.equals(getStringField));
     assertEquals(getStringGetter, nameGenerator.getGetterMethodName(key));
   }
 }
