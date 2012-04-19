@@ -57,22 +57,14 @@ abstract class CreatorBinding extends AbstractBinding implements Binding {
     dependencies.addAll(guiceUtil.getMemberInjectionDependencies(Key.get(type), type));
   }
 
-  public final Iterable<InjectorMethod> getCreatorMethods(String creatorMethodSignature,
-      NameGenerator nameGenerator) throws NoSourceNameException {
-    List<InjectorMethod> methods = new ArrayList<InjectorMethod>();
-
-    SourceSnippet creatorMethod = new SourceSnippetBuilder()
-        .append(getCreationStatement(methods, nameGenerator))
+  public SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
+    return new SourceSnippetBuilder()
+        .append(getCreationStatement(nameGenerator, methodsOutput))
         .append("\n")
         .append(SourceSnippets.callMemberInject(type, "result"))
         .append("\n")
-        .append("return result;")
         .build();
-
-    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, getGetterMethodPackage(),
-        creatorMethod));
-
-    return Collections.unmodifiableList(methods);
   }
 
   public Collection<Dependency> getDependencies() {
@@ -87,9 +79,12 @@ abstract class CreatorBinding extends AbstractBinding implements Binding {
    * Gets a {@link SourceSnippet} that creates the bound value and stores it in
    * a new local variable named "result", and creates any auxiliary methods
    * required by the snippet.
+   *
+   * <p>The final creation statements output by this binding will also perform
+   * member injection on the created value.
    */
-  protected abstract SourceSnippet getCreationStatement(List<InjectorMethod> methodsOutput,
-      NameGenerator nameGenerator) throws NoSourceNameException;
+  protected abstract SourceSnippet getCreationStatement(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException;
 
   protected String getTypeName() throws NoSourceNameException {
     return ReflectUtil.getSourceName(type);

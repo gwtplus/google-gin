@@ -18,17 +18,24 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
-import com.google.gwt.inject.rebind.util.InjectorWriteContext;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
+import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Binding for a constant value.
  */
-public class BindConstantBinding<T> extends AbstractSingleMethodBinding implements Binding {
+public class BindConstantBinding<T> extends AbstractBinding implements Binding {
 
   private final String valueToOutput;
   private final Key<?> key;
@@ -85,8 +92,13 @@ public class BindConstantBinding<T> extends AbstractSingleMethodBinding implemen
     }
   }
 
-  public void appendCreatorMethodBody(StringBuilder builder, InjectorWriteContext writeContext) {
-    builder.append("return ").append(valueToOutput).append(";");
+  public SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
+    String type = ReflectUtil.getSourceName(key.getTypeLiteral());
+
+    return new SourceSnippetBuilder()
+        .append(type).append(" result = ").append(valueToOutput).append(";")
+        .build();
   }
 
   public Collection<Dependency> getDependencies() {

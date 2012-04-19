@@ -28,6 +28,9 @@ import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
@@ -134,11 +137,13 @@ class GinjectorFragmentOutputter {
   }
 
   /**
-   * Output the getter method for the given binding, along with any additional
-   * code to support its scope.
+   * Writes a method describing the getter for the given key, along with any
+   * other code necessary to support it.
    */
-  void outputBindingGetter(Key<?> key, Binding binding, GinScope scope) {
+  void writeBindingGetter(Key<?> key, Binding binding, GinScope scope) {
     Context bindingContext = binding.getContext();
+
+    SourceSnippetBuilder getterBuilder = new SourceSnippetBuilder();
 
     String creator = nameGenerator.getCreatorMethodName(key);
     String getter = nameGenerator.getGetterMethodName(key);
@@ -146,8 +151,6 @@ class GinjectorFragmentOutputter {
     String typeName;
     try {
       typeName = ReflectUtil.getSourceName(key.getTypeLiteral());
-
-      sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
     } catch (NoSourceNameException e) {
       errorManager.logError("Error trying to write getter for [%s] -> [%s];"
           + " binding declaration: %s", e, key, binding, bindingContext);
@@ -166,32 +169,28 @@ class GinjectorFragmentOutputter {
       case SINGLETON:
         writer.println("private " + typeName + " " + field + " = null;");
         writer.println();
-        sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, "Singleton bound at:");
-        writer.println("public " + typeName + " " + getter + "()" + " {");
-        writer.indent();
-        writer.println("if (" + field + " == null) {");
-        writer.indent();
-        writer.println(field + " = " + creator + "();");
-        writer.outdent();
-        writer.println("}");
-        writer.println("return " + field + ";");
-        writer.outdent();
-        writer.println("}");
+
+        getterBuilder.append(String.format(
+            "if (%1$s == null){;\n"
+          + "  %1$s = %2$s();\n"
+          + "}\n"
+          + "return %1$s;\n",
+            field, creator));
         break;
 
       case NO_SCOPE:
         // For none, getter just returns creator
         sourceWriteUtil.writeBindingContextJavadoc(writer, bindingContext, key);
 
-        sourceWriteUtil.writeMethod(writer, "public " + typeName + " " + getter + "()",
-            "return " + creator + "();");
+        getterBuilder.append(String.format("return %s();", creator));
         break;
 
       default:
         throw new IllegalStateException();
     }
 
-    writer.println();
+    outputMethod(SourceSnippets.asMethod(false, String.format("public %s %s()", typeName, getter),
+        fragmentPackageName.toString(), getterBuilder.build()));
   }
 
   void outputMethod(InjectorMethod method) {

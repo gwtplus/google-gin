@@ -18,18 +18,23 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
-import com.google.gwt.inject.rebind.util.InjectorWriteContext;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
+import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Binding implementation for {@code Provider<T>} that just uses the binding
  * to {@code T}.
  */
-public class ImplicitProviderBinding extends AbstractSingleMethodBinding implements Binding {
+public class ImplicitProviderBinding extends AbstractBinding implements Binding {
 
   private final ParameterizedType providerType;
   private final Key<?> targetKey;
@@ -48,18 +53,19 @@ public class ImplicitProviderBinding extends AbstractSingleMethodBinding impleme
     this(providerKey, ReflectUtil.getProvidedKey(providerKey));
   }
 
-  public void appendCreatorMethodBody(StringBuilder builder, InjectorWriteContext writeContext)
-      throws NoSourceNameException {
-
+  public SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
     String providerTypeName = ReflectUtil.getSourceName(providerType);
     String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
-    builder
-        .append("return new ")
+
+    return new SourceSnippetBuilder()
+        .append(providerTypeName).append(" result = new ")
         .append(providerTypeName).append("() { \n")
         .append("  public ").append(targetKeyName).append(" get() { \n")
-        .append("    return ").append(writeContext.callGetter(targetKey)).append(";\n")
+        .append("    return ").append(SourceSnippets.callGetter(targetKey)).append(";\n")
         .append("  }\n")
-        .append("};");
+        .append("};")
+        .build();
   }
 
   public Collection<Dependency> getDependencies() {

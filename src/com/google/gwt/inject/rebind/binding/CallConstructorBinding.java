@@ -46,8 +46,8 @@ public class CallConstructorBinding extends CreatorBinding {
     addParamTypes(constructor);
   }
 
-  @Override protected SourceSnippet getCreationStatement(List<InjectorMethod> methodsOutput,
-      NameGenerator nameGenerator) throws NoSourceNameException {
+  @Override protected SourceSnippet getCreationStatement(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
     return new SourceSnippetBuilder()
         .append(getTypeName()).append(" result = ")
         .append(

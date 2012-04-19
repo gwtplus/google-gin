@@ -18,9 +18,11 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
 import com.google.inject.TypeLiteral;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Interface used by {@code InjectorGeneratorImpl} to represent different kinds
@@ -29,16 +31,15 @@ import java.util.Collection;
 public interface Binding {
 
   /**
-   * Gets the methods that should be written to the injector to create the bound
-   * key.  A method with the given {@code creatorMethodSignature} <b>must</b> be
-   * returned; other methods are optional.  If additional methods are to be
-   * created, the given {@link NameGenerator} should be used to choose their
-   * names.
+   * Gets one or more fully formed Java statements that create the bound value
+   * and store it in a new local variable named {@code result}.  If additional
+   * methods are to be created, the given {@link NameGenerator} should be used
+   * to choose their names, and they should be added to {@code methodsOutput}.
    *
    * @throws NoSourceNameException if source name is not available for type
    */
-  Iterable<InjectorMethod> getCreatorMethods(String creatorMethodSignature,
-      NameGenerator nameGenerator) throws NoSourceNameException;
+  SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException;
 
   /**
    * Returns the context in which this binding was created.

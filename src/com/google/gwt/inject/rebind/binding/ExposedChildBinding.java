@@ -19,11 +19,18 @@ import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.GinjectorNameGenerator;
-import com.google.gwt.inject.rebind.util.InjectorWriteContext;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
+import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Binding that represents a value exposed to this level from lower in the injector hierarchy.
@@ -31,7 +38,7 @@ import java.util.Collections;
  * TODO(bchambers): As with {@link ParentBinding} it would be nice if this didn't need the
  * no-op creator method.
  */
-public class ExposedChildBinding extends AbstractSingleMethodBinding implements Binding {
+public class ExposedChildBinding extends AbstractBinding implements Binding {
 
   private final ErrorManager errorManager;
   private final Key<?> key;
@@ -65,9 +72,14 @@ public class ExposedChildBinding extends AbstractSingleMethodBinding implements 
     return childBindings;
   }
 
-  public void appendCreatorMethodBody(StringBuilder sb, InjectorWriteContext injectorWriteContext) {
-    sb.append("return ").append(injectorWriteContext.callChildGetter(childBindings, key))
-        .append(";");
+  public SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
+    String typeName = ReflectUtil.getSourceName(key.getTypeLiteral());
+
+    return new SourceSnippetBuilder()
+        .append(typeName).append(" result = ")
+        .append(SourceSnippets.callChildGetter(childBindings, key)).append(";")
+        .build();
   }
 
   public Collection<Dependency> getDependencies() {

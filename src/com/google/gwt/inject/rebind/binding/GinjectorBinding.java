@@ -17,19 +17,25 @@ package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.rebind.GinjectorInterfaceType;
-import com.google.gwt.inject.rebind.util.InjectorWriteContext;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Simple binding that allows injection of the ginjector.
  */
-public class GinjectorBinding extends AbstractSingleMethodBinding implements Binding {
+public class GinjectorBinding extends AbstractBinding implements Binding {
 
   private final Class<? extends Ginjector> ginjectorInterface;
 
@@ -48,10 +54,14 @@ public class GinjectorBinding extends AbstractSingleMethodBinding implements Bin
     this.ginjectorInterface = ginjectorInterface;
   }
 
-  public void appendCreatorMethodBody(StringBuilder builder,
-      InjectorWriteContext injectorWriteContext) {
-    builder.append("return ").append(injectorWriteContext.callGinjectorInterfaceGetter())
-        .append(";");
+  public SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
+    String type = ReflectUtil.getSourceName(ginjectorInterface);
+
+    return new SourceSnippetBuilder()
+        .append(type).append(" result = ").append(SourceSnippets.callGinjectorInterfaceGetter())
+        .append(";")
+        .build();
   }
 
   public Collection<Dependency> getDependencies() {

@@ -65,23 +65,17 @@ public class ProviderMethodBinding extends AbstractBinding implements Binding {
   // every provider method invocation. Instead we should likely create just a
   // single instance of the module, invoke it repeatedly and share it between
   // provider methods.
-  public List<InjectorMethod> getCreatorMethods(String creatorMethodSignature,
-      NameGenerator nameGenerator) throws NoSourceNameException {
-    List<InjectorMethod> methods = new ArrayList<InjectorMethod>();
-
+  public SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
     String moduleSourceName = ReflectUtil.getSourceName(moduleType);
     String createModule = "new " + moduleSourceName + "()";
+    String type = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
 
-    SourceSnippet creatorMethodBody = new SourceSnippetBuilder()
-        .append("return ")
+    return new SourceSnippetBuilder()
+        .append(type).append(" result = ")
         .append(methodCallUtil.createMethodCallWithInjection(providerMethod, createModule,
-            nameGenerator, methods))
+            nameGenerator, methodsOutput))
         .build();
-
-    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, getGetterMethodPackage(),
-        creatorMethodBody));
-
-    return methods;
   }
 
   public Collection<Dependency> getDependencies() {

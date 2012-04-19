@@ -19,7 +19,11 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
-import com.google.gwt.inject.rebind.util.InjectorWriteContext;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
+import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 
 import java.lang.annotation.Annotation;
@@ -27,6 +31,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Binding implementation for {@code AsyncProvider<T>} that generates
@@ -48,7 +53,7 @@ import java.util.Collections;
  * 
  * </pre>
  */
-public class AsyncProviderBinding extends AbstractSingleMethodBinding implements Binding {
+public class AsyncProviderBinding extends AbstractBinding implements Binding {
 
   private ParameterizedType providerType;
   private final Key<?> providerKey;
@@ -66,13 +71,14 @@ public class AsyncProviderBinding extends AbstractSingleMethodBinding implements
     this(providerKey, ReflectUtil.getProvidedKey(providerKey));
   }
 
-  public void appendCreatorMethodBody(StringBuilder builder, InjectorWriteContext writeContext)
-      throws NoSourceNameException {
+  public SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
     String providerTypeName = ReflectUtil.getSourceName(providerType);
     String targetKeyName = ReflectUtil.getSourceName(targetKey.getTypeLiteral());
 
-    builder
-        .append("return new ").append(providerTypeName).append("() { \n") 
+    return new SourceSnippetBuilder()
+        .append(providerTypeName).append(" result = new ")
+        .append(providerTypeName).append("() { \n")
         .append("    public void get(")
         .append("final com.google.gwt.user.client.rpc.AsyncCallback<? super ")
         .append(targetKeyName).append("> callback) { \n")
@@ -82,14 +88,15 @@ public class AsyncProviderBinding extends AbstractSingleMethodBinding implements
         .append("new com.google.gwt.core.client.RunAsyncCallback() { \n")
         .append("        public void onSuccess() { \n")
         .append("          callback.onSuccess(")
-        .append(writeContext.callGetter(targetKey)).append(");\n")
+        .append(SourceSnippets.callGetter(targetKey)).append(");\n")
         .append("        }\n")
         .append("        public void onFailure(Throwable ex) { \n ")
         .append("          callback.onFailure(ex); \n" )
         .append("        } \n")
         .append("    }); \n")
         .append("    }\n")
-        .append(" };\n");
+        .append(" };\n")
+        .build();
   }
 
   public Collection<Dependency> getDependencies() {    

@@ -30,6 +30,7 @@ import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
 import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
 import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.gwt.inject.rebind.util.SourceWriteUtil;
@@ -46,6 +47,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,9 +199,9 @@ class GinjectorBindingsOutputter {
           fragmentPackageNameFactory.create(binding.getGetterMethodPackage());
       Key<?> key = entry.getKey();
 
-      outputCreatorMethods(bindings, key, binding, fragments);
+      outputCreatorMethods(bindings, key, binding, fragments, nameGenerator);
       fragments.get(fragmentPackageName)
-          .outputBindingGetter(key, binding, bindings.determineScope(key));
+          .writeBindingGetter(key, binding, bindings.determineScope(key));
     }
 
     // Output the fragment members.
@@ -215,14 +217,27 @@ class GinjectorBindingsOutputter {
    * Writes the creator methods associated with the given binding.
    */
   private void outputCreatorMethods(GinjectorBindings bindings, Key<?> key, Binding binding,
-      FragmentMap fragments) {
+      FragmentMap fragments, NameGenerator nameGenerator) {
 
     try {
       String typeName = ReflectUtil.getSourceName(key.getTypeLiteral());
       String creator = bindings.getNameGenerator().getCreatorMethodName(key);
 
-      outputMethods(binding.getCreatorMethods("private " + typeName + " " + creator + "()",
-          bindings.getNameGenerator()), fragments);
+      List<InjectorMethod> helperMethods = new ArrayList<InjectorMethod>();
+      SourceSnippet creationMethodBody = new SourceSnippetBuilder()
+          .append(binding.getCreationStatements(nameGenerator, helperMethods))
+          .append("return result;")
+          .build();
+
+      // Write a top-level creator method that wraps the creation statement(s)
+      // produced by the binding.
+      String creatorSignature = "private " + typeName + " " + creator + "()";
+      String creatorPackage = binding.getGetterMethodPackage();
+      InjectorMethod creatorMethod =
+          SourceSnippets.asMethod(false, creatorSignature, creatorPackage, creationMethodBody);
+
+      outputMethods(Collections.singletonList(creatorMethod), fragments);
+      outputMethods(helperMethods, fragments);
     } catch (NoSourceNameException e) {
       errorManager.logError("Error trying to write creators for [%s] -> [%s];"
           + " binding declaration: %s", e, key, binding, binding.getContext());

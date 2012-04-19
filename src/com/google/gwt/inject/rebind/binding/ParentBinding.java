@@ -18,12 +18,18 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
-import com.google.gwt.inject.rebind.util.InjectorWriteContext;
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.reflect.ReflectUtil;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.SourceSnippet;
+import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
+import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Binding that represents a value inherited from higher in the injector hierarchy.
@@ -32,7 +38,7 @@ import java.util.Collections;
  * paradigm for parent and child bindings, but it is the easiest way to add this
  * to Gin.
  */
-public class ParentBinding extends AbstractSingleMethodBinding implements Binding {
+public class ParentBinding extends AbstractBinding implements Binding {
 
   private final ErrorManager errorManager;
   private final Key<?> key;
@@ -66,10 +72,14 @@ public class ParentBinding extends AbstractSingleMethodBinding implements Bindin
     return parentBindings;
   }
 
-  public void appendCreatorMethodBody(StringBuilder builder,
-      InjectorWriteContext injectorWriteContext) {
-    String parentMethodCall = injectorWriteContext.callParentGetter(key, parentBindings);
-    builder.append("return ").append(parentMethodCall).append(";");
+  public SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
+    String type = ReflectUtil.getSourceName(key.getTypeLiteral());
+
+    return new SourceSnippetBuilder()
+        .append(type).append(" result = ")
+        .append(SourceSnippets.callParentGetter(key, parentBindings)).append(";")
+        .build();
   }
 
   public Collection<Dependency> getDependencies() {

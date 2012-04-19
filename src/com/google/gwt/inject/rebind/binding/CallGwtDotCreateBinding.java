@@ -37,8 +37,8 @@ public class CallGwtDotCreateBinding extends CreatorBinding {
     super(guiceUtil, type, context);
   }
 
-  @Override protected final SourceSnippet getCreationStatement(List<InjectorMethod> methodsOutput,
-      NameGenerator nameGenerator) throws NoSourceNameException {
+  @Override protected final SourceSnippet getCreationStatement(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
 
     return new SourceSnippetBuilder()
         .append("Object created = GWT.create(").append(getTypeNameToCreate()).append(".class);\n")

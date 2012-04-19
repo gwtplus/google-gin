@@ -19,10 +19,14 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 
+import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
+import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.InjectorWriteContext;
 import com.google.inject.Key;
 import junit.framework.TestCase;
 
+import java.util.ArrayList;
+import java.util.List;
 
 public class BindConstantBindingTest extends TestCase {
 
@@ -31,11 +35,8 @@ public class BindConstantBindingTest extends TestCase {
 
   // TODO(schmitt):  Add tests for other constant types.
 
-  public void testEnum() {
+  public void testEnum() throws NoSourceNameException {
     Key<Color> colorKey = Key.get(Color.class);
-    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
-
-    replay(writeContextMock);
 
     BindConstantBinding<Color> binding =
         new BindConstantBinding<Color>(colorKey, Color.Green, CONTEXT);
@@ -46,55 +47,37 @@ public class BindConstantBindingTest extends TestCase {
     assertTrue(binding.getDependencies().contains(
         new Dependency(Dependency.GINJECTOR, colorKey, SOURCE)));
 
-    StringBuilder methodBody = new StringBuilder();
-    binding.appendCreatorMethodBody(methodBody, writeContextMock);
-    assertEquals("return com.google.gwt.inject.rebind.binding.Color.Green;", methodBody.toString());
-
-    verify(writeContextMock);
+    assertCreationStatements(binding, "com.google.gwt.inject.rebind.binding.Color result ="
+        + " com.google.gwt.inject.rebind.binding.Color.Green;");
   }
 
-  public void testInnerEnum() {
+  public void testInnerEnum() throws NoSourceNameException {
     Key<Font> fontKey = Key.get(Font.class);
-    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
-
-    replay(writeContextMock);
 
     BindConstantBinding<Font> binding =
         new BindConstantBinding<Font>(fontKey, Font.Verdana, CONTEXT);
 
-    StringBuilder methodBody = new StringBuilder();
-    binding.appendCreatorMethodBody(methodBody, writeContextMock);
-    assertEquals(
-        "return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Verdana;",
-        methodBody.toString());
-
-    verify(writeContextMock);
+    assertCreationStatements(binding,
+        "com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font result "
+        + "= com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Verdana;");
   }
 
-  public void testInnerEnumWithCustomImplementation() {
+  public void testInnerEnumWithCustomImplementation() throws NoSourceNameException {
     Key<Font> fontKey = Key.get(Font.class);
-    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
-
-    replay(writeContextMock);
 
     BindConstantBinding<Font> binding =
         new BindConstantBinding<Font>(fontKey, Font.Arial, CONTEXT);
 
-    StringBuilder methodBody = new StringBuilder();
-    binding.appendCreatorMethodBody(methodBody, writeContextMock);
-    assertEquals("return com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Arial;",
-        methodBody.toString());
-    verify(writeContextMock);
+    assertCreationStatements(binding,
+        "com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font result "
+        + "= com.google.gwt.inject.rebind.binding.BindConstantBindingTest.Font.Arial;");
   }
 
-  public void testCharacter() {
+  public void testCharacter() throws NoSourceNameException {
     Key<Character> charKey = Key.get(Character.class);
-    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
 
     char value = '\u1234';
 
-    replay(writeContextMock);
-
     BindConstantBinding<Character> binding =
         new BindConstantBinding<Character>(charKey, value, CONTEXT);
 
@@ -104,21 +87,14 @@ public class BindConstantBindingTest extends TestCase {
     assertTrue(binding.getDependencies().contains(
         new Dependency(Dependency.GINJECTOR, charKey, SOURCE)));
 
-    StringBuilder methodBody = new StringBuilder();
-    binding.appendCreatorMethodBody(methodBody, writeContextMock);
-    assertEquals("return '" + value + "';", methodBody.toString());
-
-    verify(writeContextMock);
+    assertCreationStatements(binding, "java.lang.Character result = '" + value + "';");
   }
 
-  public void testCharacterEscaped() {
+  public void testCharacterEscaped() throws NoSourceNameException {
     Key<Character> charKey = Key.get(Character.class);
-    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
 
     char value = '\'';
 
-    replay(writeContextMock);
-
     BindConstantBinding<Character> binding =
         new BindConstantBinding<Character>(charKey, value, CONTEXT);
 
@@ -128,9 +104,26 @@ public class BindConstantBindingTest extends TestCase {
     assertTrue(binding.getDependencies().contains(
         new Dependency(Dependency.GINJECTOR, charKey, SOURCE)));
 
-    StringBuilder methodBody = new StringBuilder();
-    binding.appendCreatorMethodBody(methodBody, writeContextMock);
-    assertEquals("return '\\'';", methodBody.toString());
+    assertCreationStatements(binding, "java.lang.Character result = '\\'';");
+  }
+
+  /**
+   * Verifies that invoking binding.getCreationStatements() produces no helper
+   * methods, does not invoke any methods on the write context, and produces the
+   * given statements.
+   */
+  private void assertCreationStatements(Binding binding, String expectedStatements)
+      throws NoSourceNameException {
+    InjectorWriteContext writeContextMock = createMock(InjectorWriteContext.class);
+
+    replay(writeContextMock);
+
+    List<InjectorMethod> methods = new ArrayList<InjectorMethod>();
+    String actualStatements =
+        binding.getCreationStatements(null, methods).getSource(writeContextMock);
+
+    assertEquals(expectedStatements, actualStatements);
+    assertEquals(0, methods.size());
 
     verify(writeContextMock);
   }

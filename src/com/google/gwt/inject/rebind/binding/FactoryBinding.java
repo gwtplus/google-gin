@@ -125,15 +125,12 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     }
   }
 
-  public Iterable<InjectorMethod> getCreatorMethods(final String creatorMethodSignature,
-      NameGenerator nameGenerator) throws NoSourceNameException {
-
-    List<InjectorMethod> methods = new ArrayList<InjectorMethod>();
-
+  public SourceSnippet getCreationStatements(NameGenerator nameGenerator,
+      List<InjectorMethod> methodsOutput) throws NoSourceNameException {
     String factoryTypeName = ReflectUtil.getSourceName(factoryType);
     SourceSnippetBuilder sb = new SourceSnippetBuilder();
 
-    sb.append("return new ").append(factoryTypeName).append("() {");
+    sb.append(factoryTypeName).append(" result = new ").append(factoryTypeName).append("() {");
 
     for (AssistData assisted : assistData) {
       // While it might seem that we could just create the return type directly
@@ -154,7 +151,10 @@ public class FactoryBinding extends AbstractBinding implements Binding {
           .removeAbstractModifier()
           .build();
 
-      SourceSnippet assistedCreateCall = callAssistedCreate(assisted, nameGenerator, methods);
+      SourceSnippet methodCall = methodCallUtil.createMethodCallWithInjection(
+          assisted.constructor, null, assisted.parameterNames, nameGenerator, methodsOutput);
+
+      SourceSnippet assistedCreateCall = callAssistedCreate(assisted, nameGenerator, methodsOutput);
 
       sb.append("\n\n    ").append(signature).append(" {")
          .append("\n      return ").append(assistedCreateCall).append(";")
@@ -163,10 +163,7 @@ public class FactoryBinding extends AbstractBinding implements Binding {
 
     sb.append("\n};"); // End factory implementation.
 
-    String factoryPackage = getGetterMethodPackage();
-    methods.add(SourceSnippets.asMethod(false, creatorMethodSignature, factoryPackage, sb.build()));
-
-    return Collections.unmodifiableCollection(methods);
+    return sb.build();
   }
 
   private SourceSnippet callAssistedCreate(AssistData assisted, NameGenerator nameGenerator,
