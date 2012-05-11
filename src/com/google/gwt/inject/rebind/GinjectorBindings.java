@@ -288,7 +288,9 @@ public class GinjectorBindings implements BindingIndex {
    * Returns {@code true} if any binding in this injector or in one of its
    * descendants is an eager singleton binding.
    *
-   * <p>Note: this method is O(n^2) in the height of the injector tree.
+   * <p>Note: this method is Omega(n) in the height of the injector tree, and
+   * invoking it on every entry in the injector tree is O(n^2).  The latter cost
+   * could be reduced to O(n) by caching the return value.
    */
   public boolean hasEagerSingletonBindingInSubtree() {
     if (hasEagerSingletonBinding()) {
@@ -308,7 +310,9 @@ public class GinjectorBindings implements BindingIndex {
    * Returns {@code true} if this injector or any of its children has a static
    * injection request.
    *
-   * <p>Note: this method is O(n^2) in the height of the injector tree.
+   * <p>Note: this method is Omega(n) in the height of the injector tree, and
+   * invoking it on every entry in the injector tree is O(n^2).  The latter cost
+   * could be reduced to O(n) by caching the return value.
    */
   public boolean hasStaticInjectionRequestInSubtree() {
     if (!staticInjectionRequests.isEmpty()) {
