@@ -138,6 +138,16 @@ class GinjectorFragmentOutputter {
     return fragmentPackageName;
   }
 
+  /** Returns true if the eager singletons initializer is nonempty. */
+  boolean hasEagerSingletonInitialization() {
+    return initializeEagerSingletonsBody.length() > 0;
+  }
+
+  /** Returns true if the static injections initializer is nonempty. */
+  boolean hasStaticInjectionInitialization() {
+    return initializeStaticInjectionsBody.length() > 0;
+  }
+
   /**
    * Writes a method describing the getter for the given key, along with any
    * other code necessary to support it.  Produces a list of helper methods that
@@ -236,17 +246,21 @@ class GinjectorFragmentOutputter {
         String.format("public %s(%s injector)", fragmentClassName, ginjectorClassName),
         "this.injector = injector;");
 
-    // Write a method to initialize eager singletons.
-    sourceWriteUtil.writeMethod(
-        writer,
-        "public void initializeEagerSingletons()",
-        initializeEagerSingletonsBody.toString());
+    if (hasEagerSingletonInitialization()) {
+      // Write a method to initialize eager singletons.
+      sourceWriteUtil.writeMethod(
+          writer,
+          "public void initializeEagerSingletons()",
+          initializeEagerSingletonsBody.toString());
+    }
 
-    // Write a method to initialize static injection.
-    sourceWriteUtil.writeMethod(
-        writer,
-        "public void initializeStaticInjections()",
-        initializeStaticInjectionsBody.toString());
+    if (hasStaticInjectionInitialization()) {
+      // Write a method to initialize static injection.
+      sourceWriteUtil.writeMethod(
+          writer,
+          "public void initializeStaticInjections()",
+          initializeStaticInjectionsBody.toString());
+    }
 
     writer.commit(logger);
   }

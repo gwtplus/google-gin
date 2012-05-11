@@ -261,12 +261,67 @@ public class GinjectorBindings implements BindingIndex {
     return ginjectorInterface;
   }
 
-  public Iterable<Class<?>> getStaticInjectionRequests() {
+  public Collection<Class<?>> getStaticInjectionRequests() {
     return Collections.unmodifiableCollection(staticInjectionRequests);
   }
 
   public Iterable<TypeLiteral<?>> getMemberInjectRequests() {
     return Collections.unmodifiableCollection(memberInjectRequests);
+  }
+
+  /**
+   * Returns {@code true} if this bindings object contains at least one eager
+   * singleton binding.
+   */
+  private boolean hasEagerSingletonBinding() {
+    for (Key<?> key : bindings.keySet()) {
+      GinScope scope = determineScope(key);
+      if (GinScope.EAGER_SINGLETON.equals(scope)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Returns {@code true} if any binding in this injector or in one of its
+   * descendants is an eager singleton binding.
+   *
+   * <p>Note: this method is O(n^2) in the height of the injector tree.
+   */
+  public boolean hasEagerSingletonBindingInSubtree() {
+    if (hasEagerSingletonBinding()) {
+      return true;
+    }
+
+    for (GinjectorBindings child : getChildren()) {
+      if (child.hasEagerSingletonBindingInSubtree()) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Returns {@code true} if this injector or any of its children has a static
+   * injection request.
+   *
+   * <p>Note: this method is O(n^2) in the height of the injector tree.
+   */
+  public boolean hasStaticInjectionRequestInSubtree() {
+    if (!staticInjectionRequests.isEmpty()) {
+      return true;
+    }
+
+    for (GinjectorBindings child : getChildren()) {
+      if (child.hasStaticInjectionRequestInSubtree()) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   void putScope(Key<?> key, GinScope scope) {

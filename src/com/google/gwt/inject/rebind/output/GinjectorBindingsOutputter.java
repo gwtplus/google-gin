@@ -175,7 +175,7 @@ class GinjectorBindingsOutputter {
             + "}\n\n"
             + "return %2$s;", canonicalClassName, fieldName));
 
-      // Ensure that the initializer initializes this child.
+      // Ensure that the initializer initializes this child, if necessary.
       outputSubInitialize(child, getterName,
           initializeEagerSingletonsBody, initializeStaticInjectionsBody);
     }
@@ -210,7 +210,7 @@ class GinjectorBindingsOutputter {
         initializeStaticInjectionsBody, sourceWriteUtil, writer);
 
     writeConstructor(bindings, sourceWriteUtil, writer);
-    writeInitializers(initializeEagerSingletonsBody, initializeStaticInjectionsBody,
+    writeInitializers(bindings, initializeEagerSingletonsBody, initializeStaticInjectionsBody,
         sourceWriteUtil, writer);
   }
 
@@ -286,11 +286,13 @@ class GinjectorBindingsOutputter {
         + "}\n\n"
         + "return %2$s;", fragmentCanonicalClassName, fieldName));
 
-      // TODO(dburrows): throw away calls to and definitions of initializers
-      // that have nothing to do.
+      if (fragments.get(fragmentPackageName).hasEagerSingletonInitialization()) {
+        initializeEagerSingletonsBody.append(getterName + "().initializeEagerSingletons();\n");
+      }
 
-      initializeEagerSingletonsBody.append(getterName + "().initializeEagerSingletons();\n");
-      initializeStaticInjectionsBody.append(getterName + "().initializeStaticInjections();\n");
+      if (fragments.get(fragmentPackageName).hasStaticInjectionInitialization()) {
+        initializeStaticInjectionsBody.append(getterName + "().initializeStaticInjections();\n");
+      }
     }
   }
 
@@ -386,13 +388,17 @@ class GinjectorBindingsOutputter {
   private void outputSubInitialize(GinjectorBindings child, String childGetterName,
       StringBuilder initializeEagerSingletonsBody, StringBuilder initializeStaticInjectionsBody) {
 
-    initializeEagerSingletonsBody
-        .append(childGetterName)
-        .append("().initializeEagerSingletons();\n");
+    if (child.hasEagerSingletonBindingInSubtree()) {
+      initializeEagerSingletonsBody
+          .append(childGetterName)
+          .append("().initializeEagerSingletons();\n");
+    }
 
-    initializeStaticInjectionsBody
-        .append(childGetterName)
-        .append("().initializeStaticInjections();\n");
+    if (child.hasStaticInjectionRequestInSubtree()) {
+      initializeStaticInjectionsBody
+          .append(childGetterName)
+          .append("().initializeStaticInjections();\n");
+    }
   }
 
   /**
@@ -468,14 +474,19 @@ class GinjectorBindingsOutputter {
   // <http://code.google.com/p/google-gin/issues/detail?id=156>.
 
   private void writeInitializers(
+      GinjectorBindings bindings,
       StringBuilder initializeEagerSingletonsBody, StringBuilder initializeStaticInjectionsBody,
       SourceWriteUtil sourceWriteUtil, SourceWriter writer) {
 
-    sourceWriteUtil.writeMethod(writer,
-        "public void initializeEagerSingletons()", initializeEagerSingletonsBody.toString());
+    if (bindings.hasEagerSingletonBindingInSubtree()) {
+      sourceWriteUtil.writeMethod(writer,
+          "public void initializeEagerSingletons()", initializeEagerSingletonsBody.toString());
+    }
 
-    sourceWriteUtil.writeMethod(writer,
-        "public void initializeStaticInjections()", initializeStaticInjectionsBody.toString());
+    if (bindings.hasStaticInjectionRequestInSubtree()) {
+      sourceWriteUtil.writeMethod(writer,
+          "public void initializeStaticInjections()", initializeStaticInjectionsBody.toString());
+    }
   }
 
   /**

@@ -78,9 +78,9 @@ public class GinjectorImplOutputter {
   @Inject
   public GinjectorImplOutputter(GinjectorBindingsOutputter bindingsOutputter,
       GeneratorContext ctx, FragmentPackageName.Factory fragmentPackageNameFactory,
-      GinjectorNameGenerator ginjectorNameGenerator, final GuiceUtil guiceUtil, TreeLogger logger,
-      Provider<MemberCollector> collectorProvider, ReachabilityAnalyzer reachabilityAnalyzer,
-      SourceWriteUtil.Factory sourceWriteUtilFactory) {
+      GinjectorNameGenerator ginjectorNameGenerator, final GuiceUtil guiceUtil,
+      TreeLogger logger, Provider<MemberCollector> collectorProvider,
+      ReachabilityAnalyzer reachabilityAnalyzer, SourceWriteUtil.Factory sourceWriteUtilFactory) {
     this.bindingsOutputter = bindingsOutputter;
     this.ctx = ctx;
     this.fragmentPackageNameFactory = fragmentPackageNameFactory;
@@ -149,6 +149,15 @@ public class GinjectorImplOutputter {
       writer.println("private final %1$s %2$s = new %1$s(this);", rootInjectorClass, rootFieldName);
 
       SourceWriteUtil sourceWriteUtil = sourceWriteUtilFactory.create(rootBindings);
+
+      String staticInjectionInitialization = rootBindings.hasStaticInjectionRequestInSubtree()
+          ? String.format("%s.initializeStaticInjections();\n", rootFieldName)
+          : "";
+
+      String eagerSingletonsInitialization = rootBindings.hasEagerSingletonBindingInSubtree()
+          ? String.format("%s.initializeEagerSingletons();\n", rootFieldName)
+          : "";
+
       sourceWriteUtil.writeMethod(writer, "public " + implClassName + "()", String.format(
           // To imitate the behavior of Guice and provide more predictable
           // bootstrap ordering, we initialize the injectors in two phases:
@@ -158,9 +167,7 @@ public class GinjectorImplOutputter {
           // the proper order.
           //
           // See http://code.google.com/p/google-guice/wiki/Bootstrap
-          "%1$s.initializeStaticInjections();\n" +
-          "%1$s.initializeEagerSingletons();\n",
-          rootFieldName));
+          "%s%s", staticInjectionInitialization, eagerSingletonsInitialization));
 
       outputInterfaceMethods(rootBindings, ginjectorInterface, sourceWriteUtil, writer);
     } catch (NoSourceNameException e) {

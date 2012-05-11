@@ -180,6 +180,144 @@ public class GinjectorBindingsTest extends TestCase {
     assertTrue(topBindings.isBoundLocallyInChild(key));
   }
 
+  public void testHasEagerSingletonBindingInSubtree_selfHasNoEagerSingletonBinding()
+      throws Exception {
+    GinjectorBindings bindings = createBindings();
+
+    expectFinalize(bindings);
+
+    replay();
+
+    Key<?> key = Key.get(GinjectorBindingsTest.class);
+    Key<?> toKey = Key.get(Long.class);
+    bindings.addBinding(key, bindingFactory.getBindClassBinding(key, toKey, context));
+    bindings.putScope(key, GinScope.SINGLETON);
+
+    finalize(bindings);
+
+    assertFalse(bindings.hasEagerSingletonBindingInSubtree());
+  }
+
+  public void testHasEagerSingletonBindingInSubtree_selfHasEagerSingleton()
+      throws Exception {
+    GinjectorBindings bindings = createBindings();
+
+    expectFinalize(bindings);
+
+    replay();
+
+    Key<?> key = Key.get(GinjectorBindingsTest.class);
+    Key<?> toKey = Key.get(Long.class);
+    bindings.addBinding(key, bindingFactory.getBindClassBinding(key, toKey, context));
+    bindings.putScope(key, GinScope.EAGER_SINGLETON);
+
+    finalize(bindings);
+
+    assertTrue(bindings.hasEagerSingletonBindingInSubtree());
+  }
+
+  public void testHasEagerSingletonBindingInSubtree_childHasEagerSingleton()
+      throws Exception {
+    GinjectorBindings toplevelBindings = createBindings();
+    GinjectorBindings childBindings = createBindings();
+
+    expect(ginjectorBindingsProvider.get()).andReturn(childBindings);
+    expectFinalize(toplevelBindings);
+    expectFinalize(childBindings);
+
+    replay();
+
+    toplevelBindings.createChildGinjectorBindings(GinjectorBindingsTest.class);
+
+    Key<?> key = Key.get(GinjectorBindingsTest.class);
+    Key<?> toKey = Key.get(Long.class);
+    childBindings.addBinding(key, bindingFactory.getBindClassBinding(key, toKey, context));
+    childBindings.putScope(key, GinScope.EAGER_SINGLETON);
+
+    finalize(toplevelBindings);
+    finalize(childBindings);
+
+    assertTrue(toplevelBindings.hasEagerSingletonBindingInSubtree());
+  }
+
+  public void testHasEagerSingletonBindingInSubtree_grandchildHasEagerSingleton()
+      throws Exception {
+    GinjectorBindings toplevelBindings = createBindings();
+    GinjectorBindings childBindings = createBindings();
+    GinjectorBindings grandchildBindings = createBindings();
+
+    expect(ginjectorBindingsProvider.get()).andReturn(childBindings);
+    expect(ginjectorBindingsProvider.get()).andReturn(grandchildBindings);
+
+    expectFinalize(toplevelBindings);
+    expectFinalize(childBindings);
+    expectFinalize(grandchildBindings);
+
+    replay();
+
+    toplevelBindings.createChildGinjectorBindings(GinjectorBindingsTest.class);
+    childBindings.createChildGinjectorBindings(GinjectorBindingsTest.class);
+
+    Key<?> key = Key.get(GinjectorBindingsTest.class);
+    Key<?> toKey = Key.get(Long.class);
+    grandchildBindings.addBinding(key, bindingFactory.getBindClassBinding(key, toKey, context));
+    grandchildBindings.putScope(key, GinScope.EAGER_SINGLETON);
+
+    finalize(toplevelBindings);
+    finalize(childBindings);
+    finalize(grandchildBindings);
+
+    assertTrue(toplevelBindings.hasEagerSingletonBindingInSubtree());
+  }
+
+  public void testHasStaticInjectionRequestInSubtree_selfHasNoStaticInjectionRequest() {
+    GinjectorBindings bindings = createBindings();
+
+    replay();
+
+    assertFalse(bindings.hasStaticInjectionRequestInSubtree());
+  }
+
+  public void testHasStaticInjectionRequestInSubtree_selfHasStaticInjectionRequest() {
+    GinjectorBindings bindings = createBindings();
+
+    replay();
+
+    bindings.addStaticInjectionRequest(GinjectorBindingsTest.class, "");
+    assertTrue(bindings.hasStaticInjectionRequestInSubtree());
+  }
+
+  public void testHasStaticInjectionRequestInSubtree_childHasStaticInjectionRequest() {
+    GinjectorBindings toplevelBindings = createBindings();
+    GinjectorBindings childBindings = createBindings();
+
+    expect(ginjectorBindingsProvider.get()).andReturn(childBindings);
+    replay();
+
+    toplevelBindings.createChildGinjectorBindings(GinjectorBindingsTest.class);
+
+    childBindings.addStaticInjectionRequest(GinjectorBindingsTest.class, "");
+
+    assertTrue(toplevelBindings.hasStaticInjectionRequestInSubtree());
+  }
+
+  public void testHasStaticInjectionRequestInSubtree_grandchildHasStaticInjectionRequest() {
+    GinjectorBindings toplevelBindings = createBindings();
+    GinjectorBindings childBindings = createBindings();
+    GinjectorBindings grandchildBindings = createBindings();
+
+    expect(ginjectorBindingsProvider.get()).andReturn(childBindings);
+    expect(ginjectorBindingsProvider.get()).andReturn(grandchildBindings);
+    replay();
+
+    toplevelBindings.createChildGinjectorBindings(GinjectorBindingsTest.class);
+    childBindings.createChildGinjectorBindings(GinjectorBindingsTest.class);
+
+    grandchildBindings.addStaticInjectionRequest(GinjectorBindingsTest.class, "");
+
+    assertTrue(toplevelBindings.hasStaticInjectionRequestInSubtree());
+  }
+
   private GinjectorBindings createBindings() {
     collector.setMethodFilter(EasyMock.<MemberCollector.MethodFilter>anyObject());
 
@@ -192,6 +330,23 @@ public class GinjectorBindingsTest extends TestCase {
     verifyAndReset();
 
     return result;
+  }
+
+  /**
+   * Set up the expectations necessary to finalize the given
+   * {@link GinjectorBindings}.
+   */
+  private void expectFinalize(GinjectorBindings bindings) throws Exception {
+    bindingResolver.resolveBindings(bindings);
+    errorManager.checkForError();
+  }
+
+  /**
+   * Finalize the given {@link GinjectorBindings}.  This must be invoked before
+   * checking whether it contains any eager singletons.
+   */
+  private void finalize(GinjectorBindings bindings) throws Exception {
+    bindings.resolveBindings();
   }
 
   private interface DummyInjectorInterface extends Ginjector {
