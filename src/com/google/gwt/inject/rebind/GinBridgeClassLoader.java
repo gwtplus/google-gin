@@ -23,7 +23,6 @@ import com.google.gwt.dev.javac.CompilationState;
 import com.google.gwt.dev.javac.CompiledClass;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 
-import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -160,64 +159,17 @@ class GinBridgeClassLoader extends ClassLoader {
   }
 
   /**
-   * Retrieves class definitions from a {@link GeneratorContext} by means of reflection.
+   * Retrieves class definitions from a {@link GeneratorContext} by downcasting.
    */
   private Map<String, CompiledClass> extractClassFileMap() {
     if (context instanceof StandardGeneratorContext) {
       StandardGeneratorContext standardContext = (StandardGeneratorContext) context;
-
-      try {
-        CompilationState compilationState =
-            getFieldValue(StandardGeneratorContext.class, standardContext, "compilationState");
-        return getFieldValue(CompilationState.class, compilationState, "exposedClassFileMap");
-      } catch (FieldLoadException e) {
-        logger.log(TreeLogger.Type.WARN,
-            String.format(
-                "Could not load generated classes from GWT context, failed to access %s#%s",
-                e.declaringType, e.fieldName),
-            e.getCause());
-        return null;
-      }
+      return standardContext.getCompilationState().getClassFileMap();
     } else {
       logger.log(TreeLogger.Type.WARN,
           String.format("Could not load generated classes from GWT context, "
               + "encountered unexpected generator type %s.", context.getClass()));
       return null;
-    }
-  }
-
-  private <S, T extends S, F> F getFieldValue(Class<S> declaringType, T owner, String fieldName)
-      throws FieldLoadException {
-    Field field;
-    try {
-      field = declaringType.getDeclaredField(fieldName);
-    } catch (NoSuchFieldException e) {
-      throw new FieldLoadException(e, fieldName, declaringType);
-    }
-
-    boolean accessible = field.isAccessible();
-    field.setAccessible(true);
-    try {
-      @SuppressWarnings("unchecked") // Reflection field values are untyped.
-      F value = (F) field.get(owner);
-      return value;
-    } catch (IllegalAccessException e) {
-      throw new FieldLoadException(e, fieldName, declaringType);
-    } catch (ClassCastException e) {
-      throw new FieldLoadException(e, fieldName, declaringType);
-    } finally {
-      field.setAccessible(accessible);
-    }
-  }
-
-  private static class FieldLoadException extends Exception {
-    private final String fieldName;
-    private final Class<?> declaringType;
-
-    private FieldLoadException(Throwable throwable, String fieldName, Class<?> declaringType) {
-      super(throwable);
-      this.fieldName = fieldName;
-      this.declaringType = declaringType;
     }
   }
 }
