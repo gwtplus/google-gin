@@ -21,6 +21,7 @@ import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -565,5 +566,20 @@ public class ReflectUtil {
     Type entryType = ((ParameterizedType) providerType).getActualTypeArguments()[0];
 
     return key.ofType(entryType);
+  }
+
+  /**
+   * Returns {@code true} if the given class has a non-private default
+   * constructor, or has no constructor at all.
+   */
+  public static boolean hasAccessibleDefaultConstructor(Class<?> clazz) {
+    Constructor<?> constructor;
+    try {
+      constructor = clazz.getDeclaredConstructor();
+    } catch (NoSuchMethodException e) {
+      return clazz.getDeclaredConstructors().length == 0;
+    }
+
+    return !isPrivate(constructor);
   }
 }

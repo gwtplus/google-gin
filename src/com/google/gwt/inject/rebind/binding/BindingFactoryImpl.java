@@ -109,7 +109,8 @@ public class BindingFactoryImpl implements BindingFactory {
   
   public ProviderMethodBinding getProviderMethodBinding(ProviderMethod<?> providerMethod,
       Context context) {
-    return new ProviderMethodBinding(guiceUtil, methodCallUtil, providerMethod, context);
+    return new ProviderMethodBinding(
+        errorManager, guiceUtil, methodCallUtil, providerMethod, context);
   }
 
   public RemoteServiceProxyBinding getRemoteServiceProxyBinding(TypeLiteral<?> type) {

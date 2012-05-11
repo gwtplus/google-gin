@@ -15,6 +15,7 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
@@ -24,13 +25,11 @@ import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.SourceSnippet;
 import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
-import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.ProviderMethod;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -48,8 +47,8 @@ public class ProviderMethodBinding extends AbstractBinding implements Binding {
   private final Class<?> moduleType;
   private final Key<?> targetKey;
   
-  ProviderMethodBinding(GuiceUtil guiceUtil, MethodCallUtil methodCallUtil,
-      ProviderMethod<?> providerMethod, Context context) {
+  ProviderMethodBinding(ErrorManager errorManager, GuiceUtil guiceUtil,
+      MethodCallUtil methodCallUtil, ProviderMethod<?> providerMethod, Context context) {
     super(context, TypeLiteral.get(providerMethod.getMethod().getDeclaringClass()));
 
     this.guiceUtil = guiceUtil;
@@ -59,6 +58,14 @@ public class ProviderMethodBinding extends AbstractBinding implements Binding {
     Method method = providerMethod.getMethod();
     this.providerMethod = MethodLiteral.get(method, TypeLiteral.get(method.getDeclaringClass()));
     this.targetKey = providerMethod.getKey();
+
+    if (!ReflectUtil.hasAccessibleDefaultConstructor(method.getDeclaringClass())) {
+      errorManager.logError(
+          "Cannot invoke a @Provides method on a module without a default constructor.  "
+              + "Gin must be able to create the module at runtime in order to invoke an instance "
+              + "method.  Method name: %s",
+          method);
+    }
   }
   
   // TODO(schmitt): This implementation creates a new module instance for
