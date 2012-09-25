@@ -192,13 +192,13 @@ public class GinjectorGenerator extends Generator {
 
   private void getModuleClassesFromInjectorInterface(Class<?> ginjectorType,
       Set<Class<? extends GinModule>> moduleClasses) {
+    for (Class<?> ancestor : ginjectorType.getInterfaces()) {
+      getModuleClassesFromInjectorInterface(ancestor, moduleClasses);
+    }
+
     GinModules ginModulesAnnotation = ginjectorType.getAnnotation(GinModules.class);
     if (ginModulesAnnotation != null) {
       moduleClasses.addAll(Arrays.asList(ginModulesAnnotation.value()));
-    }
-
-    for (Class<?> ancestor : ginjectorType.getInterfaces()) {
-      getModuleClassesFromInjectorInterface(ancestor, moduleClasses);
     }
   }
 

@@ -21,9 +21,15 @@ import com.google.gwt.inject.client.GinModules;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.SimpleObject;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.inject.Inject;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Gin tests using a {@code Ginjector} type hierarchy.
@@ -60,6 +66,13 @@ public class HierarchicalTest extends GWTTestCase {
     assertEquals("baz", ginjector.getGreen());
   }
 
+  public void testModuleInitializationOrder() {
+    ChildGinjector ginjector = GWT.create(ChildGinjector.class);
+
+    List<?> expectedOrder = Arrays.asList(GinModuleA.class, GinModuleC.class, GinModuleB.class);
+    assertEquals(expectedOrder, ginjector.getModuleInitializationList());
+  }
+
   public void testInheritedNonGinjector() {
     InheritingGinjector ginjector = GWT.create(InheritingGinjector.class);
     assertEquals("foo", ginjector.getString());
@@ -69,10 +82,22 @@ public class HierarchicalTest extends GWTTestCase {
     return "com.google.gwt.inject.InjectTest";
   }
 
+
+  @Singleton
+  public static class ModuleInitializationList extends ArrayList<Object> {}
+
+  public static class InitializationMarker<T> {
+    @Inject
+    InitializationMarker(T module, ModuleInitializationList list) {
+      list.add(module.getClass());
+    }
+  }
+
   public static class GinModuleA extends AbstractGinModule {
     @Override
     protected void configure() {
       bindConstant().annotatedWith(Names.named("red")).to("foo");
+      bind(new TypeLiteral<InitializationMarker<GinModuleA>>(){}).asEagerSingleton();
     }
   }
 
@@ -80,6 +105,7 @@ public class HierarchicalTest extends GWTTestCase {
     @Override
     protected void configure() {
       bindConstant().annotatedWith(Names.named("blue")).to("bar");
+      bind(new TypeLiteral<InitializationMarker<GinModuleB>>(){}).asEagerSingleton();
     }
   }
 
@@ -87,6 +113,7 @@ public class HierarchicalTest extends GWTTestCase {
     @Override
     protected void configure() {
       bindConstant().annotatedWith(Names.named("green")).to("baz");
+      bind(new TypeLiteral<InitializationMarker<GinModuleC>>(){}).asEagerSingleton();
     }
   }
 
@@ -95,6 +122,8 @@ public class HierarchicalTest extends GWTTestCase {
     @Named("red") String getRed();
 
     @Named("green") String getGreen();
+
+    ModuleInitializationList getModuleInitializationList();
   }
 
   @GinModules({GinModuleB.class, GinModuleC.class})
