@@ -36,7 +36,7 @@
   <!-- Project Libraries -->
 
   <path id="library.guice.classpath">
-    <pathelement location="${basedir}/lib/guice-3.0.jar"/>
+    <pathelement location="${basedir}/lib/guice-3.0-rc2.jar"/>
   </path>
 
   <path id="library.gwt-user.classpath">
@@ -72,7 +72,7 @@
   </path>
 
   <path id="library.assistedinject.classpath">
-    <pathelement location="${basedir}/lib/guice-assistedinject-3.0.jar"/>
+    <pathelement location="${basedir}/lib/guice-assistedinject-3.0-rc2.jar"/>
   </path>
 
   <dirname property="gin.basedir" file="${ant.file}"/>

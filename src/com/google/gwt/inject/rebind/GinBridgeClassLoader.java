@@ -105,9 +105,11 @@ class GinBridgeClassLoader extends ClassLoader {
         try {
           clazz = findClass(name);          
         } catch (ClassNotFoundException e) {
-          logger.log(Type.WARN, String.format(
-              "Class %s is used in Gin, but not available in GWT client code.", name));
           clazz = super.loadClass(name, false);
+          if (!clazz.isAnnotation()) { // Annotations are always safe to load
+            logger.log(Type.WARN, String.format(
+                "Class %s is used in Gin, but not available in GWT client code.", name));
+          }
         }
       }
     }
