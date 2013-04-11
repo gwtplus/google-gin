@@ -21,8 +21,16 @@ import java.lang.annotation.Annotation;
  * Builder returned from calls to expose, used to add an (optional) annotation
  * to the element that is being exposed.  This is similar to 
  * {@link GinAnnotatedBindingBuilder} but doesn't allow specifying a value.
+ * See the EDSL examples at {@link GinBinder}.
  */
 public interface GinAnnotatedElementBuilder {
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   void annotatedWith(Class<? extends Annotation> annotationType);
+
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   void annotatedWith(Annotation annotation);
 }

@@ -20,12 +20,33 @@ import com.google.inject.TypeLiteral;
 
 import javax.inject.Provider;
 
+/**
+ * See the EDSL examples at {@link GinBinder}.
+ */
 public interface GinLinkedBindingBuilder<T> extends GinScopedBindingBuilder {
 
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   <I extends T> GinScopedBindingBuilder to(Class<I> implementation);
+
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   <I extends T> GinScopedBindingBuilder to(TypeLiteral<I> implementation);
+
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   <I extends T> GinScopedBindingBuilder to(Key<I> targetKey);
 
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   <I extends Provider<? extends T>> GinScopedBindingBuilder toProvider(Class<I> provider);
+
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   <I extends Provider<? extends T>> GinScopedBindingBuilder toProvider(Key<I> providerKey);
 }

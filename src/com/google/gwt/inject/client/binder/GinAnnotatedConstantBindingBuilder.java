@@ -17,10 +17,19 @@ package com.google.gwt.inject.client.binder;
 
 import java.lang.annotation.Annotation;
 
+/**
+ * See the EDSL examples at {@link GinBinder}.
+ */
 public interface GinAnnotatedConstantBindingBuilder {
 
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   GinConstantBindingBuilder annotatedWith(Class<? extends Annotation> aClass);
 
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   GinConstantBindingBuilder annotatedWith(Annotation annotation);
 
 }

@@ -17,9 +17,20 @@ package com.google.gwt.inject.client.binder;
 
 import java.lang.annotation.Annotation;
 
+/**
+ * See the EDSL examples at {@link GinBinder}.
+ */
 public interface GinScopedBindingBuilder {
 
+  /**
+   * See the EDSL examples at {@link GinBinder}.
+   */
   void in(Class<? extends Annotation> scopeAnnotation);
 
+  /**
+   * Instructs the {@link com.google.gwt.inject.client.Ginjector} to eagerly
+   * initialize this singleton-scoped binding upon creation. Useful for application
+   * initialization logic.  See the EDSL examples at {@link GinBinder}.
+   */
   void asEagerSingleton();
 }
