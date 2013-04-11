@@ -328,9 +328,9 @@ public class SourceWriteUtil {
 
     SourceSnippetBuilder sb = new SourceSnippetBuilder();
 
-    sb.append(createMethodInjections(getMethodsToInject(type), "injectee", nameGenerator,
-        methodsOutput));
     sb.append(createFieldInjections(getFieldsToInject(type), "injectee", nameGenerator,
+        methodsOutput));
+    sb.append(createMethodInjections(getMethodsToInject(type), "injectee", nameGenerator,
         methodsOutput));
 
     // Generate the top-level member inject method in the package containing the
