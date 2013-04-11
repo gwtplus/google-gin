@@ -23,7 +23,20 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
 /**
- * GIN counterpart of Guice's {@code AbstractModule}.
+ * A support class for {@link GinModule}s which reduces repetition and results in
+ * a more readable configuration. Simply extend this class, implement {@link
+ * #configure()}, and call the inherited methods which mirror those found in
+ * {@link GinBinder}. For example:
+ *
+ * <pre>
+ * public class MyModule extends AbstractGinModule {
+ *   protected void configure() {
+ *     bind(Service.class).to(ServiceImpl.class).in(Singleton.class);
+ *     bind(CreditCardPaymentService.class);
+ *     bind(PaymentService.class).to(CreditCardPaymentService.class);
+ *   }
+ * }
+ * </pre>
  */
 public abstract class AbstractGinModule implements GinModule {
   private GinBinder binder;
@@ -35,30 +48,51 @@ public abstract class AbstractGinModule implements GinModule {
 
   protected abstract void configure();
 
+  /**
+   * @see GinBinder#bind(Class)
+   */
   protected final <T> GinAnnotatedBindingBuilder<T> bind(Class<T> clazz) {
     return binder.bind(clazz);
   }
 
+  /**
+   * @see GinBinder#bind(TypeLiteral)
+   */
   protected final <T> GinAnnotatedBindingBuilder<T> bind(TypeLiteral<T> type) {
     return binder.bind(type);
   }
 
+  /**
+   * @see GinBinder#bind(Key)
+   */
   protected final <T> GinLinkedBindingBuilder<T> bind(Key<T> key) {
     return binder.bind(key);
   }
 
+  /**
+   * @see GinBinder#bindConstant()
+   */
   protected final GinAnnotatedConstantBindingBuilder bindConstant() {
     return binder.bindConstant();
   }
 
+  /**
+   * @see GinBinder#install(Module)
+   */
   protected final void install(GinModule install) {
     binder.install(install);
   }
 
+  /**
+   * @see GinBinder#requestStaticInjection(Class[])
+   */
   protected void requestStaticInjection(Class<?>... types) {
     binder.requestStaticInjection(types);
   }
 
+  /**
+   * Gets direct access to the underlying {@code GinBinder}.
+   */
   protected GinBinder binder() {
     return binder;
   }

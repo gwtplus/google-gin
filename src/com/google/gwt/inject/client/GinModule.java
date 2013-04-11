@@ -44,5 +44,8 @@ import com.google.gwt.inject.client.binder.GinBinder;
  * {@code TypeLiteral}.
  */
 public interface GinModule {
+  /**
+   * Contributes bindings and other configurations for this module to {@code binder}.
+   */
   void configure(GinBinder binder);
 }
