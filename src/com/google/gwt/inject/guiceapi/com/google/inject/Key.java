@@ -38,6 +38,14 @@ public class Key<T> {
     throw new UnsupportedOperationException();
   }
 
+  public TypeLiteral<T> getTypeLiteral() {
+    throw new UnsupportedOperationException();
+  }
+
+  public <T> Key<T> ofType(TypeLiteral<T> type) {
+    throw new UnsupportedOperationException();
+  }
+
   public static <T> Key<T> get(Class<T> type) {
     throw new UnsupportedOperationException();
   }

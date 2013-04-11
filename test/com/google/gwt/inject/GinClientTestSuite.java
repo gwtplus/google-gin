@@ -39,15 +39,16 @@ import com.google.gwt.inject.client.installduplicate.InstallDuplicateTest;
 import com.google.gwt.inject.client.jsr330.Jsr330Test;
 import com.google.gwt.inject.client.method.MethodInjectTest;
 import com.google.gwt.inject.client.misc.StaticInjectTest;
+import com.google.gwt.inject.client.multibindings.GinMapBinderTest;
+import com.google.gwt.inject.client.multibindings.GinMultibinderTest;
 import com.google.gwt.inject.client.nomodules.NoModulesTest;
 import com.google.gwt.inject.client.nonpublic.NonPublicTest;
 import com.google.gwt.inject.client.optional.OptionalInjectionTest;
 import com.google.gwt.inject.client.packageprivate.PackagePrivateTest;
 import com.google.gwt.inject.client.privatebasic.PrivateBasicTest;
 import com.google.gwt.inject.client.privatedependsonexposed.PrivateDependsOnExposedTest;
-import com.google.gwt.inject.client.privatedoublebinds.PrivateDoubleBindsTest;
-import com.google.gwt.inject.client.privateeager.PrivateEagerSingletonTest;
 import com.google.gwt.inject.client.privateeager.PrivateEagerSingletonInstantiationTest;
+import com.google.gwt.inject.client.privateeager.PrivateEagerSingletonTest;
 import com.google.gwt.inject.client.privatefactory.PrivateFactoryTest;
 import com.google.gwt.inject.client.privategwtcreate.PrivateGwtCreateTest;
 import com.google.gwt.inject.client.privatemanylevel.PrivateManyLevelTest;
@@ -55,8 +56,8 @@ import com.google.gwt.inject.client.privatepinned.PrivatePinnedTest;
 import com.google.gwt.inject.client.provider.ProviderTest;
 import com.google.gwt.inject.client.providermethods.ProviderMethodsTest;
 import com.google.gwt.inject.client.scopedimplicit.ScopedImplicitTest;
-import com.google.gwt.inject.superclient.supersource.SuperSourceTest;
 import com.google.gwt.inject.generated.client.GeneratorTest;
+import com.google.gwt.inject.superclient.supersource.SuperSourceTest;
 import com.google.gwt.junit.tools.GWTTestSuite;
 
 import junit.framework.Test;
@@ -112,6 +113,8 @@ public class GinClientTestSuite {
     // suite.addTestSuite(PrivateDoubleBindsTest.class);
     suite.addTestSuite(GeneratorTest.class);
     suite.addTestSuite(SuperSourceTest.class);
+    suite.addTestSuite(GinMultibinderTest.class);
+    suite.addTestSuite(GinMapBinderTest.class);
 
     return suite;
   }
