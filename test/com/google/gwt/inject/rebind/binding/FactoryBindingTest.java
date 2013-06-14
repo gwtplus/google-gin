@@ -16,6 +16,11 @@
 
 package com.google.gwt.inject.rebind.binding;
 
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.inject.rebind.reflect.FieldLiteral;
+import com.google.gwt.inject.rebind.reflect.MethodLiteral;
+import com.google.gwt.inject.rebind.util.GuiceUtil;
+import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.inject.ConfigurationException;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -24,6 +29,7 @@ import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import junit.framework.TestCase;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 
@@ -53,6 +59,56 @@ public class FactoryBindingTest extends TestCase {
     }
   }
 
+  public void testTwoUnnamedStringAnnotations() {
+    try {
+      new FactoryBinding(Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
+          Key.get(TwoUnnamedStringsFactory.class), CONTEXT, 
+          new GuiceUtil(createInjectableCollector()), null);
+      fail("Expected ConfigurationException.");
+    } catch (ConfigurationException e) {
+      assertTrue(e.getMessage().contains("has more than one parameter of type " +
+          "java.lang.String annotated with @Assisted(\"\")."));
+    }
+  }
+
+  public void testDuplicateNamedAssistedAnnotations() {
+    try {
+      new FactoryBinding(Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
+          Key.get(TwoAssistedFooStringsFactory.class), CONTEXT, 
+          new GuiceUtil(createInjectableCollector()), null);
+      fail("Expected ConfigurationException.");
+    } catch (ConfigurationException e) {
+      assertTrue(e.getMessage().contains("has more than one parameter of type " +
+          "java.lang.String annotated with @Assisted(\"foo\")."));
+    }
+  }
+
+  public void testWorkingEmptyAssistedAnnotations() {
+    new FactoryBinding(Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
+        Key.get(UnnamedStringAndIntegerFactory.class), CONTEXT, 
+        new GuiceUtil(createInjectableCollector()), null);
+    // Just testing that there are no exceptions thrown during configuration.
+  }
+
+  public void testWorkingNamedAssistedAnnotations() {
+    new FactoryBinding(Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
+        Key.get(StringIntegerWithSameAssistedValueFactory.class), CONTEXT, 
+        new GuiceUtil(createInjectableCollector()), null);
+    // Just testing that there are no exceptions thrown during configuration.
+  }
+
+  public void testMismatchedFactoryAndClassAnnotations() {
+    try {
+      new FactoryBinding(Collections.<Key<?>, TypeLiteral<?>>emptyMap(),
+          Key.get(MismatchedFactoryAndClassAssistedValuesFactory.class), CONTEXT, 
+          new GuiceUtil(createInjectableCollector()), null);
+      fail("Expected ConfigurationException.");
+    } catch (ConfigurationException e) {
+      assertTrue(e.getMessage(), e.getMessage().contains("has no constructors matching " +
+          "the parameters in method"));
+    }
+  }
+
   public interface BrokenBeetleFactory {
     Beetle create(int year);
   }
@@ -71,5 +127,76 @@ public class FactoryBindingTest extends TestCase {
 
     @AssistedInject
     public Golf(@Assisted List<String> foo, @Assisted String bar) {}
+  }
+
+  public interface TwoUnnamedStringsFactory {
+    TwoUnnamedStrings create(String foo, String bar);
+  }
+
+  public static class TwoUnnamedStrings {
+
+    @Inject
+    public TwoUnnamedStrings(@Assisted String foo, @Assisted String bar) {}
+  }
+
+  public interface TwoAssistedFooStringsFactory {
+    TwoAssistedFooStrings create(@Assisted("foo") String foo, @Assisted("foo") String bar);
+  }
+
+  public static class TwoAssistedFooStrings {
+
+    @Inject
+    public TwoAssistedFooStrings(@Assisted("foo") String foo, @Assisted("foo") String bar) {}
+  }
+
+  public interface UnnamedStringAndIntegerFactory {
+    UnnamedStringAndInteger create(String foo, Integer bar);
+  }
+
+  public static class UnnamedStringAndInteger {
+
+    @Inject
+    public UnnamedStringAndInteger(@Assisted String foo, @Assisted Integer bar) {}
+  }
+
+  public interface StringIntegerWithSameAssistedValueFactory {
+    StringIntegerWithSameAssistedValue create(@Assisted("foo") String foo, 
+        @Assisted("foo") Integer bar);
+  }
+
+  public static class StringIntegerWithSameAssistedValue {
+
+    @Inject
+    public StringIntegerWithSameAssistedValue(@Assisted("foo") String foo, 
+        @Assisted("foo") Integer bar) {}
+  }
+
+  public interface MismatchedFactoryAndClassAssistedValuesFactory {
+    MismatchedFactoryAndClassAssistedValues create(@Assisted("foo") String foo);
+  }
+
+  public static class MismatchedFactoryAndClassAssistedValues {
+
+    @Inject
+    public MismatchedFactoryAndClassAssistedValues(@Assisted("bar") String foo) {}
+  }
+  
+  // Lifted from GuiceUtilTest
+  private MemberCollector createInjectableCollector() {
+    MemberCollector collector = new MemberCollector(TreeLogger.NULL);
+    collector.setMethodFilter(
+        new MemberCollector.MethodFilter() {
+          public boolean accept(MethodLiteral<?, Method> method) {
+            return method.isAnnotationPresent(Inject.class) && !method.isStatic();
+          }
+        });
+
+    collector.setFieldFilter(
+        new MemberCollector.FieldFilter() {
+          public boolean accept(FieldLiteral<?> field) {
+            return field.isAnnotationPresent(Inject.class) && !field.isStatic();
+          }
+        });
+    return collector;
   }
 }

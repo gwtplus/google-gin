@@ -272,10 +272,19 @@ public class FactoryBinding extends AbstractBinding implements Binding {
 
     int p = 0;
     String[] parameterNames = new String[ctorParams.size()];
+    Set<Key<?>> keySet = new LinkedHashSet<Key<?>>();
     for (TypeLiteral<?> ctorParam : ctorParams) {
       Key<?> ctorParamKey = getKey(ctorParam, constructor, ctorParamAnnotations[p], errors);
 
       if (ctorParamKey.getAnnotationType() == Assisted.class) {
+        if (!keySet.add(ctorParamKey)) {
+          errors.addMessage(PrettyPrinter.format(
+              "%s has more than one parameter of type %s annotated with @Assisted(\"%s\").  " +
+              "Please specify a unique value with the annotation to avoid confusion.",
+              implementation, ctorParamKey.getTypeLiteral().getType(), 
+              ((Assisted) ctorParamKey.getAnnotation()).value()));
+        }
+        
         int location = methodParams.indexOf(ctorParamKey);
 
         // This should never happen since the constructor was already checked
