@@ -63,7 +63,7 @@ class GinBridgeClassLoader extends ClassLoader {
 
   GinBridgeClassLoader(GeneratorContext context, TreeLogger logger,
       Collection<String> exceptedPackages) {
-    super(GinBridgeClassLoader.class.getClassLoader()); // Use own class loader.
+    super(); // Use system class loader by default.
     this.context = context;
     this.logger = logger;
     this.exceptedPackages = getExceptedPackages(exceptedPackages);

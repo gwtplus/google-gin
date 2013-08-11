@@ -5,7 +5,7 @@
   <property environment="env"/>
 
   <!-- Used for distribution naming. -->
-  <property name="gin.version" value="2.1" />
+  <property name="gin.version" value="1.0" />
 
   <!-- Mac GWT requires -XstartOnFirstThread -->
   <condition property="mac">
@@ -301,7 +301,7 @@
 
     <zip destfile="${gin.dist.dir}/gin-${gin.version}-src.jar">
       <fileset dir="${gin.source.dir}"/>
-      <fileset file="${gin.basedir}/LICENSE"/>      
+      <fileset file="${gin.basedir}/LICENSE"/>
     </zip>
   </target>
 
@@ -336,13 +336,11 @@
       <fileset file="${gin.basedir}/LICENSE"/>
       <fileset file="${gin.dist.dir}/gin-${gin.version}.jar"/>
       <fileset dir="${gin.basedir}" includes="javadoc/**/*" />
-      <zipfileset dir="${gin.javadoc.dir}" prefix="javadoc"/>
     </zip>
 
     <zip destfile="${gin.dist.dir}/gin-${gin.version}-src.zip">
       <fileset dir="${gin.basedir}"
                excludes="out/**/*,out,.svn,.svn/**/*,**/.svn,tomcat,tomcat/**/*,build.properties" />
-      <zipfileset dir="${gin.javadoc.dir}" prefix="javadoc"/>
     </zip>
   </target>
 
