@@ -131,7 +131,7 @@
 
   <target name="compile.production" description="Compile module gin; production classes">
     <mkdir dir="${gin.output.dir}"/>
-    <javac destdir="${gin.output.dir}" debug="${compiler.debug}" fork="true"
+    <javac destdir="${gin.output.dir}" debug="${compiler.debug}" fork="true" target="1.5"
            nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}">
       <compilerarg line="${compiler.args}"/>
       <classpath refid="gin.classpath"/>
