@@ -1,6 +1,6 @@
 package com.google.gwt.inject.rebind.reflect;
 
-import com.google.gwt.dev.util.Preconditions;
+import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.inject.TypeLiteral;
 
 import java.lang.reflect.Field;

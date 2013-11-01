@@ -15,7 +15,6 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.GinjectorNameGenerator;
@@ -23,6 +22,7 @@ import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.gwt.inject.rebind.util.SourceSnippet;
 import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
 import com.google.gwt.inject.rebind.util.SourceSnippets;

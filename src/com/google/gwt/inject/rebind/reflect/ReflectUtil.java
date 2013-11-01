@@ -16,7 +16,9 @@
 
 package com.google.gwt.inject.rebind.reflect;
 
-import com.google.gwt.dev.util.Preconditions;
+import static com.google.gwt.inject.rebind.util.SourceWriteUtil.join;
+
+import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
@@ -34,8 +36,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.google.gwt.inject.rebind.util.SourceWriteUtil.join;
 
 /**
  * Utility providing helper methods around reflection.

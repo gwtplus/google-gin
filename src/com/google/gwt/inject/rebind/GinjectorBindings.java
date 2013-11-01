@@ -17,7 +17,6 @@ package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.client.Ginjector;
 import com.google.gwt.inject.client.assistedinject.FactoryModule;
 import com.google.gwt.inject.rebind.binding.Binding;
@@ -33,13 +32,12 @@ import com.google.gwt.inject.rebind.resolution.BindingResolver;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.MemberCollector;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.spi.InjectionPoint;
-
-import javax.inject.Provider;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -52,6 +50,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.inject.Provider;
 
 /**
  * Stores information that describes the bindings present in a given injector,

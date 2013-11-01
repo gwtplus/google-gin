@@ -15,10 +15,10 @@
  */
 package com.google.gwt.inject.rebind.resolution;
 
-import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Dependency;
+import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.inject.Key;
 
 import java.util.Collection;

@@ -15,13 +15,13 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.reflect.MethodLiteral;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
 import com.google.gwt.inject.rebind.util.InjectorMethod;
 import com.google.gwt.inject.rebind.util.MethodCallUtil;
 import com.google.gwt.inject.rebind.util.NameGenerator;
+import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.gwt.inject.rebind.util.SourceSnippet;
 import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
 

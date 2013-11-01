@@ -16,9 +16,9 @@
 
 package com.google.gwt.inject.rebind.reflect;
 
-import com.google.gwt.dev.util.Preconditions;
-import com.google.gwt.dev.util.collect.Lists;
-import com.google.gwt.user.client.rpc.core.java.util.Collections;
+import static com.google.gwt.inject.rebind.util.SourceWriteUtil.join;
+
+import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.MoreTypes;
@@ -34,8 +34,6 @@ import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static com.google.gwt.inject.rebind.util.SourceWriteUtil.join;
 
 /**
  * Generic method and constructor representation that preserves the member's

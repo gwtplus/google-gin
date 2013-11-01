@@ -15,8 +15,8 @@
  */
 package com.google.gwt.inject.rebind.util;
 
-import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.output.FragmentPackageName;
+import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 

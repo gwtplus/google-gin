@@ -15,8 +15,8 @@
  */
 package com.google.gwt.inject.rebind.binding;
 
-import com.google.gwt.dev.util.Preconditions;
 import com.google.gwt.inject.rebind.GuiceBindingVisitor;
+import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Key;
 import com.google.inject.Provider;
