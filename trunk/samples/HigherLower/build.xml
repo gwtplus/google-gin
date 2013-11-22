@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project name="OldGinExample" default="devmode" basedir=".">
+  <description>
+    Example build file for GIN projects.
+  </description>
+
+  <!-- Access to environment variables. -->
+  <property environment="env"/>
+
+  <!-- Read configuration (gwt environment) from properties file -->
+  <property file="build.properties"/>
+
+  <!-- GWT installation directory; can be passed as Ant property gwt.home,
+       or can be provided by system property GWT_HOME. -->
+  <property name="gwt.home" value="${env.GWT_HOME}"/>
+
+  <!-- Output config -->
+  <property name="bin.dir" value="bin"/>
+  <property name="javac.out.dir" value="${bin.dir}/java"/>
+  <property name="gwt.web.out.dir" value="${bin.dir}/web"/>
+  <property name="gwt.devmode.out.dir" value="${bin.dir}/devmode"/>
+
+  <!-- Source files -->
+  <property name="src.dir" value="src"/>
+
+  <!-- Module name -->
+  <property name="gwt.module" value="com.google.gwt.gin.higherlower.HigherLower" />
+
+  <!-- Library directory containing the GIN and Guice binary jars -->
+  <property name="lib.dir" value="lib"/>
+
+  <!-- Javac class path -->
+  <path id="javac.path">
+    <pathelement path="${lib.dir}/aopalliance.jar"/>
+    <pathelement path="${lib.dir}/gin.jar"/>
+    <pathelement path="${lib.dir}/guice-snapshot.jar"/>
+    <pathelement path="${lib.dir}/javax.inject.jar" />
+    <pathelement path="${lib.dir}/guice-assistedinject-snapshot.jar" />
+    <pathelement path="${gwt.home}/gwt-user.jar"/>
+  </path>
+
+  <!-- Classpath for GWT compilation -->
+  <path id="gwt.path">
+    <!-- Sources -->
+    <path location="${src.dir}"/>
+
+    <!-- Location of the GWT compiler and libraries -->
+    <pathelement path="${gwt.home}/gwt-dev.jar"/>
+
+    <!-- GIN runs Guice at GWT compile time, so it needs the compiled project sources -->
+    <path location="${javac.out.dir}"/>
+
+    <!-- All other binary dependencies, as used by javac -->
+    <path refid="javac.path"/>
+  </path>
+
+  <target name="compile" depends="clean"
+      description="Compiles Java types needed during GWT compilation">
+    <mkdir dir="${javac.out.dir}"/>
+    <javac srcdir="${src.dir}" destdir="${javac.out.dir}" debug="on"
+        debuglevel="lines,vars,source" source="1.5">
+      <classpath refid="javac.path"/>
+    </javac>
+  </target>
+
+  <target name="web" depends="compile" description="GWT Web Compilation">
+    <mkdir dir="${gwt.web.out.dir}"/>
+    <java fork="true" maxmemory="256M" classpathref="gwt.path"
+        classname="com.google.gwt.dev.Compiler">
+      <arg value="-war"/>
+      <arg value="${gwt.web.out.dir}"/>
+      <arg value="${gwt.module}"/>
+    </java>
+  </target>
+
+  <!-- GWT's development mode, allows debugging of the application in your browser. -->
+  <!-- Only works with GWT 2.0 and later. -->
+  <target name="devmode" depends="compile" description="GWT Development Mode (GWT 2.0+ only)">
+    <java failonerror="true" fork="true" classpathref="gwt.path"
+        classname="com.google.gwt.dev.DevMode">
+      <jvmarg value="-Xmx256M"/>
+      <arg value="-startupUrl"/>
+      <arg value="${gwt.module}/HigherLower.html" />
+      <arg value="-war"/>
+      <arg value="${gwt.web.out.dir}" />
+      <arg value="-logLevel"/>
+      <arg value="INFO" />
+      <arg value="${gwt.module}"/>
+    </java>
+  </target>
+
+  <target name="clean">
+    <delete dir="${bin.dir}"/>
+  </target>
+
+</project>

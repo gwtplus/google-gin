@@ -1,0 +1,12 @@
+This directory contains Java source files for the parts of the Guice API
+that the GWT compiler needs to see when using GIN. Mostly this consists
+of interfaces and annotations copied directly from the Guice code base.
+In a few instances, we provide API-compatible stubs since the code will
+not in fact be exercised in GWT client code. The stubs allow GinModule
+code to compile via the GWT compiler.
+
+This subtree is never compiled via javac (see the excludes in build.xml).
+The source files are packaged with GIN to be made available to the GWT
+compiler. It is critical that these are never javac'd, or else they
+might interfere with the real Guice types on the classpath of GIN's
+Generator.
