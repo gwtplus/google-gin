@@ -7,7 +7,7 @@ cache:
    - $HOME/.m2
 
 before_script:
- - mvn mvn dependency:copy-dependencies
+ - mvn dependency:copy-dependencies
 
 script:
  - ant

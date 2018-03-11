@@ -27,10 +27,6 @@
 		</mailingList>
 	</mailingLists>
 
-	<prerequisites>
-		<maven>3.0</maven>
-	</prerequisites>
-
 	<developers>
 		<developer>
 			<id>bstoler</id>
