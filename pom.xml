@@ -17,7 +17,7 @@
 	<name>GIN (GWT INjection)</name>
 	<description>GIN (GWT INjection) brings automatic dependency injection to GWT client-side code. GIN is built on top of Guice and uses (a subset of) Guice's binding language.</description>
 
-	<url>https://github.com/metteo/google-gin/wiki</url>
+	<url>http://metteo.github.io/google-gin/site</url>
 	<inceptionYear>2008</inceptionYear>
 
 	<mailingLists>
@@ -160,6 +160,7 @@
 					<encoding>UTF-8</encoding>
 					<excludes>
 						<exclude>com/google/gwt/inject/guiceapi/**</exclude>
+						<exclude>site/**</exclude><!-- until we move to maven sdl -->
 					</excludes>
 					<testExcludes>
 						<exclude>com/google/gwt/inject/super/**</exclude>
@@ -210,6 +211,28 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-site-plugin</artifactId>
+				<version>3.7</version>
+
+				<dependencies>
+					<dependency>
+						<groupId>org.apache.maven.doxia</groupId>
+						<artifactId>doxia-module-markdown</artifactId>
+						<version>1.8</version>
+					</dependency>
+				</dependencies>
+			</plugin>
 		</plugins>
 	</build>
+
+	<reporting>
+		<plugins>
+			<plugin>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<version>2.9</version>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>
