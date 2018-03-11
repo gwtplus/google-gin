@@ -16,7 +16,20 @@
 
 	<name>GIN (GWT INjection)</name>
 	<description>GIN (GWT INjection) brings automatic dependency injection to GWT client-side code. GIN is built on top of Guice and uses (a subset of) Guice's binding language.</description>
+
 	<url>https://github.com/metteo/google-gin/wiki</url>
+	<inceptionYear>2008</inceptionYear>
+
+	<mailingLists>
+		<mailingList>
+			<name>Gin Users List</name>
+			<archive>https://groups.google.com/forum/#!forum/google-gin</archive>
+		</mailingList>
+	</mailingLists>
+
+	<prerequisites>
+		<maven>3.0</maven>
+	</prerequisites>
 
 	<developers>
 		<developer>
@@ -65,6 +78,7 @@
 		<license>
 			<name>Apache License 2.0</name>
 			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
+			<distribution>repo</distribution>
 		</license>
 	</licenses>
 
@@ -116,6 +130,13 @@
 		</dependency>
 
 		<dependency>
+			<groupId>com.google.code.findbugs</groupId>
+			<artifactId>jsr305</artifactId>
+			<version>3.0.2</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>3.8.1</version>
@@ -155,6 +176,31 @@
 				<configuration>
 					<encoding>UTF-8</encoding>
 				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+							<goal>test-jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
