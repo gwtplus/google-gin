@@ -10,7 +10,7 @@ before_script:
  - mvn dependency:copy-dependencies
 
 script:
- - mvn package
+ - mvn verify
  - ant all
 
 notifications:
