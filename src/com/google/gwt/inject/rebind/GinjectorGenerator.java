@@ -88,6 +88,12 @@ public class GinjectorGenerator extends Generator {
     exceptions.add("com.google.inject"); // Need the non-super-source version during generation.
     exceptions.add("javax.inject"); // Need the non-super-source version during generation.
     exceptions.add("com.google.gwt.inject.client"); // Excluded to allow class-literal comparison.
+    
+    // Required by GWT 2.8.0+ to prevent loading of GWT script only java.lang.JsException class
+    // See: https://github.com/gwtproject/gwt/issues/9311
+    // See: https://github.com/gwtproject/gwt/commit/1d660d2fc00a5cbfeccf512251f78ab4302ab633
+    exceptions.add("com.google.gwt.core.client");
+    exceptions.add("com.google.gwt.core.client.impl");
 
     // Add any excepted packages or classes registered by other developers.
     exceptions.addAll(getValuesForProperty("gin.classloading.exceptedPackages"));
