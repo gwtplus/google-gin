@@ -16,6 +16,7 @@
 		    <item name="Introduction" href="index.html"/>
 			<item name="Dev Wiki" href="https://github.com/metteo/google-gin/wiki"/>
 			<item name="Javadoc" href="../latest/javadoc"/>
+			<item name="Download" href="https://github.com/metteo/google-gin/releases"/>
 		</menu>
 		<menu ref="reports"/>
 	</body>
