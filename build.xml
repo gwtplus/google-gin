@@ -24,9 +24,15 @@
   <property name="compiler.max.memory" value="128m"/>
   <property name="test.max.memory" value="256m"/>
 
-  <!-- GWT installation directory; can be passed as Ant property gwt.home,
-       or can be provided by system property GWT_HOME. -->
-  <property name="gwt.home" value="${env.GWT_HOME}"/>
+  <property name="dependency.dir" value="${basedir}/target/dependency"/>
+
+  <fail message="Run 'mvn dependency:copy-dependencies' to fetch required dependencies">
+    <condition>
+      <not>
+      	<available file="${dependency.dir}" type="dir"/>
+	  </not>
+	</condition>
+  </fail>
 
   <patternset id="compiler.resources">
     <include name="**/?*.xml"/>
@@ -36,43 +42,43 @@
   <!-- Project Libraries -->
 
   <path id="library.guice.classpath">
-    <pathelement location="${basedir}/lib/guice-3.0.jar"/>
+    <pathelement location="${dependency.dir}/compile/guice-3.0.jar"/>
   </path>
 
   <path id="library.gwt-user.classpath">
-    <pathelement location="${gwt.home}/gwt-user.jar"/>
+  	<fileset dir="${dependency.dir}/provided" includes="gwt-user*.jar,validation-api*.jar"/>
   </path>
 
   <path id="library.gwt-dev.classpath">
-    <fileset dir="${gwt.home}" includes="gwt-dev*.jar"/>
+  	<fileset dir="${dependency.dir}/provided" includes="gwt-dev*.jar,asm*.jar"/>
   </path>
 
   <path id="library.junit.classpath">
-    <pathelement location="${basedir}/lib/test/junit.jar"/>
+    <pathelement location="${dependency.dir}/test/junit-3.8.1.jar"/>
   </path>
 
   <path id="library.easymock.classpath">
-    <pathelement location="${basedir}/lib/test/easymock.jar"/>
+    <pathelement location="${dependency.dir}/test/easymock-3.1.jar"/>
   </path>
 
   <path id="library.objenesis.classpath">
-    <pathelement location="${basedir}/lib/test/objenesis.jar"/>
+    <pathelement location="${dependency.dir}/test/objenesis-1.2.jar"/>
   </path>
 
   <path id="library.cglib.classpath">
-    <pathelement location="${basedir}/lib/test/cglib.jar"/>
+    <pathelement location="${dependency.dir}/test/cglib-nodep-2.2.2.jar"/>
   </path>
 
   <path id="library.aopalliance.classpath">
-    <pathelement location="${basedir}/lib/aopalliance.jar"/>
+    <pathelement location="${dependency.dir}/compile/aopalliance-1.0.jar"/>
   </path>
 
   <path id="library.javax.inject.classpath">
-    <pathelement location="${basedir}/lib/javax.inject.jar"/>
+    <pathelement location="${dependency.dir}/compile/javax.inject-1.jar"/>
   </path>
 
   <path id="library.assistedinject.classpath">
-    <pathelement location="${basedir}/lib/guice-assistedinject-3.0.jar"/>
+    <pathelement location="${dependency.dir}/compile/guice-assistedinject-3.0.jar"/>
   </path>
 
   <dirname property="gin.basedir" file="${ant.file}"/>
@@ -132,7 +138,8 @@
   <target name="compile.production" description="Compile module gin; production classes">
     <mkdir dir="${gin.output.dir}"/>
     <javac destdir="${gin.output.dir}" debug="${compiler.debug}" fork="true" target="1.8" source="1.8"
-           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}">
+           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" >
+
       <compilerarg line="${compiler.args}"/>
       <classpath refid="gin.classpath"/>
       <src refid="gin.sourcepath"/>
@@ -332,15 +339,24 @@
   <target name="dist" depends="jars, javadoc" description="Creates distributable archives.">
     <mkdir dir="${gin.dist.dir}"/>
     <zip destfile="${gin.dist.dir}/gin-${gin.version}.zip">
-      <fileset dir="${gin.basedir}/lib" includes="*.jar" />
+      <fileset dir="${dependency.dir}/compile" includes="*.jar" />
       <fileset file="${gin.basedir}/LICENSE"/>
       <fileset file="${gin.dist.dir}/gin-${gin.version}.jar"/>
       <zipfileset dir="${gin.javadoc.dir}" prefix="javadoc"/>
     </zip>
 
     <zip destfile="${gin.dist.dir}/gin-${gin.version}-src.zip">
-      <fileset dir="${gin.basedir}"
-               excludes="out/**/*,out,.svn,.svn/**/*,**/.svn,tomcat,tomcat/**/*,build.properties" />
+      <fileset dir="${gin.basedir}">
+        <exclude name="out" />
+      	<exclude name="out/**/*" />
+        <exclude name="target" />
+      	<exclude name="target/**/*" />
+      	<exclude name="build.properties"/>
+        <exclude name=".settings" />
+      	<exclude name=".settings/**/*" />
+        <exclude name=".classpath" />
+        <exclude name=".project" />
+      </fileset>
       <zipfileset dir="${gin.javadoc.dir}" prefix="javadoc"/>
     </zip>
   </target>
