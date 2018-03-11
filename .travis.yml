@@ -1,0 +1,19 @@
+language: java
+
+sudo: false
+
+cache:
+  directories:
+   - $HOME/.m2
+
+before_script:
+ - mvn mvn dependency:copy-dependencies
+
+script:
+ - ant
+
+notifications:
+  email: false
+
+jdk:
+ - openjdk8
