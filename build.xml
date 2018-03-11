@@ -138,8 +138,8 @@
   <target name="compile.production" description="Compile module gin; production classes">
     <mkdir dir="${gin.output.dir}"/>
     <javac destdir="${gin.output.dir}" debug="${compiler.debug}" fork="true" target="1.8" source="1.8"
-           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" >
-
+           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" 
+           includeantruntime="false">
       <compilerarg line="${compiler.args}"/>
       <classpath refid="gin.classpath"/>
       <src refid="gin.sourcepath"/>
@@ -171,7 +171,8 @@
           description="Compile rebind tests.">
     <mkdir dir="${gin.testoutput.dir}"/>
     <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" fork="true"
-           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}">
+           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" 
+           includeantruntime="false">
       <compilerarg line="${compiler.args}"/>
       <classpath refid="gin.test.classpath"/>
       <classpath location="${gin.output.dir}"/>
@@ -192,7 +193,8 @@
           description="Compile client tests.">
     <mkdir dir="${gin.testoutput.dir}"/>
     <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" fork="true"
-           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}">
+           nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}"
+           includeantruntime="false">
       <compilerarg line="${compiler.args}"/>
       <classpath refid="gin.test.classpath"/>
       <classpath location="${gin.output.dir}"/>
@@ -348,12 +350,12 @@
     <zip destfile="${gin.dist.dir}/gin-${gin.version}-src.zip">
       <fileset dir="${gin.basedir}">
         <exclude name="out" />
-      	<exclude name="out/**/*" />
+        <exclude name="out/**/*" />
         <exclude name="target" />
-      	<exclude name="target/**/*" />
-      	<exclude name="build.properties"/>
+        <exclude name="target/**/*" />
+        <exclude name="build.properties"/>
         <exclude name=".settings" />
-      	<exclude name=".settings/**/*" />
+        <exclude name=".settings/**/*" />
         <exclude name=".classpath" />
         <exclude name=".project" />
       </fileset>
@@ -370,7 +372,7 @@
   <target name="javadoc" description="Creates javadoc">
     <javadoc sourcepath="${gin.source.dir}" destdir="${gin.javadoc.dir}"
              classpathref="gin.classpath">
-      <link href="http://google-guice.googlecode.com/svn/trunk/javadoc" />
+      <link href="http://google.github.io/guice/api-docs/latest/javadoc/" />
     </javadoc>
   </target>
 
