@@ -147,9 +147,6 @@
 	</dependencies>
 
 	<build>
-		<sourceDirectory>src</sourceDirectory>
-		<testSourceDirectory>test</testSourceDirectory>
-
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -158,13 +155,6 @@
 					<source>1.8</source>
 					<target>1.8</target>
 					<encoding>UTF-8</encoding>
-					<excludes>
-						<exclude>com/google/gwt/inject/guiceapi/**</exclude>
-						<exclude>site/**</exclude><!-- until we move to maven sdl -->
-					</excludes>
-					<testExcludes>
-						<exclude>com/google/gwt/inject/super/**</exclude>
-					</testExcludes>
 				</configuration>
 			</plugin>
 			<plugin>

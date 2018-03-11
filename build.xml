@@ -83,7 +83,11 @@
 
   <dirname property="gin.basedir" file="${ant.file}"/>
 
-  <property name="gin.source.dir" value="${gin.basedir}/src"/>
+  <property name="gin.src.dir" value="${gin.basedir}/src/main/java"/>
+  <property name="gin.res.dir" value="${gin.basedir}/src/main/resources"/>
+	
+  <property name="gin.test.src.dir" value="${gin.basedir}/src/test/java"/>
+  <property name="gin.test.res.dir" value="${gin.basedir}/src/test/resources"/>
 
   <property name="gin.output.base" value="${gin.basedir}/out"/>
   <property name="gin.output.dir" value="${gin.output.base}/production"/>
@@ -127,9 +131,15 @@
     <path refid="gin.test.sourcepath"/>
   </path>
 
-  <path id="gin.sourcepath" path="${gin.basedir}/src"/>
-  <path id="gin.test.sourcepath" location="${gin.basedir}/test"/>
+  <path id="gin.sourcepath">
+  	<pathelement path="${gin.src.dir}"/>
+  	<pathelement path="${gin.res.dir}"/>
+  </path>
 
+  <path id="gin.test.sourcepath">
+    <pathelement path="${gin.test.src.dir}"/>
+    <pathelement path="${gin.test.res.dir}"/>
+  </path>
 
   <!-- Compilation -->
 
@@ -152,7 +162,7 @@
     </javac>
 
     <copy todir="${gin.output.dir}">
-      <fileset dir="${gin.basedir}/src">
+      <fileset dir="${gin.res.dir}">
         <patternset refid="compiler.resources"/>
         <type type="file"/>
       </fileset>
@@ -160,15 +170,16 @@
 
     <!-- Also include client and guiceapi .java files in the output, for GWT -->
     <copy todir="${gin.output.dir}">
-      <fileset dir="${gin.basedir}/src">
+      <fileset dir="${gin.src.dir}">
         <include name="com/google/gwt/inject/client/**/*.java" />
+      </fileset>
+      <fileset dir="${gin.res.dir}">
         <include name="com/google/gwt/inject/guiceapi/**/*.java" />
       </fileset>
     </copy>
   </target>
 
-  <target name="compile.tests.rebind" depends="compile.production"
-          description="Compile rebind tests.">
+  <target name="compile.tests.rebind" depends="compile.production" description="Compile rebind tests.">
     <mkdir dir="${gin.testoutput.dir}"/>
     <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" fork="true"
            nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" 
@@ -185,12 +196,11 @@
 
     <!-- Required to run the tests in IntelliJ under GWT 2.0. -->
     <copy todir="${gin.testoutput.dir}">
-      <fileset dir="${gin.basedir}/test" includes="**/?*.java"/>
+      <fileset dir="${gin.test.src.dir}" includes="**/?*.java"/>
     </copy>
   </target>
 
-  <target name="compile.tests.client" depends="compile.production"
-          description="Compile client tests.">
+  <target name="compile.tests.client" depends="compile.production" description="Compile client tests.">
     <mkdir dir="${gin.testoutput.dir}"/>
     <javac destdir="${gin.testoutput.dir}" debug="${compiler.debug}" fork="true"
            nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}"
@@ -204,7 +214,7 @@
     </javac>
 
     <copy todir="${gin.testoutput.dir}">
-      <fileset dir="${gin.basedir}/test">
+      <fileset dir="${gin.test.res.dir}">
         <patternset refid="compiler.resources"/>
         <type type="file"/>
       </fileset>
@@ -212,10 +222,12 @@
 
     <!-- Also include client and guiceapi .java files in the output, for GWT -->
     <copy todir="${gin.testoutput.dir}">
-      <fileset dir="${gin.basedir}/test">
+      <fileset dir="${gin.test.src.dir}">
         <include name="com/google/gwt/inject/client/**/*.java" />
         <include name="com/google/gwt/inject/superclient/**/*.java" />
         <include name="com/google/gwt/inject/generated/client/**/*.java" />
+      </fileset>
+      <fileset dir="${gin.test.res.dir}">
         <include name="com/google/gwt/inject/super/**/*.java" />
       </fileset>
     </copy>
@@ -309,7 +321,8 @@
     </jar>
 
     <zip destfile="${gin.dist.dir}/gin-${gin.version}-src.jar">
-      <fileset dir="${gin.source.dir}"/>
+      <fileset dir="${gin.src.dir}"/>
+      <fileset dir="${gin.res.dir}"/>
       <fileset file="${gin.basedir}/LICENSE"/>
     </zip>
   </target>
@@ -370,7 +383,7 @@
   <target name="init" description="Build initialization" />
 
   <target name="javadoc" description="Creates javadoc">
-    <javadoc sourcepath="${gin.source.dir}" destdir="${gin.javadoc.dir}"
+    <javadoc sourcepath="${gin.src.dir}" destdir="${gin.javadoc.dir}"
              classpathref="gin.classpath">
       <link href="http://google.github.io/guice/api-docs/latest/javadoc/" />
     </javadoc>
