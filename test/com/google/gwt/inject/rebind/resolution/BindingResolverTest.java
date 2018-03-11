@@ -416,8 +416,7 @@ public class BindingResolverTest extends TestCase {
     expectCreateBinding(fooImpl(), required(fooImpl(), bar()));
     expectCreateBinding(bar(), required(bar(), foo()));
     
-    Capture<String> errorMessage = new Capture<String>();
-    errorManager.logError(EasyMock.isA(String.class), EasyMock.anyObject(), EasyMock.anyObject());
+    errorManager.logError(isA(String.class), isA(String.class), EasyMock.anyObject());
 
     // Intentionally use a different key, so that == won't work
     replayAndResolve(root, required(foo(), fooImpl()));

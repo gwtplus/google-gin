@@ -5,7 +5,7 @@
   <property environment="env"/>
 
   <!-- Used for distribution naming. -->
-  <property name="gin.version" value="2.1.2" />
+  <property name="gin.version" value="2.1.3-SNAPSHOT" />
 
   <!-- Mac GWT requires -XstartOnFirstThread -->
   <condition property="mac">
@@ -131,7 +131,7 @@
 
   <target name="compile.production" description="Compile module gin; production classes">
     <mkdir dir="${gin.output.dir}"/>
-    <javac destdir="${gin.output.dir}" debug="${compiler.debug}" fork="true" target="1.5" source="1.5"
+    <javac destdir="${gin.output.dir}" debug="${compiler.debug}" fork="true" target="1.8" source="1.8"
            nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}">
       <compilerarg line="${compiler.args}"/>
       <classpath refid="gin.classpath"/>
