@@ -165,6 +165,68 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.21.0</version>
+				<configuration>
+					<!-- test-rebind -->
+					<includes>
+						<include>com/google/gwt/inject/rebind/**/*Test.java</include>
+					</includes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>2.21.0</version>
+				<configuration>
+					<includes>
+						<include>com/google/gwt/inject/*TestSuite.java</include>
+					</includes>
+
+					<additionalClasspathElements>
+						<additionalClasspathElement>${project.build.sourceDirectory}</additionalClasspathElement>
+						<additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
+					</additionalClasspathElements>
+
+					<useManifestOnlyJar>false</useManifestOnlyJar>
+					
+					<forkCount>1C</forkCount>
+					<reuseForks>false</reuseForks>
+				</configuration>
+				<executions>
+					<execution>
+						<id>test-hosted</id>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+						<configuration>
+							<systemPropertyVariables>
+								<!-- Add -logLevel TRACE to get more debug output -->
+								<gwt.args>-gen target/generated-test-sources/test-hosted -war
+									target/war/test-hosted</gwt.args>
+							</systemPropertyVariables>
+							<reportsDirectory>${project.build.directory}/failsafe-reports/test-hosted</reportsDirectory>
+						</configuration>
+					</execution>
+					<execution>
+						<id>test-web</id>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+						<configuration>
+							<systemPropertyVariables>
+								<!-- Add -logLevel TRACE to get more debug output -->
+								<gwt.args>-prod -style PRETTY -gen
+									target/generated-test-sources/test-web -war target/war/test-web</gwt.args>
+							</systemPropertyVariables>
+
+							<reportsDirectory>${project.build.directory}/failsafe-reports/test-web</reportsDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.0.0</version>
 				<executions>
@@ -175,6 +237,9 @@
 						</goals>
 					</execution>
 				</executions>
+				<configuration>
+				    <quite>true</quite>
+				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
@@ -202,10 +267,8 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
 				<version>3.7</version>
-
 				<dependencies>
 					<dependency>
 						<groupId>org.apache.maven.doxia</groupId>

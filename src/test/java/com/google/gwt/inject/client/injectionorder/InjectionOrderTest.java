@@ -17,10 +17,12 @@ package com.google.gwt.inject.client.injectionorder;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.inject.client.Ginjector;
+import com.google.gwt.inject.client.NoGinModules;
 import com.google.gwt.junit.client.GWTTestCase;
 
 public class InjectionOrderTest extends GWTTestCase {
 
+  @NoGinModules
   interface FooGinjector extends Ginjector {
     Foo createFoo();
   }

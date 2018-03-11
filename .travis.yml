@@ -10,10 +10,12 @@ before_script:
  - mvn dependency:copy-dependencies
 
 script:
- - ant
+ - mvn package
+ - ant all
 
 notifications:
   email: false
 
 jdk:
  - openjdk8
+
