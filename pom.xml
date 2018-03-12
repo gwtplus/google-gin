@@ -96,11 +96,29 @@
 	</scm>
 
 	<properties>
+	    <!-- TODO: Upgrade to 4.x -->
 		<guice.version>3.0</guice.version>
+		
+		<!-- mvn works with 2.8.2, ant doesn't due to manual (incomplete) classpath management -->
 		<gwt.version>2.7.0</gwt.version>
+		
+		<jsr330.version>1</jsr330.version>
 	</properties>
 
 	<dependencies>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>${jsr330.version}</version>
+            <!-- with our internal javax.inject.Inject.gwt.xml module -->
+        </dependency>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>${jsr330.version}</version>
+            <classifier>sources</classifier>
+        </dependency>
+        
 		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
@@ -202,8 +220,10 @@
 						<configuration>
 							<systemPropertyVariables>
 								<!-- Add -logLevel TRACE to get more debug output -->
-								<gwt.args>-gen target/generated-test-sources/test-hosted -war
-									target/war/test-hosted</gwt.args>
+								<gwt.args>
+								    -gen target/generated-test-sources/test-hosted 
+								    -war target/war/test-hosted
+								</gwt.args>
 							</systemPropertyVariables>
 							<reportsDirectory>${project.build.directory}/failsafe-reports/test-hosted</reportsDirectory>
 						</configuration>
@@ -217,8 +237,11 @@
 						<configuration>
 							<systemPropertyVariables>
 								<!-- Add -logLevel TRACE to get more debug output -->
-								<gwt.args>-prod -style PRETTY -gen
-									target/generated-test-sources/test-web -war target/war/test-web</gwt.args>
+								<gwt.args>
+								    -prod -style PRETTY 
+								    -gen target/generated-test-sources/test-web 
+								    -war target/war/test-web
+								</gwt.args>
 							</systemPropertyVariables>
 
 							<reportsDirectory>${project.build.directory}/failsafe-reports/test-web</reportsDirectory>
@@ -227,6 +250,7 @@
 				</executions>
 			</plugin>
 			<plugin>
+			    <!-- TODO: Fix javadoc warnings -->
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.0.0</version>
 				<executions>
@@ -238,7 +262,12 @@
 					</execution>
 				</executions>
 				<configuration>
+				    <links>
+				        <link>https://google.github.io/guice/api-docs/latest/javadoc/</link>
+				    </links>
+				    <detectJavaApiLink>true</detectJavaApiLink>
 				    <quite>true</quite>
+				    <doclint>none</doclint>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -277,9 +306,11 @@
 					</dependency>
 				</dependencies>
 			</plugin>
+			<!-- TODO: invoker plugin to run samples build here -->
 		</plugins>
 	</build>
 
+    <!-- TODO: More reporting? test coverage? -->
 	<reporting>
 		<plugins>
 			<plugin>

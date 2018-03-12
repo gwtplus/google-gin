@@ -1,6 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "GWT 2.7.0" "http://www.gwtproject.org/doctype/2.7.0/gwt-module.dtd">
 <module>
 
   <inherits name='com.google.gwt.user.User'/>
+  <inherits name='javax.inject.Inject'/>
 
   <generate-with class="com.google.gwt.inject.rebind.GinjectorGenerator">
     <when-type-assignable class="com.google.gwt.inject.client.Ginjector" />
