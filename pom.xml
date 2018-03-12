@@ -306,7 +306,22 @@
 					</dependency>
 				</dependencies>
 			</plugin>
-			<!-- TODO: invoker plugin to run samples build here -->
+			<plugin>
+				<artifactId>maven-invoker-plugin</artifactId>
+				<version>3.0.1</version>
+				<configuration>
+					<localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
+				</configuration>
+				<executions>
+					<execution>
+						<id>integration-test</id>
+						<goals>
+							<goal>install</goal>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
