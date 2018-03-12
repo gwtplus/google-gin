@@ -102,7 +102,9 @@
     <!-- mvn works with 2.8.2, ant doesn't due to manual (incomplete) classpath management -->
     <gwt.version>2.7.0</gwt.version>
 
-    <jsr330.version>1</jsr330.version>
+    <jsr330.version>1</jsr330.version> <!-- @Inject, @Singleton -->
+    <jsr305.version>3.0.2</jsr305.version> <!-- @Nullable -->
+    <jsr250.version>1.3.2</jsr250.version> <!-- @Generated, @PostConstruct -->
   </properties>
 
   <dependencies>
@@ -146,7 +148,13 @@
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>jsr305</artifactId>
-      <version>3.0.2</version>
+      <version>${jsr305.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>${jsr250.version}</version>
       <scope>provided</scope>
     </dependency>
 
