@@ -75,6 +75,7 @@
 
   <path id="library.javax.inject.classpath">
     <pathelement location="${dependency.dir}/compile/javax.inject-1.jar"/>
+  	<pathelement location="${dependency.dir}/compile/javax.inject-1-sources.jar"/>
   </path>
 
   <path id="library.assistedinject.classpath">
