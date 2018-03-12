@@ -1,0 +1,1 @@
+$wnd.simple.runAsyncCallback1("function _d(){++$d}\nfunction Pi(a){$wnd.alert(a)}\nwi(139,1,{},_d);var $d=0;var qg=gl(op,'SimpleAsyncWidget',139);wi(108,1,{42:1});_.u=function Ze(){new _d;Pi(sp+('Hello Async! from instance '+$d))};So(nb)(1);\n//# sourceURL=simple-1.js\n")
