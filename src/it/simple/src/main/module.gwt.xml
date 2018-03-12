@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE module PUBLIC "GWT 2.8.2" "http://www.gwtproject.org/doctype/2.8.2/gwt-module.dtd">
 <module>
-    <!-- Inherit the core Web Toolkit stuff. -->
-    <inherits name='com.google.gwt.user.User'/>
+  <!-- Inherit the core Web Toolkit stuff. -->
+  <inherits name='com.google.gwt.user.User' />
 
-    <!-- Inherit the default GWT style sheet. -->
-    <inherits name='com.google.gwt.user.theme.standard.Standard'/>
+  <!-- Inherit the default GWT style sheet. -->
+  <inherits name='com.google.gwt.user.theme.standard.Standard' />
 
-    <!-- Inherit the i18n module for the messages used in this example. -->
-    <inherits name="com.google.gwt.i18n.I18N"/>
+  <!-- Inherit the i18n module for the messages used in this example. -->
+  <inherits name="com.google.gwt.i18n.I18N" />
 
-    <!-- Inherit GIN. -->
-    <inherits name='com.google.gwt.inject.Inject'/>
+  <!-- Inherit GIN. -->
+  <inherits name='com.google.gwt.inject.Inject' />
 
-    <entry-point class='com.google.gwt.inject.example.simple.client.SimpleEntryPoint'/>
-    <stylesheet src='simple.css'/>
+  <entry-point class='com.google.gwt.inject.example.simple.client.SimpleEntryPoint' />
+  <stylesheet src='simple.css' />
 </module>
