@@ -15,7 +15,7 @@
   <packaging>jar</packaging>
 
   <name>Gin</name>
-  <description>Gin (GWT INjection) brings automatic dependency injection to GWT client-side code. Gin is built on top of Guice and uses (a subset of) Guice's binding language.</description>
+  <description>Gin (GWT INjection) brings automatic dependency injection to GWT client-side code. GIN is built on top of Guice and uses (a subset of) Guice's binding language.</description>
 
   <!-- Provide exact url for proper relative urls, even though parent has a redirect file -->
   <url>http://metteo.github.io/google-gin/site</url>
