@@ -17,6 +17,7 @@
   <name>GIN (GWT INjection)</name>
   <description>GIN (GWT INjection) brings automatic dependency injection to GWT client-side code. GIN is built on top of Guice and uses (a subset of) Guice's binding language.</description>
 
+  <!-- Provide exact url for proper relative urls, even though parent has a redirect file -->
   <url>http://metteo.github.io/google-gin/site</url>
   <inceptionYear>2008</inceptionYear>
 
@@ -96,7 +97,9 @@
   </scm>
 
   <properties>
-    <!-- TODO: Upgrade to 4.x -->
+    <java.release>1.8</java.release>
+  
+    <!-- TODO: Upgrade to 4.2.0 -->
     <guice.version>3.0</guice.version>
 
     <!-- mvn works with 2.8.2, ant doesn't due to manual (incomplete) classpath management -->
@@ -108,6 +111,7 @@
   </properties>
 
   <dependencies>
+    <!-- JSR-330 -->
     <dependency>
       <groupId>javax.inject</groupId>
       <artifactId>javax.inject</artifactId>
@@ -121,6 +125,7 @@
       <classifier>sources</classifier>
     </dependency>
 
+    <!-- Guice and AssitedInject extension -->
     <dependency>
       <groupId>com.google.inject</groupId>
       <artifactId>guice</artifactId>
@@ -132,6 +137,7 @@
       <version>${guice.version}</version>
     </dependency>
 
+    <!-- GWT -->
     <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-user</artifactId>
@@ -145,6 +151,7 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Common Annotations -->
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>jsr305</artifactId>
@@ -158,6 +165,7 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Testing -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -178,8 +186,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.7.0</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>${java.release}</source>
+          <target>${java.release}</target>
           <encoding>UTF-8</encoding>
         </configuration>
       </plugin>
@@ -189,6 +197,25 @@
         <configuration>
           <encoding>UTF-8</encoding>
         </configuration>
+        <executions>
+          <execution>
+            <id>client-sources</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.sourceDirectory}</directory>
+                  <include>com/google/gwt/inject/client/**/*.java</include>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -209,7 +236,6 @@
           </includes>
 
           <additionalClasspathElements>
-            <additionalClasspathElement>${project.build.sourceDirectory}</additionalClasspathElement>
             <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
           </additionalClasspathElements>
 
@@ -229,6 +255,7 @@
               <systemPropertyVariables>
                 <!-- Add -logLevel TRACE to get more debug output -->
                 <gwt.args>
+                  -devMode
                   -gen target/generated-test-sources/test-hosted
                   -war target/war/test-hosted
                 </gwt.args>
@@ -296,7 +323,7 @@
         <version>2.8</version>
         <executions>
           <execution>
-            <id>default-cli</id>
+            <id>default-cli</id> <!-- For ant build -->
             <configuration>
               <useSubDirectoryPerScope>true</useSubDirectoryPerScope>
             </configuration>

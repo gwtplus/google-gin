@@ -43,12 +43,6 @@
       <artifactId>gin</artifactId>
       <version>${gin.version}</version>
     </dependency>
-    <dependency> <!-- Required until client sources are not included -->
-      <groupId>com.google.gwt.inject</groupId>
-      <artifactId>gin</artifactId>
-      <version>${gin.version}</version>
-      <classifier>sources</classifier>
-    </dependency>
   </dependencies>
 
   <build>
