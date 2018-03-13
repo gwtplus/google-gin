@@ -14,8 +14,8 @@
   <version>2.1.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>GIN (GWT INjection)</name>
-  <description>GIN (GWT INjection) brings automatic dependency injection to GWT client-side code. GIN is built on top of Guice and uses (a subset of) Guice's binding language.</description>
+  <name>Gin</name>
+  <description>Gin (GWT INjection) brings automatic dependency injection to GWT client-side code. Gin is built on top of Guice and uses (a subset of) Guice's binding language.</description>
 
   <!-- Provide exact url for proper relative urls, even though parent has a redirect file -->
   <url>http://metteo.github.io/google-gin/site</url>
@@ -23,7 +23,7 @@
 
   <mailingLists>
     <mailingList>
-      <name>Gin Users List</name>
+      <name>Gin Users</name>
       <archive>https://groups.google.com/forum/#!forum/google-gin</archive>
     </mailingList>
   </mailingLists>
@@ -98,11 +98,7 @@
 
   <properties>
     <java.release>1.8</java.release>
-  
-    <!-- TODO: Upgrade to 4.2.0 -->
-    <guice.version>3.0</guice.version>
-
-    <!-- mvn works with 2.8.2, ant doesn't due to manual (incomplete) classpath management -->
+    <guice.version>4.2.0</guice.version>
     <gwt.version>2.7.0</gwt.version>
 
     <jsr330.version>1</jsr330.version> <!-- @Inject, @Singleton -->
@@ -316,18 +312,6 @@
               <goal>jar</goal>
               <goal>test-jar</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.8</version>
-        <executions>
-          <execution>
-            <id>default-cli</id> <!-- For ant build -->
-            <configuration>
-              <useSubDirectoryPerScope>true</useSubDirectoryPerScope>
-            </configuration>
           </execution>
         </executions>
       </plugin>
