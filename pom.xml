@@ -299,6 +299,7 @@
         <configuration>
           <links>
             <link>https://google.github.io/guice/api-docs/latest/javadoc/</link>
+            <link>http://www.gwtproject.org/javadoc/latest/</link>
           </links>
           <detectJavaApiLink>true</detectJavaApiLink>
           <quite>true</quite>
