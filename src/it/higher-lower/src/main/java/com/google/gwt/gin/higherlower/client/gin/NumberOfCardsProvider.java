@@ -2,7 +2,6 @@ package com.google.gwt.gin.higherlower.client.gin;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.google.inject.name.Named;
 
 public class NumberOfCardsProvider implements Provider<Integer> {
   private final int numberOfCards;

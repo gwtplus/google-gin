@@ -1,10 +1,9 @@
 package com.google.gwt.gin.higherlower.client;
 
+import com.google.gwt.gin.higherlower.client.gin.NumberOfCards;
 import com.google.gwt.gin.higherlower.client.model.Card;
 import com.google.gwt.gin.higherlower.client.model.Deck;
-import com.google.gwt.gin.higherlower.client.gin.NumberOfCards;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 
 public class DefaultHigherLowerGame implements HigherLowerGame {
   private final Deck deck;

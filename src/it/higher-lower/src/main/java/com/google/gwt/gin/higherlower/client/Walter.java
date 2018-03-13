@@ -1,8 +1,8 @@
 package com.google.gwt.gin.higherlower.client;
 
+import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.gin.higherlower.client.gin.StartGame;
 import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.Widget;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
@@ -29,7 +29,8 @@ public class Walter implements GameHost {
     newGame();
   }
 
-  public void onClick(Widget sender) {
+  @Override
+  public void onClick(ClickEvent event) {
     startGame();
   }
 

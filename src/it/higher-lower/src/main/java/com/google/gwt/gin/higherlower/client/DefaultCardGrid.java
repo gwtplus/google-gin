@@ -8,7 +8,6 @@ import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.Image;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.google.inject.name.Named;
 
 public class DefaultCardGrid extends CardGrid {
   private final Provider<Image> backOfCard;

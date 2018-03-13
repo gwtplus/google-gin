@@ -19,9 +19,9 @@ import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Image;
 import com.google.inject.Singleton;
-import com.google.inject.name.Names;
 
 public class HigherOrLowerModule extends AbstractGinModule {
+
   @Override
   protected void configure() {
     bind(Homepage.class).to(DefaultHomepage.class);

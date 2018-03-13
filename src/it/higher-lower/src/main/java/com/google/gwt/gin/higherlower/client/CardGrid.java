@@ -1,7 +1,7 @@
 package com.google.gwt.gin.higherlower.client;
 
-import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.gin.higherlower.client.model.Card;
+import com.google.gwt.user.client.ui.Composite;
 
 /**
  * The card grid visible on the screen.

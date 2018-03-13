@@ -1,10 +1,10 @@
 package com.google.gwt.gin.higherlower.client;
 
-import com.google.gwt.user.client.ui.ClickListener;
+import com.google.gwt.event.dom.client.ClickHandler;
 
 /**
  * The game host that drives a HigherLower game.
  */
-public interface GameHost extends ClickListener {
+public interface GameHost extends ClickHandler {
   void playerGuess(RelationshipToPreviousCard guess);
 }

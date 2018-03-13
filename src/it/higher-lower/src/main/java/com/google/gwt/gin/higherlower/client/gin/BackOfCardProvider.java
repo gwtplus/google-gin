@@ -1,6 +1,6 @@
 package com.google.gwt.gin.higherlower.client.gin;
 
-import com.google.gwt.gin.higherlower.client.DeckOfCardsImageBundle;
+import com.google.gwt.gin.higherlower.client.bundle.DeckOfCardsClientBundle;
 import com.google.gwt.user.client.ui.Image;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -9,14 +9,14 @@ import com.google.inject.Provider;
  * Gives out the back of a playing card.
  */
 public class BackOfCardProvider implements Provider<Image> {
-  private final DeckOfCardsImageBundle imageBundle;
+  private final DeckOfCardsClientBundle clientBundle;
 
   @Inject
-  public BackOfCardProvider(DeckOfCardsImageBundle imageBundle) {
-    this.imageBundle = imageBundle;
+  public BackOfCardProvider(DeckOfCardsClientBundle clientBundle) {
+    this.clientBundle = clientBundle;
   }
 
   public Image get() {
-    return imageBundle.back().createImage();
+    return new Image(clientBundle.back());
   }
 }

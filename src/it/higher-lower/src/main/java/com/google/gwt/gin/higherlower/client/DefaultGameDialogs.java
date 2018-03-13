@@ -1,11 +1,11 @@
 package com.google.gwt.gin.higherlower.client;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.ClickListener;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.google.gwt.user.client.ui.Widget;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
@@ -30,8 +30,9 @@ public class DefaultGameDialogs implements GameDialogs {
 
     Button higher = new Button("Higher, higher!");
     higher.addStyleName("centered");
-    higher.addClickListener(new ClickListener() {
-      public void onClick(Widget sender) {
+    higher.addClickHandler(new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
         box.hide();
         gameHost.get().playerGuess(RelationshipToPreviousCard.HIGHER);
       }
@@ -40,8 +41,9 @@ public class DefaultGameDialogs implements GameDialogs {
 
     Button lower = new Button("Down, boy!");
     lower.addStyleName("centered");
-    lower.addClickListener(new ClickListener() {
-      public void onClick(Widget sender) {
+    lower.addClickHandler(new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
         box.hide();
         gameHost.get().playerGuess(RelationshipToPreviousCard.LOWER);
       }
@@ -62,8 +64,9 @@ public class DefaultGameDialogs implements GameDialogs {
     box.setText("Thanks for playing Higher or Lower! *ding*ding*ding*ding*");
     Button b = new Button("Thanks for having me!");
     b.addStyleName("centered");
-    b.addClickListener(new ClickListener() {
-      public void onClick(Widget sender) {
+    b.addClickHandler(new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
         runnable.run();
         box.hide();
       }

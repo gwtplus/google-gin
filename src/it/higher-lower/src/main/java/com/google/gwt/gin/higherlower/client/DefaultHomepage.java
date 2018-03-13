@@ -10,13 +10,14 @@ import com.google.inject.Inject;
  * Application home page.
  */
 public class DefaultHomepage extends Homepage {
+
   @Inject
   public DefaultHomepage(CardGrid cardGrid,
                   @StartGame Button button,
                   GameHost startGame,
                   ScoreBoard scoreBoard) {
     
-    button.addClickListener(startGame);
+    button.addClickHandler(startGame);
 
     VerticalPanel gamePanel = new VerticalPanel();
     gamePanel.addStyleName("widePanel");

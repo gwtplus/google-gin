@@ -1,9 +1,8 @@
 package com.google.gwt.gin.higherlower.client;
 
-import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.gin.higherlower.client.gin.NumberOfCards;
+import com.google.gwt.user.client.ui.Label;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 
 public class DefaultScoreBoard extends ScoreBoard {
   private final Label label;
