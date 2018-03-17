@@ -15,10 +15,10 @@
   <packaging>jar</packaging>
 
   <name>Gin</name>
-  <description>Gin (GWT INjection) brings automatic dependency injection to GWT client-side code. GIN is built on top of Guice and uses (a subset of) Guice's binding language.</description>
+  <description>Gin (GWT INjection) brings automatic dependency injection to GWT client-side code. Gin is built on top of Guice and uses (a subset of) Guice's binding language.</description>
 
   <!-- Provide exact url for proper relative urls, even though parent has a redirect file -->
-  <url>http://metteo.github.io/google-gin/site</url>
+  <url>http://gwtplus.github.io/google-gin/site</url>
   <inceptionYear>2008</inceptionYear>
 
   <mailingLists>
@@ -81,18 +81,18 @@
 
   <issueManagement>
     <system>GitHub Issues</system>
-    <url>https://github.com/metteo/google-gin/issues</url>
+    <url>https://github.com/gwtplus/google-gin/issues</url>
   </issueManagement>
 
   <ciManagement>
     <system>Travis CI</system>
-    <url>https://travis-ci.org/metteo/google-gin</url>
+    <url>https://travis-ci.org/gwtplus/google-gin</url>
   </ciManagement>
 
   <scm>
-    <connection>scm:git:https://github.com/metteo/google-gin.git</connection>
-    <developerConnection>scm:git:https://github.com/metteo/google-gin.git</developerConnection>
-    <url>https://github.com/metteo/google-gin</url>
+    <connection>scm:git:https://github.com/gwtplus/google-gin.git</connection>
+    <developerConnection>scm:git:https://github.com/gwtplus/google-gin.git</developerConnection>
+    <url>https://github.com/gwtplus/google-gin</url>
     <tag>master</tag>
   </scm>
 

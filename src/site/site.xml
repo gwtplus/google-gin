@@ -13,14 +13,14 @@
   <body>
     <menu name="Overview">
       <item name="Introduction" href="index.html" />
-      <item name="Dev Wiki" href="https://github.com/metteo/google-gin/wiki" />
+      <item name="Dev Wiki" href="https://github.com/gwtplus/google-gin/wiki" />
       <item name="Javadoc" href="../latest/javadoc" />
-      <item name="Download" href="https://github.com/metteo/google-gin/releases" />
+      <item name="Download" href="https://github.com/gwtplus/google-gin/releases" />
     </menu>
     <menu name="Examples">
-      <item name="Simple" href="https://github.com/metteo/google-gin/tree/master/src/it/simple" />
+      <item name="Simple" href="https://github.com/gwtplus/google-gin/tree/master/src/it/simple" />
       <item name="Simple (demo)" href="../demos/simple" />
-      <item name="Higher Lower" href="https://github.com/metteo/google-gin/tree/master/src/it/higher-lower" />
+      <item name="Higher Lower" href="https://github.com/gwtplus/google-gin/tree/master/src/it/higher-lower" />
       <item name="Higher Lower (demo)" href="../demos/HigherLower" />
     </menu>
     <menu ref="reports" />
