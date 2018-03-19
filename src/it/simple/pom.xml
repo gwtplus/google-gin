@@ -4,7 +4,7 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.google.gwt.inject.example</groupId>
+  <groupId>io.github.gwtplus.gin.example</groupId>
   <artifactId>simple</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>gwt-app</packaging>
@@ -39,7 +39,7 @@
     </dependency>
 
     <dependency>
-      <groupId>com.google.gwt.inject</groupId>
+      <groupId>io.github.gwtplus.gin</groupId>
       <artifactId>gin</artifactId>
       <version>${gin.version}</version>
     </dependency>
