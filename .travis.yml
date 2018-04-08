@@ -7,7 +7,7 @@ cache:
    - $HOME/.m2
 
 script:
- - ./mvnw verify
+ - ./mvnw verify -Pci
 
 notifications:
   email: false
