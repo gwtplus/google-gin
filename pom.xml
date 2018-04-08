@@ -363,6 +363,16 @@
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-release-plugin</artifactId>
+            <version>2.5.3</version>
+            <configuration>
+              <tagNameFormat>v@{project.version}</tagNameFormat>
+              <developmentVersion>HEAD-SNAPSHOT</developmentVersion>
+              <pushChanges>false</pushChanges>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <version>1.6</version>
             <executions>
