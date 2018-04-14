@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
@@ -14,10 +15,18 @@
   <url>http://gwtplus.github.io/google-gin/site</url>
   <inceptionYear>2008</inceptionYear>
 
+  <organization>
+    <name>GWT Plus</name>
+    <url>https://github.com/gwtplus/</url>
+  </organization>
+
   <mailingLists>
     <mailingList>
       <name>Gin Users</name>
-      <archive>https://groups.google.com/forum/#!forum/google-gin</archive>
+      <archive>http://groups.google.com/group/google-gin/topics</archive>
+      <subscribe>http://groups.google.com/group/google-gin/subscribe</subscribe>
+      <unsubscribe>http://groups.google.com/group/google-gin/subscribe</unsubscribe>
+      <post>http://groups.google.com/group/google-gin/post</post>
     </mailingList>
   </mailingLists>
 
@@ -296,6 +305,25 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+            <manifestEntries>
+              <!-- Original name and company -->
+              <Specification-Title>GIN (GWT INjection)</Specification-Title>
+              <Specification-Vendor>Google Inc.</Specification-Vendor>
+
+              <!-- Java 9 compatibility -->
+              <Automatic-Module-Name>com.google.gwt.inject</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-source-plugin</artifactId>
