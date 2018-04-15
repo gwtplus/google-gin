@@ -31,4 +31,4 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PARAMETER, ElementType.FIELD, ElementType.METHOD})
 @BindingAnnotation
-public @interface Injectable {}
+public @interface Injectable { }

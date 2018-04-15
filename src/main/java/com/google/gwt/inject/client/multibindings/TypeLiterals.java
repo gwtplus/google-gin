@@ -28,7 +28,7 @@ import java.util.Set;
  */
 public class TypeLiterals {
 
-  private TypeLiterals() {}
+  private TypeLiterals() { }
 
   @SuppressWarnings("unchecked")
   public static <K, V> TypeLiteral<Map<K, V>> mapOf(TypeLiteral<K> key, TypeLiteral<V> value) {

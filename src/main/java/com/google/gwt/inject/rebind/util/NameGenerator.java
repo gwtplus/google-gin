@@ -16,7 +16,6 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.inject.rebind.output.FragmentPackageName;
-import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
@@ -56,7 +55,7 @@ public class NameGenerator {
   }
   
   /**
-   * "Mangled key name" cache:  Key -> mangled name
+   * "Mangled key name" cache:  Key -> mangled name.
    */
   private final Map<CacheKey, String> methodKeyCache = new LinkedHashMap<CacheKey, String>();
   

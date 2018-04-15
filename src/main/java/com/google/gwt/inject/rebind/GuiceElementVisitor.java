@@ -40,7 +40,7 @@ import java.util.List;
 public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
   
   /**
-   * Interface for use with Assisted Injection for creating {@link GuiceElementVisitor}
+   * Interface for use with Assisted Injection for creating {@link GuiceElementVisitor}.
    */
   public interface GuiceElementVisitorFactory {
     GuiceElementVisitor create(GinjectorBindings bindingsCollection);
@@ -167,7 +167,8 @@ public class GuiceElementVisitor extends DefaultElementVisitor<Void> {
             key, childCollection);
       }
 
-      PrettyPrinter.log(logger, TreeLogger.TRACE, "Child binding for %s in %s: %s", key, bindings, childBinding);
+      PrettyPrinter.log(logger, TreeLogger.TRACE, "Child binding for %s in %s: %s", key, bindings,
+          childBinding);
 
       bindings.addBinding(key, childBinding);
     }

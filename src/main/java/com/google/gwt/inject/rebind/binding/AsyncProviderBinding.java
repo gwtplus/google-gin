@@ -26,15 +26,13 @@ import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
 import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Binding implementation for {@code AsyncProvider<T>} that generates
+ * Binding implementation for {@code AsyncProvider<T>}. It generates
  * the following code for the provider:
  * 
  * <pre style=code>
@@ -91,7 +89,7 @@ public class AsyncProviderBinding extends AbstractBinding implements Binding {
         .append(SourceSnippets.callGetter(targetKey)).append(");\n")
         .append("        }\n")
         .append("        public void onFailure(Throwable ex) { \n ")
-        .append("          callback.onFailure(ex); \n" )
+        .append("          callback.onFailure(ex); \n")
         .append("        } \n")
         .append("    }); \n")
         .append("    }\n")

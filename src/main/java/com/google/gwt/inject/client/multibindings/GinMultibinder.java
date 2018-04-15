@@ -126,7 +126,6 @@ public final class GinMultibinder<T> {
     ginBinder.install(new SetModule());
   }
 
-
   /**
    * Configures the bound set to silently discard duplicate elements. When multiple equal values are
    * bound, the one that gets included is arbitrary. When multiple modules contribute elements to
@@ -154,7 +153,7 @@ public final class GinMultibinder<T> {
   // TODO(user): not private due to http://code.google.com/p/google-gin/issues/detail?id=184
   final class SetModule extends SingletonInternalModule<Provider<T>> {
 
-    public SetModule() {
+    SetModule() {
       super(multibindingKey);
     }
 

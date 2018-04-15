@@ -36,14 +36,14 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.spi.Elements;
 
-import javax.inject.Provider;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import javax.inject.Provider;
 
 /**
  * Builds up the bindings and scopes for this {@code Ginjector}.  This uses

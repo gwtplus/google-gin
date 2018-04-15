@@ -20,7 +20,7 @@ package com.google.gwt.inject.client.multibindings;
  */
 class Preconditions {
 
-  private Preconditions() {}
+  private Preconditions() { }
 
   static void checkState(boolean condition, String msg) {
     if (!condition) {

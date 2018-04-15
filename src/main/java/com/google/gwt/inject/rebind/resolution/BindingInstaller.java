@@ -55,7 +55,7 @@ class BindingInstaller {
   private final TreeLogger logger;
 
   @Inject
-  public BindingInstaller(
+  BindingInstaller(
       BindingPositioner.Factory positionsFactory,
       BindingFactory bindingFactory,
       @Assisted TreeLogger logger) {

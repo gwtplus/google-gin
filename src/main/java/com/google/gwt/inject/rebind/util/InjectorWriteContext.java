@@ -16,8 +16,6 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.inject.rebind.GinjectorBindings;
-import com.google.gwt.inject.rebind.reflect.MethodLiteral;
-import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 

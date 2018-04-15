@@ -20,8 +20,6 @@ import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
-import java.util.ArrayList;
-
 /**
  * Utility class for source snippets.
  */
@@ -111,7 +109,9 @@ public final class SourceSnippets {
     };
   }
 
-  /** Creates a snippet that generates a constant text string. */
+  /**
+   * Creates a snippet that generates a constant text string.
+   */
   public static SourceSnippet forText(final String text) {
     return new SourceSnippet() {
       public String getSource(InjectorWriteContext writeContext) {

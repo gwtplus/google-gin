@@ -16,7 +16,6 @@
 package com.google.gwt.inject.rebind.binding;
 
 import com.google.gwt.core.ext.Generator;
-import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.InjectorMethod;
@@ -24,7 +23,6 @@ import com.google.gwt.inject.rebind.util.NameGenerator;
 import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.gwt.inject.rebind.util.SourceSnippet;
 import com.google.gwt.inject.rebind.util.SourceSnippetBuilder;
-import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 
 import java.lang.reflect.Type;
@@ -34,6 +32,8 @@ import java.util.List;
 
 /**
  * Binding for a constant value.
+ * 
+ * @param <T> type
  */
 public class BindConstantBinding<T> extends AbstractBinding implements Binding {
 

@@ -26,11 +26,11 @@ public interface BindingIndex {
    * Returns true if the passed key is bound in the Ginjector.
    * <p/>
    * Note: This only works reliably in the source-generation phase of the
-   * ginjector generation since during the binding processing phase not all
+   * Ginjector generation since during the binding processing phase not all
    * keys are guaranteed to have been looked at.
    *
    * @param key key to be checked
    * @return true if key is bound.
    */
-  public boolean isBound(Key<?> key);
+  boolean isBound(Key<?> key);
 }

@@ -24,7 +24,7 @@ import java.lang.annotation.Annotation;
 class AnnotatedConstantBindingBuilderAdapter implements GinAnnotatedConstantBindingBuilder {
   private final AnnotatedConstantBindingBuilder guiceBuilder;
 
-  public AnnotatedConstantBindingBuilderAdapter(
+  AnnotatedConstantBindingBuilderAdapter(
       AnnotatedConstantBindingBuilder guiceBuilder) {
     this.guiceBuilder = guiceBuilder;
   }

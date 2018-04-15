@@ -28,7 +28,7 @@ import javax.inject.Provider;
 class LinkedBindingBuilderAdapter<T> implements GinLinkedBindingBuilder<T> {
   private final LinkedBindingBuilder<T> linkedBindingBuilder;
 
-  public LinkedBindingBuilderAdapter(LinkedBindingBuilder<T> linkedBindingBuilder) {
+  LinkedBindingBuilderAdapter(LinkedBindingBuilder<T> linkedBindingBuilder) {
     this.linkedBindingBuilder = linkedBindingBuilder;
   }
 

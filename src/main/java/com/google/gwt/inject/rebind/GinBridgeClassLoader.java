@@ -19,7 +19,6 @@ package com.google.gwt.inject.rebind;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
-import com.google.gwt.dev.javac.CompilationState;
 import com.google.gwt.dev.javac.CompiledClass;
 import com.google.gwt.dev.javac.StandardGeneratorContext;
 

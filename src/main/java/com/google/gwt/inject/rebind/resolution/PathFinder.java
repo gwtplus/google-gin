@@ -55,7 +55,7 @@ public class PathFinder {
    */
   private Queue<Key<?>> workQueue;
 
-  public PathFinder() {}
+  public PathFinder() { }
   
   public PathFinder onGraph(DependencyGraph graph) {
     this.graph = graph;

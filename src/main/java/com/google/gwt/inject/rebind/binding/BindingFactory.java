@@ -23,10 +23,10 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.internal.ProviderMethod;
 
-import javax.inject.Provider;
-
 import java.lang.reflect.Constructor;
 import java.util.Map;
+
+import javax.inject.Provider;
 
 /**
  * Factory interface for creating bindings. The parameters to each method are the not guice

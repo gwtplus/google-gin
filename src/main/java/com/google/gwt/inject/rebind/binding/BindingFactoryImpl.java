@@ -28,10 +28,10 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.internal.ProviderMethod;
 
-import javax.inject.Provider;
-
 import java.lang.reflect.Constructor;
 import java.util.Map;
+
+import javax.inject.Provider;
 
 /**
  * Guice-based implementation of the binding factory.

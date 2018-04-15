@@ -33,7 +33,7 @@ import com.google.inject.Provider;
  */
 public class Dependency {
   
-  private static final class GinjectorSourceClass {}
+  private static final class GinjectorSourceClass { }
   
   /**
    * A unique key used to indicate that a dependency originated in the Ginjector; for instance, 

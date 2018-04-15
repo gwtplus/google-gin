@@ -42,7 +42,7 @@ class GinjectorFragmentContext implements InjectorWriteContext {
   private final SourceWriter sourceWriter;
 
   @Inject
-  public GinjectorFragmentContext(
+  GinjectorFragmentContext(
       ErrorManager errorManager,
       FragmentPackageName.Factory fragmentPackageNameFactory,
       GinjectorNameGenerator ginjectorNameGenerator,

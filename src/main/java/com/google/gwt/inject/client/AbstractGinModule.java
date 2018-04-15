@@ -17,8 +17,8 @@ package com.google.gwt.inject.client;
 
 import com.google.gwt.inject.client.binder.GinAnnotatedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinAnnotatedConstantBindingBuilder;
-import com.google.gwt.inject.client.binder.GinLinkedBindingBuilder;
 import com.google.gwt.inject.client.binder.GinBinder;
+import com.google.gwt.inject.client.binder.GinLinkedBindingBuilder;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 

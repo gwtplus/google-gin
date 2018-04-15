@@ -19,6 +19,8 @@ import java.lang.annotation.Annotation;
 
 /**
  * See the EDSL examples at {@link GinBinder}.
+ * 
+ * @param <T> type
  */
 public interface GinAnnotatedBindingBuilder<T> extends GinLinkedBindingBuilder<T> {
   /**

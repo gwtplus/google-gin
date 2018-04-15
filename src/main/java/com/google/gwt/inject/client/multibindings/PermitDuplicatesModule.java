@@ -31,7 +31,7 @@ import com.google.inject.TypeLiteral;
  */
 class PermitDuplicatesModule<T> extends SingletonInternalModule<T> {
 
-  public PermitDuplicatesModule(Key<T> multibindingKey) {
+  PermitDuplicatesModule(Key<T> multibindingKey) {
     super(multibindingKey);
   }
 
@@ -43,7 +43,7 @@ class PermitDuplicatesModule<T> extends SingletonInternalModule<T> {
 
   static class PermitDuplicateRegisterer<T> {
     @Inject
-    public PermitDuplicateRegisterer(@Internal RuntimeBindingsRegistry<T> registry) {
+    PermitDuplicateRegisterer(@Internal RuntimeBindingsRegistry<T> registry) {
       registry.permitDuplicates();
     }
   }

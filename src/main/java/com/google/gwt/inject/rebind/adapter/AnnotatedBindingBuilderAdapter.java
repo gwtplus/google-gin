@@ -29,7 +29,7 @@ import javax.inject.Provider;
 class AnnotatedBindingBuilderAdapter<T> implements GinAnnotatedBindingBuilder<T> {
   private final AnnotatedBindingBuilder<T> annotatedBindingBuilder;
 
-  public AnnotatedBindingBuilderAdapter(AnnotatedBindingBuilder<T> annotatedBindingBuilder) {
+  AnnotatedBindingBuilderAdapter(AnnotatedBindingBuilder<T> annotatedBindingBuilder) {
     this.annotatedBindingBuilder = annotatedBindingBuilder;
   }
 

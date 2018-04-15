@@ -20,6 +20,9 @@ import com.google.inject.binder.AnnotatedElementBuilder;
 
 import java.lang.annotation.Annotation;
 
+/**
+ * 
+ */
 public class AnnotatedElementBuilderAdapter
     implements GinAnnotatedElementBuilder {
 

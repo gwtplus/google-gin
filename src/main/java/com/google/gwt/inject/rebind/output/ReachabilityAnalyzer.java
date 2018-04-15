@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright 2012 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -63,7 +63,7 @@ final class ReachabilityAnalyzer {
   private final GinjectorBindings rootBindings;
 
   @Inject
-  public ReachabilityAnalyzer(
+  ReachabilityAnalyzer(
       GuiceUtil guiceUtil,
       Provider<MemberCollector> memberCollectorProvider,
       @RootBindings GinjectorBindings rootBindings,
@@ -132,7 +132,9 @@ final class ReachabilityAnalyzer {
     logger.log(TreeLogger.DEBUG, "End reachability analysis");
   }
 
-  /** Traces out bindings that are reachable from a GInjector method. */
+  /**
+   * Traces out bindings that are reachable from a GInjector method.
+   */
   private void traceGinjectorMethods() {
     TypeLiteral<?> ginjectorInterface = rootBindings.getGinjectorInterface();
     for (MethodLiteral<?, Method> method
@@ -160,7 +162,9 @@ final class ReachabilityAnalyzer {
     }
   }
 
-  /** Traces out bindings that are reachable from an eager singleton. */
+  /**
+   * Traces out bindings that are reachable from an eager singleton.
+   */
   private void traceEagerSingletons() {
     doTraceEagerSingletons(rootBindings);
   }

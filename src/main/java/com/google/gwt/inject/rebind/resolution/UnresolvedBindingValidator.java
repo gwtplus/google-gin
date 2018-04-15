@@ -20,9 +20,7 @@ import com.google.gwt.inject.rebind.ErrorManager;
 import com.google.gwt.inject.rebind.GinjectorBindings;
 import com.google.gwt.inject.rebind.binding.Binding;
 import com.google.gwt.inject.rebind.binding.Dependency;
-import com.google.gwt.inject.rebind.binding.ParentBinding;
 import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExplorerOutput;
-import com.google.gwt.inject.rebind.util.Preconditions;
 import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
 import com.google.inject.Key;
@@ -248,6 +246,9 @@ public class UnresolvedBindingValidator {
     }
   }
 
+  /**
+   *
+   */
   public interface Factory {
     UnresolvedBindingValidator create(TreeLogger logger);
   }

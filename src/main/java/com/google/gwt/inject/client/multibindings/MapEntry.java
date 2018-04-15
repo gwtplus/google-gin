@@ -29,7 +29,7 @@ class MapEntry<K, V> {
   private final Provider<V> valueProvider;
 
   @Inject
-  public MapEntry(@Internal K key, @Internal Provider<V> valueProvider) {
+  MapEntry(@Internal K key, @Internal Provider<V> valueProvider) {
     this.key = key;
     this.valueProvider = valueProvider;
   }

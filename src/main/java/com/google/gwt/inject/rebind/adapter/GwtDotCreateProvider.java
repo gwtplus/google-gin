@@ -30,6 +30,8 @@ import com.google.inject.binder.ScopedBindingBuilder;
  *
  * Some details are in
  * <a href="http://code.google.com/p/google-gin/issues/detail?id=22">issue 22</a>.
+ * 
+ * @param <T> type
  */
 public class GwtDotCreateProvider<T> implements Provider<T> {
   static <T> ScopedBindingBuilder bind(LinkedBindingBuilder<T> builder) {
@@ -37,7 +39,7 @@ public class GwtDotCreateProvider<T> implements Provider<T> {
   }
 
   // Private constructor, only created via static method
-  private GwtDotCreateProvider() {}
+  private GwtDotCreateProvider() { }
 
   public T get() {
     throw new AssertionError("should never be actually called");

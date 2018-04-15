@@ -22,7 +22,6 @@ import com.google.gwt.inject.rebind.resolution.DependencyExplorer.DependencyExpl
 import com.google.gwt.inject.rebind.resolution.UnresolvedBindingValidator.InvalidKeys;
 import com.google.gwt.inject.rebind.util.PrettyPrinter;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 
 /**
  * Drives the top level Binding Resolution algorithm.  This performs the following steps:

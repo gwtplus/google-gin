@@ -30,6 +30,9 @@ import javax.inject.Named;
 /**
  * Generic member representation preserving the member's type parameters.
  *
+ * @param <T> type
+ * @param <M> member
+ * 
  * @see TypeLiteral
  */
 public abstract class MemberLiteral<T, M extends Member & AnnotatedElement> {

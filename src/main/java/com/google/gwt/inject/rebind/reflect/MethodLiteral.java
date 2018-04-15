@@ -40,6 +40,9 @@ import java.util.List;
  * parametrization and allows common operations on methods and constructors
  * where appropriate.
  *
+ * @param <T> type
+ * @param <M> member
+ *
  * @see TypeLiteral
  */
 public abstract class MethodLiteral<T, M extends Member & AnnotatedElement & GenericDeclaration>
@@ -257,6 +260,5 @@ public abstract class MethodLiteral<T, M extends Member & AnnotatedElement & Gen
     public List<Type> getRawParameterTypes() {
       return Arrays.asList(getMember().getGenericParameterTypes());
     }
-
   }
 }

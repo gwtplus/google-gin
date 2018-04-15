@@ -23,7 +23,7 @@ import java.lang.annotation.Annotation;
 class ScopedBindingBuilderAdapter implements GinScopedBindingBuilder {
   private final ScopedBindingBuilder scopedBindingBuilder;
 
-  public ScopedBindingBuilderAdapter(ScopedBindingBuilder scopedBindingBuilder) {
+  ScopedBindingBuilderAdapter(ScopedBindingBuilder scopedBindingBuilder) {
     this.scopedBindingBuilder = scopedBindingBuilder;
   }
 

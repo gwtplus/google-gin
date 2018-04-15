@@ -77,7 +77,7 @@ public class ImplicitBindingCreator {
   }
 
   /**
-   * Creates the implicit binding
+   * Creates the implicit binding.
    */
   public Binding create(Key<?> key) throws BindingCreationException {
     TypeLiteral<?> type = key.getTypeLiteral();
@@ -283,6 +283,9 @@ public class ImplicitBindingCreator {
     return injectConstructor;
   }
 
+  /**
+   * 
+   */
   public interface Factory {
     ImplicitBindingCreator create(TreeLogger logger);
   }

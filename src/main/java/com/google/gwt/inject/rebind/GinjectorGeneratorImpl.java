@@ -52,7 +52,7 @@ class GinjectorGeneratorImpl {
   private final GinjectorBindings rootBindings;
 
   @Inject
-  public GinjectorGeneratorImpl(TreeLogger logger, GeneratorContext ctx,
+  GinjectorGeneratorImpl(TreeLogger logger, GeneratorContext ctx,
       BindingsProcessor bindingsProcessor,
       @RootBindings GinjectorBindings rootBindings,
       GinjectorImplOutputter outputter) {

@@ -35,7 +35,8 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
  *        }
  *      }
  *  </pre>
- *   
+ *
+ * @param <T> type
  */
 public interface AsyncProvider<T> {
 

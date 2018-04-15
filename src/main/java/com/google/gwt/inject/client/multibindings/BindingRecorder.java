@@ -32,7 +32,7 @@ class BindingRecorder {
 
   private final GinBinder binder;
 
-  public <T> BindingRecorder(GinBinder binder, Key<T> multibindingKey) {
+  <T> BindingRecorder(GinBinder binder, Key<T> multibindingKey) {
     BindingRegistererModule<T> module = new BindingRegistererModule<T>(multibindingKey);
     binder.install(module);
     this.binder = module.getBinder();
@@ -55,7 +55,7 @@ class BindingRecorder {
 
     private GinBinder binder;
 
-    public BindingRegistererModule(Key<T> multibindingKey) {
+    BindingRegistererModule(Key<T> multibindingKey) {
       super(multibindingKey);
     }
 
@@ -73,7 +73,7 @@ class BindingRecorder {
 
   static class BindingRegisterer<T> {
     @Inject
-    public BindingRegisterer(@Internal RuntimeBindingsRegistry<T> registry, @Internal T binding) {
+    BindingRegisterer(@Internal RuntimeBindingsRegistry<T> registry, @Internal T binding) {
       registry.register(binding);
     }
   }

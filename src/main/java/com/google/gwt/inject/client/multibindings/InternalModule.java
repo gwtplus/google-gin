@@ -35,7 +35,7 @@ abstract class InternalModule<T> extends PrivateGinModule {
 
   private Key<T> multibindingKey;
 
-  public InternalModule(Key<T> multibindingKey) {
+  InternalModule(Key<T> multibindingKey) {
     this.multibindingKey = multibindingKey;
   }
 
@@ -74,7 +74,7 @@ abstract class InternalModule<T> extends PrivateGinModule {
    */
   abstract static class SingletonInternalModule<T> extends InternalModule<T> {
 
-    public SingletonInternalModule(Key<T> keyForMultibinding) {
+    SingletonInternalModule(Key<T> keyForMultibinding) {
       super(keyForMultibinding);
     }
 

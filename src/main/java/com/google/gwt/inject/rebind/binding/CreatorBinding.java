@@ -29,7 +29,6 @@ import com.google.gwt.inject.rebind.util.SourceSnippets;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;

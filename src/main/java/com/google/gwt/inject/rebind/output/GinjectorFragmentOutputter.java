@@ -39,7 +39,6 @@ import com.google.inject.Key;
 import com.google.inject.assistedinject.Assisted;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -138,12 +137,16 @@ class GinjectorFragmentOutputter {
     return fragmentPackageName;
   }
 
-  /** Returns true if the eager singletons initializer is nonempty. */
+  /**
+   * Returns true if the eager singletons initializer is nonempty.
+   */
   boolean hasEagerSingletonInitialization() {
     return initializeEagerSingletonsBody.length() > 0;
   }
 
-  /** Returns true if the static injections initializer is nonempty. */
+  /**
+   * Returns true if the static injections initializer is nonempty.
+   */
   boolean hasStaticInjectionInitialization() {
     return initializeStaticInjectionsBody.length() > 0;
   }
@@ -180,8 +183,10 @@ class GinjectorFragmentOutputter {
         initializeEagerSingletonsBody.append("// Eager singleton bound at:\n");
         appendBindingContextCommentToMethod(bindingContext, initializeEagerSingletonsBody);
         initializeEagerSingletonsBody.append(getter).append("();\n");
-        // $FALL-THROUGH$
+        // !break
+        //CHECKSTYLE_OFF
       case SINGLETON:
+        //CHECKSTYLE_OFF
         writer.println("private " + typeName + " " + field + " = null;");
         writer.println();
         getterBuilder.append(String.format("\nif (%s == null) {\n", field))

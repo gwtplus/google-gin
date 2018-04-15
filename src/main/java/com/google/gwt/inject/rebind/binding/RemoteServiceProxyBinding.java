@@ -18,7 +18,6 @@ package com.google.gwt.inject.rebind.binding;
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
 import com.google.gwt.inject.rebind.reflect.ReflectUtil;
 import com.google.gwt.inject.rebind.util.GuiceUtil;
-import com.google.gwt.inject.rebind.util.SourceWriteUtil;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.inject.TypeLiteral;
 

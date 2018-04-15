@@ -103,6 +103,9 @@ public class DependencyGraph {
     return dependenciesTargeting.keySet();
   }
 
+  /**
+   * 
+   */
   public static class Builder {
     private final Map<Key<?>, Set<Dependency>> dependenciesOf;
     private final Map<Key<?>, Set<Dependency>> dependenciesTargeting;
@@ -142,6 +145,9 @@ public class DependencyGraph {
     }
   }
 
+  /**
+   *
+   */
   public static class GraphPruner {
 
     private final DependencyGraph source;

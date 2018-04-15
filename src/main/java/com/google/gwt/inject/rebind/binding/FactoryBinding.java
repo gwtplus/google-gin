@@ -92,7 +92,6 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     }
   };
 
-
   private final List<AssistData> assistData = new ArrayList<AssistData>();
   private final Map<Key<?>, TypeLiteral<?>> collector;
   private final Key<?> factoryKey;
@@ -412,7 +411,7 @@ public class FactoryBinding extends AbstractBinding implements Binding {
     int p = 0;
     for (TypeLiteral<?> param : params) {
       Key<?> paramKey = getKey(param, constructor, paramAnnotations[p++], errors);
-      if(paramKey.getAnnotationType() == Assisted.class && !paramList.contains(paramKey)) {
+      if (paramKey.getAnnotationType() == Assisted.class && !paramList.contains(paramKey)) {
         return false;
       }
     }

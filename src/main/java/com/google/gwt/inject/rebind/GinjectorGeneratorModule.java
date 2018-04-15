@@ -1,18 +1,20 @@
-/**
- * Copyright (C) 2008 Wideplay Interactive.
+//CHECKSTYLE_OFF
+/*
+ * Copyright 2008 Wideplay Interactive.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
+//CHECKSTYLE_ON
 package com.google.gwt.inject.rebind;
 
 import com.google.gwt.core.ext.GeneratorContext;
@@ -53,7 +55,7 @@ class GinjectorGeneratorModule extends AbstractModule {
   private final Class<? extends Ginjector> ginjectorInterface;
   private final Set<Class<? extends GinModule>> moduleClasses;
 
-  public GinjectorGeneratorModule(TreeLogger logger, GeneratorContext ctx,
+  GinjectorGeneratorModule(TreeLogger logger, GeneratorContext ctx,
       Class<? extends Ginjector> ginjectorInterface, 
       Set<Class<? extends GinModule>> moduleClasses) {
     this.logger = logger;
@@ -69,7 +71,8 @@ class GinjectorGeneratorModule extends AbstractModule {
 
     bind(TreeLogger.class).toInstance(logger);
     bind(GeneratorContext.class).toInstance(ctx);
-    bind(new TypeLiteral<Class<? extends Ginjector>>(){})
+    bind(new TypeLiteral<Class<? extends Ginjector>>() {
+    })
         .annotatedWith(GinjectorInterfaceType.class)
         .toInstance(ginjectorInterface);
     bind(GinjectorBindings.class).annotatedWith(RootBindings.class)
@@ -79,7 +82,8 @@ class GinjectorGeneratorModule extends AbstractModule {
         .in(Singleton.class);
     install(new FactoryModuleBuilder()
         .build(GuiceElementVisitor.GuiceElementVisitorFactory.class));
-    bind(new TypeLiteral<Set<Class<? extends GinModule>>>(){})
+    bind(new TypeLiteral<Set<Class<? extends GinModule>>>() {
+    })
         .annotatedWith(ModuleClasses.class)
         .toInstance(moduleClasses);
     bind(BindingFactory.class).to(BindingFactoryImpl.class);

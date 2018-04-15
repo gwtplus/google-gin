@@ -289,7 +289,7 @@ public final class GinMapBinder<K, V> {
   }
 
   private abstract class AbstractMapModule extends SingletonInternalModule<MapEntry<K, V>> {
-    public AbstractMapModule() {
+    AbstractMapModule() {
       super(multibindingKey);
     }
 

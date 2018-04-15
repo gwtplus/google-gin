@@ -22,6 +22,8 @@ import javax.inject.Provider;
 
 /**
  * See the EDSL examples at {@link GinBinder}.
+ * 
+ * @param <T> type
  */
 public interface GinLinkedBindingBuilder<T> extends GinScopedBindingBuilder {
 

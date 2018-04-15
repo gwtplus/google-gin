@@ -64,7 +64,7 @@ public class MemberCollector {
    * filter only accepts A* and not A, A will not be collected, and A* will be
    * collected <b>despite being overridden</b> by A.
    */
-  public static interface MethodFilter {
+  public interface MethodFilter {
     boolean accept(MethodLiteral<?, Method> method);
   }
 
@@ -72,7 +72,7 @@ public class MemberCollector {
    * Filter used during the collection of fields to restrict the kind of
    * collected fields.
    */
-  public static interface FieldFilter {
+  public interface FieldFilter {
     boolean accept(FieldLiteral<?> field);
   }
 
@@ -97,7 +97,6 @@ public class MemberCollector {
           List<TypeLiteral<?>> parameters1 = m1.getParameterTypes();
           List<TypeLiteral<?>> parameters2 = m2.getParameterTypes();
           
-
           if (parameters1.size() != parameters2.size()) {
             return parameters1.size() - parameters2.size();
           }
@@ -146,13 +145,13 @@ public class MemberCollector {
       };
 
   /**
-   * Internal method cache: Type name -> Method Set
+   * Internal method cache: Type name -> Method Set.
    */
   private final Map<TypeLiteral<?>, Set<MethodLiteral<?, Method>>> methodMultiMap =
       new LinkedHashMap<TypeLiteral<?>, Set<MethodLiteral<?, Method>>>();
 
   /**
-   * Internal field cache: Type name -> Method Set
+   * Internal field cache: Type name -> Method Set.
    */
   private final Map<TypeLiteral<?>, Set<FieldLiteral<?>>> fieldMultiMap =
       new LinkedHashMap<TypeLiteral<?>, Set<FieldLiteral<?>>>();

@@ -164,22 +164,22 @@ import com.google.inject.TypeLiteral;
 public interface GinBinder {
 
   /**
-   * See the EDSL examples at {@link GinBinder}
+   * See the EDSL examples at {@link GinBinder}.
    */
   <T> GinAnnotatedBindingBuilder<T> bind(Class<T> clazz);
 
   /**
-   * See the EDSL examples at {@link GinBinder}
+   * See the EDSL examples at {@link GinBinder}.
    */
   <T> GinAnnotatedBindingBuilder<T> bind(TypeLiteral<T> type);
 
   /**
-   * See the EDSL examples at {@link GinBinder}
+   * See the EDSL examples at {@link GinBinder}.
    */
   <T> GinLinkedBindingBuilder<T> bind(Key<T> key);
 
   /**
-   * See the EDSL examples at {@link GinBinder}
+   * See the EDSL examples at {@link GinBinder}.
    */
   GinAnnotatedConstantBindingBuilder bindConstant();
 

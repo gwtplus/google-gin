@@ -81,6 +81,9 @@ public class FragmentPackageName {
     return name;
   }
 
+  /**
+   * 
+   */
   public interface Factory {
     /**
      * Request a fragment package name that can access values in the given

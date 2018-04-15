@@ -171,7 +171,7 @@ public class MethodCallUtil {
     private final MethodLiteral<?, ?> method;
     private final String[] parameterNames;
 
-    public InvokerCall(boolean hasInvokee, String invokeeName, String invokerMethodName,
+    InvokerCall(boolean hasInvokee, String invokeeName, String invokerMethodName,
         String invokerPackageName, int invokerParamCount, MethodLiteral<?, ?> method,
         String[] parameterNames) {
       this.hasInvokee = hasInvokee;
@@ -258,7 +258,7 @@ public class MethodCallUtil {
     private final boolean returning;
     private final String returnTypeString;
 
-    public InvokerMethod(boolean hasInvokee, List<String> invokeeCallParams, String invokeeTypeName,
+    InvokerMethod(boolean hasInvokee, List<String> invokeeCallParams, String invokeeTypeName,
         String invokerPackageName, String invokerSignature, boolean isNative, boolean isThrowing,
         MethodLiteral<?, ?> method, boolean returning, String returnTypeString) {
       super(isNative, invokerSignature, invokerPackageName);

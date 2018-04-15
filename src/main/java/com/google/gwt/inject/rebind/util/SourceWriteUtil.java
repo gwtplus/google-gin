@@ -30,10 +30,9 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.Assisted;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 

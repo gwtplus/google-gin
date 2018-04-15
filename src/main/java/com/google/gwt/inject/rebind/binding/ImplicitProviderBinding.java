@@ -43,7 +43,6 @@ public class ImplicitProviderBinding extends AbstractBinding implements Binding 
   private ImplicitProviderBinding(Key<?> providerKey, Key<?> targetKey) {
     super(Context.format("Implicit provider for %s", providerKey), targetKey);
 
-
     this.providerKey = Preconditions.checkNotNull(providerKey);
     this.providerType = (ParameterizedType) providerKey.getTypeLiteral().getType();
     this.targetKey = Preconditions.checkNotNull(targetKey);

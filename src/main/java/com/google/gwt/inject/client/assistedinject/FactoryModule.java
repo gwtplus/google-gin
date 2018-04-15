@@ -1,4 +1,5 @@
-/* Copyright 2010 Google Inc.
+/* 
+ * Copyright 2010 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -27,6 +28,8 @@ import java.util.Map;
  *
  * Fake module that transports assisted inject information from user-defined
  * modules to the bindings processor.
+ * 
+ * @param <F> generic type
  */
 public class FactoryModule<F> implements GinModule {
 
@@ -55,5 +58,5 @@ public class FactoryModule<F> implements GinModule {
     return source;
   }
 
-  public void configure(GinBinder binder) {}
+  public void configure(GinBinder binder) { }
 }

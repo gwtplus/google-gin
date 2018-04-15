@@ -21,7 +21,7 @@ import com.google.inject.binder.ConstantBindingBuilder;
 class ConstantBindingBuilderAdapter implements GinConstantBindingBuilder {
   private final ConstantBindingBuilder guiceBuilder;
 
-  public ConstantBindingBuilderAdapter(ConstantBindingBuilder guiceBuilder) {
+  ConstantBindingBuilderAdapter(ConstantBindingBuilder guiceBuilder) {
     this.guiceBuilder = guiceBuilder;
   }
 

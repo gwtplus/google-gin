@@ -16,7 +16,6 @@
 package com.google.gwt.inject.rebind.util;
 
 import com.google.gwt.inject.rebind.reflect.NoSourceNameException;
-import com.google.gwt.inject.rebind.util.NameGenerator;
 
 /**
  * A method that will be written to an injector implementation.
@@ -28,15 +27,17 @@ public interface InjectorMethod {
   boolean isNative();
 
   /**
-   * Returns the signature of the method (e.g., "public void foo()")
+   * Returns the signature of the method (e.g., "public void foo()").
    */
   String getMethodSignature();
 
   /**
-   * Returns the body of the method in the given context (e.g., "return this;")
+   * Returns the body of the method in the given context (e.g., "return this;").
    */
   String getMethodBody(InjectorWriteContext context) throws NoSourceNameException;
 
-  /** Get the name of the package in which this method should be created. */
+  /**
+   * Get the name of the package in which this method should be created.
+   */
   String getPackageName();
 }

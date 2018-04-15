@@ -35,13 +35,15 @@ import com.google.inject.spi.ProviderInstanceBinding;
 import com.google.inject.spi.ProviderKeyBinding;
 import com.google.inject.spi.UntargettedBinding;
 
-import javax.inject.Provider;
-
 import java.lang.annotation.Annotation;
 import java.util.List;
 
+import javax.inject.Provider;
+
 /**
  * Gathers information about Guice Bindings and adds the information to a {@link GinjectorBindings}.
+ * 
+ * @param <T> type
  */
 public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
     implements BindingScopingVisitor<Void> {

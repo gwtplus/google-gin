@@ -106,7 +106,7 @@ class BindingPositioner {
   private DependencyExplorerOutput output;
 
   @Inject
-  public BindingPositioner(@Assisted TreeLogger logger) {
+  BindingPositioner(@Assisted TreeLogger logger) {
     this.logger = logger;
   }
   
