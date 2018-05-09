@@ -306,8 +306,7 @@
                 <gwt.args>
                   -devMode
                   -gen target/generated-test-sources/test-devmode
-                  -war
-                  target/war/test-devmode
+                  -war target/war/test-devmode
                 </gwt.args>
               </systemPropertyVariables>
               <reportsDirectory>${project.build.directory}/failsafe-reports/test-devmode</reportsDirectory>
@@ -325,8 +324,7 @@
                 <gwt.args>
                   -prod -style PRETTY
                   -gen target/generated-test-sources/test-web
-                  -war
-                  target/war/test-web
+                  -war target/war/test-web
                 </gwt.args>
               </systemPropertyVariables>
               <reportsDirectory>${project.build.directory}/failsafe-reports/test-web</reportsDirectory>
@@ -451,6 +449,7 @@
             <artifactId>maven-invoker-plugin</artifactId>
             <version>3.0.1</version>
             <configuration>
+              <streamLogs>true</streamLogs>
               <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
             </configuration>
             <executions>
