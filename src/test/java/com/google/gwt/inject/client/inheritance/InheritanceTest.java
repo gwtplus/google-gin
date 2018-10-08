@@ -34,12 +34,12 @@ public class InheritanceTest extends GWTTestCase {
   }
 
 
-  public void testInjectionIneritance() {
+  public void testInjectionInheritance() {
     FooGinjector injector = GWT.create(FooGinjector.class);
     Foo foo = injector.createFoo();
     
     // Method injection asserts the order but as a sanity check let's see if the injection worked:
-    if (!foo.success) { System.err.println("[ERROR] InheritanceTest.testInjectionIneritance() failed."); }
+    if (!foo.success) { System.err.println("[ERROR] InheritanceTest.testInjectionInheritance() failed."); }
     
     //FIXME: Enable assertion when fixed
     //assertTrue(foo.success);
