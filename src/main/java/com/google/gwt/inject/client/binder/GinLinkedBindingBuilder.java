@@ -18,7 +18,7 @@ package com.google.gwt.inject.client.binder;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * See the EDSL examples at {@link GinBinder}.

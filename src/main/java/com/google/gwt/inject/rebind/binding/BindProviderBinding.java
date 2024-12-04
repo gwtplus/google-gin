@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * A binding to call the requested {@link com.google.inject.Provider}.

@@ -67,7 +67,7 @@ public class FactoryBindingTest extends TestCase {
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("has more than one parameter of type " +
-          "java.lang.String annotated with @Assisted(\"\")."));
+          "String annotated with @Assisted(\"\")."));
     }
   }
 
@@ -79,7 +79,7 @@ public class FactoryBindingTest extends TestCase {
       fail("Expected ConfigurationException.");
     } catch (ConfigurationException e) {
       assertTrue(e.getMessage().contains("has more than one parameter of type " +
-          "java.lang.String annotated with @Assisted(\"foo\")."));
+          "String annotated with @Assisted(\"foo\")."));
     }
   }
 

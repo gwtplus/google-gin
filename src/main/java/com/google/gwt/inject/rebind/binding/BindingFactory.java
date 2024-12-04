@@ -26,7 +26,7 @@ import com.google.inject.internal.ProviderMethod;
 import java.lang.reflect.Constructor;
 import java.util.Map;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * Factory interface for creating bindings. The parameters to each method are the not guice

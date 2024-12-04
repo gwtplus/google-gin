@@ -238,7 +238,7 @@ public final class GinMapBinder<K, V> {
    * @see #addBinding(Object)
    */
   public GinLinkedBindingBuilder<V> addBinding(
-      Class<? extends javax.inject.Provider<? extends K>> keyProvider) {
+      Class<? extends jakarta.inject.Provider<? extends K>> keyProvider) {
     return addBinding(TypeLiteral.get(keyProvider));
   }
 
@@ -253,7 +253,7 @@ public final class GinMapBinder<K, V> {
    * @see #addBinding(Object)
    */
   public GinLinkedBindingBuilder<V> addBinding(
-      TypeLiteral<? extends javax.inject.Provider<? extends K>> keyProvider) {
+      TypeLiteral<? extends jakarta.inject.Provider<? extends K>> keyProvider) {
     BindingRecorder recorder = createRecorder();
     recorder.bind(keyType).toProvider(Key.get(keyProvider));
     return recorder.bind(valueType);

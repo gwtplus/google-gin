@@ -40,7 +40,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * Class responsible for creating implicit bindings.  This returns the binding entry

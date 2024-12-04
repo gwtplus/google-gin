@@ -28,7 +28,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.assistedinject.Assisted;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 public class PrivateFactoryTest extends GWTTestCase {
 

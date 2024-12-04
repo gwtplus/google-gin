@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * Stores information that describes the bindings present in a given injector,
@@ -380,7 +380,7 @@ public class GinjectorBindings implements BindingIndex {
         // the "real" binding every time we need the value.
         scope = GinScope.NO_SCOPE; 
       } else if (raw.getAnnotation(Singleton.class) != null
-          || raw.getAnnotation(javax.inject.Singleton.class) != null) {
+          || raw.getAnnotation(jakarta.inject.Singleton.class) != null) {
         // Look for scope annotation as a fallback
         scope = GinScope.SINGLETON;
       } else if (RemoteServiceProxyBinding.isRemoteServiceProxy(key.getTypeLiteral())) {
