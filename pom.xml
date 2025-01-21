@@ -414,6 +414,7 @@
               <detectJavaApiLink>true</detectJavaApiLink>
               <quite>true</quite>
               <doclint>none</doclint>
+              <source>8</source>
             </configuration>
           </plugin>
           <plugin>
