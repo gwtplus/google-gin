@@ -43,7 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * Builds up the bindings and scopes for this {@code Ginjector}.  This uses

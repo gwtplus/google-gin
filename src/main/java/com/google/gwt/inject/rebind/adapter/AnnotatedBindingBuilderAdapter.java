@@ -24,7 +24,7 @@ import com.google.inject.binder.AnnotatedBindingBuilder;
 
 import java.lang.annotation.Annotation;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 class AnnotatedBindingBuilderAdapter<T> implements GinAnnotatedBindingBuilder<T> {
   private final AnnotatedBindingBuilder<T> annotatedBindingBuilder;

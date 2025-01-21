@@ -38,7 +38,7 @@ import com.google.inject.spi.UntargettedBinding;
 import java.lang.annotation.Annotation;
 import java.util.List;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * Gathers information about Guice Bindings and adds the information to a {@link GinjectorBindings}.
@@ -136,7 +136,7 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   }
 
   // TODO(schmitt): We don't support this right now in any case, but it's
-  // strange to be using the Guice Scope instead of javax.inject.Scope
+  // strange to be using the Guice Scope instead of jakarta.inject.Scope
   public Void visitScope(Scope scope) {
     messages.add(new Message(PrettyPrinter.format("Explicit scope unsupported: key=%s scope=%s",
         targetKey, scope)));
@@ -144,7 +144,7 @@ public class GuiceBindingVisitor<T> extends DefaultBindingTargetVisitor<T, Void>
   }
 
   public Void visitScopeAnnotation(Class<? extends Annotation> scopeAnnotation) {
-    if (scopeAnnotation == Singleton.class || scopeAnnotation == javax.inject.Singleton.class) {
+    if (scopeAnnotation == Singleton.class || scopeAnnotation == jakarta.inject.Singleton.class) {
       bindingsCollection.putScope(targetKey, GinScope.SINGLETON);
     } else {
       messages.add(new Message(PrettyPrinter.format("Unsupported scope annotation: key=%s scope=%s",

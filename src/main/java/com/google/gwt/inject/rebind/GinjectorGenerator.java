@@ -86,7 +86,7 @@ public class GinjectorGenerator extends Generator {
   private ClassLoader createGinClassLoader(TreeLogger logger, GeneratorContext context) {
     Set<String> exceptions = new LinkedHashSet<String>();
     exceptions.add("com.google.inject"); // Need the non-super-source version during generation.
-    exceptions.add("javax.inject"); // Need the non-super-source version during generation.
+    exceptions.add("jakarta.inject"); // Need the non-super-source version during generation.
     exceptions.add("com.google.gwt.inject.client"); // Excluded to allow class-literal comparison.
     
     // Required by GWT 2.8.0+ to prevent loading of GWT script only java.lang.JsException class

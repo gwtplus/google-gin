@@ -20,7 +20,7 @@ import com.google.gwt.inject.client.privatemanylevel.PrivateManyLevelTest.Engine
 import com.google.gwt.inject.client.privatemanylevel.PrivateManyLevelTest.Transmission;
 import com.google.inject.Inject;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 public class Car {
   private final Engine engine;

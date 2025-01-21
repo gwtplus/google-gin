@@ -113,7 +113,7 @@ public class GuiceUtil {
    * annotation and the injection is marked as optional (
    * {@literal @}{@code Inject(optional = true)}).
    *
-   * Note that {@link javax.inject.Inject} does not have an optional parameter
+   * Note that {@link jakarta.inject.Inject} does not have an optional parameter
    * and therefore cannot be optional.
    *
    * @param member method to be checked
@@ -176,6 +176,6 @@ public class GuiceUtil {
    */
   public static boolean hasInject(MemberLiteral<?, ?> member) {
     return member.isAnnotationPresent(Inject.class)
-        || member.isAnnotationPresent(javax.inject.Inject.class);
+        || member.isAnnotationPresent(jakarta.inject.Inject.class);
   }
 }

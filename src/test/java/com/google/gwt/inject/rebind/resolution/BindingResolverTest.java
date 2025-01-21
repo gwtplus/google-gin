@@ -402,7 +402,7 @@ public class BindingResolverTest extends TestCase {
     expectCreateBinding(bar(), required(bar(), baz()));
     expectCreateBinding(baz(), required(baz(), bar()));
     
-    Capture<String> errorMessage = new Capture<String>();
+    Capture<String> errorMessage = Capture.newInstance();
     errorManager.logError(isA(String.class), isA(Object.class), isA(Object.class));
 
     // Intentionally use a different key, so that == won't work
@@ -467,7 +467,7 @@ public class BindingResolverTest extends TestCase {
     
     expectCreateBinding(foo(), required(foo(), bar()), required(foo(), baz()));
     expectCreateBinding(bar());
-    Capture<String> errorMessage = new Capture<String>();
+    Capture<String> errorMessage = Capture.newInstance();
     errorManager.logError(isA(String.class), isA(Object.class), capture(errorMessage),
         isA(Object.class)); // failure to create bar b/c already bound
 

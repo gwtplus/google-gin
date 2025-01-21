@@ -25,7 +25,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 /**
  * Generic member representation preserving the member's type parameters.

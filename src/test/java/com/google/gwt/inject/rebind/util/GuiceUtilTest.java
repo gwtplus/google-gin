@@ -266,7 +266,7 @@ public class GuiceUtilTest extends TestCase {
 
     @Inject String nonOptionalInject;
     @Inject(optional = true) String optionalInject;
-    @javax.inject.Inject String javaxInject;
+    @jakarta.inject.Inject String javaxInject;
 
     @Inject Baz unAnnotatedKey;
     @Inject @MyBindingAnnotation Baz annotatedKey;
@@ -282,7 +282,7 @@ public class GuiceUtilTest extends TestCase {
 
     @Inject void nonOptionalInject() {}
     @Inject(optional = true) void optionalInject() {}
-    @javax.inject.Inject void javaxInject() {}
+    @jakarta.inject.Inject void javaxInject() {}
 
     @Inject void nonOptionalKeys(String string, Foo foo) {}
     @Inject(optional = true) void optionalKeys(String string, Foo foo) {}

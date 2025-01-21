@@ -26,7 +26,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 public class PrivateManyLevelTest extends GWTTestCase {
 

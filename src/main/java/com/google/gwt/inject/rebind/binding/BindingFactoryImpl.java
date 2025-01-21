@@ -31,7 +31,7 @@ import com.google.inject.internal.ProviderMethod;
 import java.lang.reflect.Constructor;
 import java.util.Map;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * Guice-based implementation of the binding factory.

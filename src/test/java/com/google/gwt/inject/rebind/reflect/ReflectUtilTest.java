@@ -26,6 +26,8 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
 
+import javax.lang.model.element.Name;
+
 
 public class ReflectUtilTest extends TestCase {
 
@@ -250,7 +252,7 @@ public class ReflectUtilTest extends TestCase {
     MethodLiteral<?, ?> method =
         getMethod(TypeLiteral.get(ReflectUtilTest.class), "parametrizedMethod", Object.class);
     assertEquals(
-        "private <T extends java.lang.CharSequence & java.util.Map, V> T parametrizedMethod(V _0)",
+        "private <T extends java.lang.CharSequence & javax.lang.model.element.Name, V> T parametrizedMethod(V _0)",
         ReflectUtil.signatureBuilder(method).build());
   }
 
@@ -314,7 +316,7 @@ public class ReflectUtilTest extends TestCase {
 
     Method combinedMethod = ReflectUtilTest.class.getDeclaredMethod("combinedTypeVariableMethod");
     assertEquals(
-        "T extends java.lang.CharSequence & java.util.Map<java.lang.String, java.lang.String>",
+        "T extends java.lang.CharSequence & javax.lang.model.element.Name",
         ReflectUtil.getTypeVariableDefinition(combinedMethod.getTypeParameters()[0]));
   }
 
@@ -342,7 +344,7 @@ public class ReflectUtilTest extends TestCase {
     return null;
   }
 
-  private <T extends CharSequence & Map<String, String>> T combinedTypeVariableMethod() {
+  private <T extends CharSequence & Name> T combinedTypeVariableMethod() {
     return null;
   }
 
@@ -352,7 +354,7 @@ public class ReflectUtilTest extends TestCase {
 
   private void throwingMethod() throws IllegalArgumentException, ExampleException {}
 
-  private <T extends CharSequence & Map, V> T parametrizedMethod(V param) { return null; }
+  private <T extends CharSequence & Name, V> T parametrizedMethod(V param) { return null; }
 
   static class ConstructorType {
     protected ConstructorType() {}

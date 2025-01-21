@@ -54,8 +54,8 @@ public class MemberLiteralTest extends TestCase {
       // Expected.
     }
 
-    Annotation[] javaxAnnotation = new Annotation[] { getAnnotation(javax.inject.Named.class) };
-    assertEquals(getAnnotation(javax.inject.Named.class),
+    Annotation[] javaxAnnotation = new Annotation[] { getAnnotation(jakarta.inject.Named.class) };
+    assertEquals(getAnnotation(jakarta.inject.Named.class),
         fakeLiteral.getBindingAnnotation(javaxAnnotation));
   }
 
@@ -69,7 +69,7 @@ public class MemberLiteralTest extends TestCase {
   @MyBindingAnnotation
   @MyOtherAnnotation
   @Named("foo")
-  @javax.inject.Named
+  @jakarta.inject.Named
   private MethodLiteral<MemberLiteralTest, Method> getMemberLiteral() throws NoSuchMethodException {
     return MethodLiteral.get(MemberLiteralTest.class.getDeclaredMethod("getMemberLiteral"),
         TypeLiteral.get(MemberLiteralTest.class));

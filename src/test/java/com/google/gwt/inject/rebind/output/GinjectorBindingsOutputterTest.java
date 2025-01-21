@@ -83,9 +83,9 @@ public class GinjectorBindingsOutputterTest extends TestCase {
     expect(ctx.tryCreate((TreeLogger) anyObject(), (String) anyObject(), (String) anyObject()))
         .andStubReturn(printWriter);
 
-    Capture<FieldLiteral<SuperClass>> fieldCapture = new Capture<FieldLiteral<SuperClass>>();
+    Capture<FieldLiteral<SuperClass>> fieldCapture = Capture.newInstance();
     Capture<MethodLiteral<SuperClass, Method>> methodCapture =
-        new Capture<MethodLiteral<SuperClass, Method>>();
+           Capture.newInstance();
 
     NameGenerator nameGenerator = createMock(NameGenerator.class, "nameGenerator");
     expect(nameGenerator

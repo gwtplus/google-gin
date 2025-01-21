@@ -23,7 +23,7 @@ import com.google.inject.binder.LinkedBindingBuilder;
 
 import java.lang.annotation.Annotation;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 class LinkedBindingBuilderAdapter<T> implements GinLinkedBindingBuilder<T> {
   private final LinkedBindingBuilder<T> linkedBindingBuilder;
